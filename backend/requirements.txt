@@ -1,0 +1,8 @@
+# Runtime dependencies for the CP-ABE anonymization demo backend.
+fastapi==0.141.1
+uvicorn[standard]==0.53.0
+sqlalchemy==2.0.54
+pydantic==2.13.5
+PyJWT==2.14.0
+bcrypt==5.0.0
+python-dotenv==1.2.3

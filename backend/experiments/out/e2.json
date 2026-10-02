@@ -1,0 +1,49 @@
+{
+ "n_train": 400,
+ "n_test": 100,
+ "model": "interpolated word bigram",
+ "variants": [
+  {
+   "variant": "raw (upper bound, not releasable)",
+   "perplexity": 13.44,
+   "pii_perplexity": 60.26,
+   "pii_oov": 0.0783,
+   "digit_shape_preserved": 1.0
+  },
+  {
+   "variant": "suppress all",
+   "perplexity": 74.94,
+   "pii_perplexity": 60181.06,
+   "pii_oov": 0.9297,
+   "digit_shape_preserved": 0.0
+  },
+  {
+   "variant": "pseudonym all",
+   "perplexity": 74.95,
+   "pii_perplexity": 60203.84,
+   "pii_oov": 0.9297,
+   "digit_shape_preserved": 0.0
+  },
+  {
+   "variant": "surrogate all",
+   "perplexity": 19.72,
+   "pii_perplexity": 258.61,
+   "pii_oov": 0.234,
+   "digit_shape_preserved": 1.0
+  },
+  {
+   "variant": "GREEN policy",
+   "perplexity": 23.3,
+   "pii_perplexity": 431.38,
+   "pii_oov": 0.273,
+   "digit_shape_preserved": 0.8189
+  },
+  {
+   "variant": "GREEN policy, real detector",
+   "perplexity": 22.56,
+   "pii_perplexity": 353.52,
+   "pii_oov": 0.1906,
+   "digit_shape_preserved": 0.8189
+  }
+ ]
+}

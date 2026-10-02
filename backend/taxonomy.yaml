@@ -1,0 +1,65 @@
+# Sensitive data taxonomy for bank-client call transcripts.
+# This file IS the policy: privacy/taxonomy.py loads it, the detector tags spans
+# with these types, and the redactor looks up actions here. Edit it, restart, done.
+
+tiers: [GREEN, AMBER, RED]          # ascending clearance (PDF security ratings)
+
+tier_roles:
+  RED: Compliance / risk team — assesses high-risk calls before approval
+  AMBER: Call agents / QA — see their own calls, never credentials
+  GREEN: Data scientists / model training — de-identified corpus only
+
+# Redaction actions, most to least utility preserved:
+#   keep        unchanged
+#   surrogate   realistic fake of the same shape, stable within a call
+#   mask_last4  all but the last 4 digits masked
+#   pseudonym   <TYPE_n> placeholder, stable within a call
+#   generalize  coarser value (town -> region, $4,250 -> S$1k-10k)
+#   suppress    [REDACTED]
+classes:
+  DIRECT_ID:
+    harm: 5
+    description: Identifies one person on its own.
+    actions: {RED: keep, AMBER: pseudonym, GREEN: surrogate}
+  FINANCIAL_ID:
+    harm: 5
+    description: Enables fraud or is regulated banking secrecy data.
+    actions: {RED: keep, AMBER: mask_last4, GREEN: surrogate}
+  AUTH_SECRET:
+    harm: 10
+    description: Live credential. No business reason for anyone to read it, so nobody does.
+    actions: {RED: suppress, AMBER: suppress, GREEN: suppress}
+  QUASI_ID:
+    harm: 1
+    description: Harmless alone, identifying in combination (linkage attack).
+    actions: {RED: keep, AMBER: keep, GREEN: generalize}
+  SENSITIVE_ATTR:
+    harm: 3
+    description: Harmful to disclose even when de-identified.
+    actions: {RED: keep, AMBER: keep, GREEN: suppress}
+
+# Per-type `actions` override the class default for the listed tiers only.
+types:
+  PERSON:          {class: DIRECT_ID, description: "Client, agent or payee name"}
+  NRIC:            {class: DIRECT_ID, description: Singapore NRIC/FIN (checksum-validated)}
+  PHONE:           {class: DIRECT_ID, description: Singapore phone number}
+  EMAIL:           {class: DIRECT_ID, description: 'Email address, written or spoken ("tan dot wei at gmail dot com")'}
+  ADDRESS:         {class: DIRECT_ID, description: Residential address}
+  DOB:             {class: DIRECT_ID, description: Date of birth}
+  ACCOUNT_NO:      {class: FINANCIAL_ID, description: Bank account number}
+  CARD_NO:         {class: FINANCIAL_ID, description: Payment card number (Luhn-validated)}
+  TXN_REF:         {class: FINANCIAL_ID, description: Transaction / case reference}
+  AMOUNT:
+    class: FINANCIAL_ID
+    description: Exact monetary amount
+    actions: {AMBER: keep, GREEN: generalize}   # agents need the amount; banding keeps it useful
+  OTP:             {class: AUTH_SECRET, description: One-time password}
+  PIN:             {class: AUTH_SECRET, description: Card / account PIN}
+  SECURITY_ANSWER: {class: AUTH_SECRET, description: Answer to a security question}
+  LOCATION:        {class: QUASI_ID, description: Town or branch}
+  EMPLOYER:        {class: QUASI_ID, description: Employer name}
+  OCCUPATION:      {class: QUASI_ID, description: Job title}
+  NATIONALITY:     {class: QUASI_ID, description: Nationality}
+  DATE:            {class: QUASI_ID, description: Calendar date other than DOB}
+  HEALTH:          {class: SENSITIVE_ATTR, description: Medical condition or treatment}
+  LEGAL:           {class: SENSITIVE_ATTR, description: Legal / family proceedings}

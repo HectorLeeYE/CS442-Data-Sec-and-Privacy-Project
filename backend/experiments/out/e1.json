@@ -1,0 +1,568 @@
+{
+ "ablation": {
+  "clean": [
+   {
+    "config": "presidio only",
+    "layers": [
+     "presidio"
+    ],
+    "recall": {
+     "DIRECT_ID": 0.8207,
+     "FINANCIAL_ID": 0.1697,
+     "AUTH_SECRET": 0.5852,
+     "QUASI_ID": 0.6425,
+     "SENSITIVE_ATTR": 0.0
+    },
+    "class_accuracy": {
+     "DIRECT_ID": 0.7657,
+     "FINANCIAL_ID": 0.5439,
+     "AUTH_SECRET": 0.0,
+     "QUASI_ID": 0.8684,
+     "SENSITIVE_ATTR": null
+    },
+    "support": {
+     "DIRECT_ID": 2543,
+     "FINANCIAL_ID": 1408,
+     "AUTH_SECRET": 581,
+     "QUASI_ID": 828,
+     "SENSITIVE_ATTR": 223
+    },
+    "harm_weighted_recall": 0.575,
+    "precision": 1.0,
+    "char_leakage": 0.487,
+    "over_redaction": 0.0024
+   },
+   {
+    "config": "+ format",
+    "layers": [
+     "presidio",
+     "format"
+    ],
+    "recall": {
+     "DIRECT_ID": 0.9972,
+     "FINANCIAL_ID": 1.0,
+     "AUTH_SECRET": 0.5852,
+     "QUASI_ID": 0.6425,
+     "SENSITIVE_ATTR": 0.0
+    },
+    "class_accuracy": {
+     "DIRECT_ID": 0.9472,
+     "FINANCIAL_ID": 1.0,
+     "AUTH_SECRET": 0.0,
+     "QUASI_ID": 0.8684,
+     "SENSITIVE_ATTR": null
+    },
+    "support": {
+     "DIRECT_ID": 2543,
+     "FINANCIAL_ID": 1408,
+     "AUTH_SECRET": 581,
+     "QUASI_ID": 828,
+     "SENSITIVE_ATTR": 223
+    },
+    "harm_weighted_recall": 0.874,
+    "precision": 1.0,
+    "char_leakage": 0.08,
+    "over_redaction": 0.0024
+   },
+   {
+    "config": "+ context",
+    "layers": [
+     "presidio",
+     "format",
+     "context"
+    ],
+    "recall": {
+     "DIRECT_ID": 0.9996,
+     "FINANCIAL_ID": 1.0,
+     "AUTH_SECRET": 1.0,
+     "QUASI_ID": 0.9674,
+     "SENSITIVE_ATTR": 0.861
+    },
+    "class_accuracy": {
+     "DIRECT_ID": 1.0,
+     "FINANCIAL_ID": 1.0,
+     "AUTH_SECRET": 1.0,
+     "QUASI_ID": 0.9126,
+     "SENSITIVE_ATTR": 1.0
+    },
+    "support": {
+     "DIRECT_ID": 2543,
+     "FINANCIAL_ID": 1408,
+     "AUTH_SECRET": 581,
+     "QUASI_ID": 828,
+     "SENSITIVE_ATTR": 223
+    },
+    "harm_weighted_recall": 0.9954,
+    "precision": 0.9435,
+    "char_leakage": 0.0131,
+    "over_redaction": 0.0099
+   },
+   {
+    "config": "+ spoken",
+    "layers": [
+     "presidio",
+     "format",
+     "context",
+     "spoken"
+    ],
+    "recall": {
+     "DIRECT_ID": 0.9996,
+     "FINANCIAL_ID": 1.0,
+     "AUTH_SECRET": 1.0,
+     "QUASI_ID": 0.9674,
+     "SENSITIVE_ATTR": 0.861
+    },
+    "class_accuracy": {
+     "DIRECT_ID": 1.0,
+     "FINANCIAL_ID": 1.0,
+     "AUTH_SECRET": 1.0,
+     "QUASI_ID": 0.9126,
+     "SENSITIVE_ATTR": 1.0
+    },
+    "support": {
+     "DIRECT_ID": 2543,
+     "FINANCIAL_ID": 1408,
+     "AUTH_SECRET": 581,
+     "QUASI_ID": 828,
+     "SENSITIVE_ATTR": 223
+    },
+    "harm_weighted_recall": 0.9954,
+    "precision": 0.9435,
+    "char_leakage": 0.0131,
+    "over_redaction": 0.0099
+   },
+   {
+    "config": "+ propagate (full)",
+    "layers": [
+     "presidio",
+     "format",
+     "context",
+     "spoken",
+     "propagate"
+    ],
+    "recall": {
+     "DIRECT_ID": 1.0,
+     "FINANCIAL_ID": 1.0,
+     "AUTH_SECRET": 1.0,
+     "QUASI_ID": 0.9674,
+     "SENSITIVE_ATTR": 0.861
+    },
+    "class_accuracy": {
+     "DIRECT_ID": 1.0,
+     "FINANCIAL_ID": 1.0,
+     "AUTH_SECRET": 1.0,
+     "QUASI_ID": 0.9126,
+     "SENSITIVE_ATTR": 1.0
+    },
+    "support": {
+     "DIRECT_ID": 2543,
+     "FINANCIAL_ID": 1408,
+     "AUTH_SECRET": 581,
+     "QUASI_ID": 828,
+     "SENSITIVE_ATTR": 223
+    },
+    "harm_weighted_recall": 0.9956,
+    "precision": 0.9224,
+    "char_leakage": 0.0131,
+    "over_redaction": 0.0113
+   },
+   {
+    "config": "full minus presidio",
+    "layers": [
+     "format",
+     "context",
+     "spoken",
+     "propagate"
+    ],
+    "recall": {
+     "DIRECT_ID": 0.9725,
+     "FINANCIAL_ID": 1.0,
+     "AUTH_SECRET": 1.0,
+     "QUASI_ID": 0.9674,
+     "SENSITIVE_ATTR": 0.861
+    },
+    "class_accuracy": {
+     "DIRECT_ID": 1.0,
+     "FINANCIAL_ID": 1.0,
+     "AUTH_SECRET": 1.0,
+     "QUASI_ID": 1.0,
+     "SENSITIVE_ATTR": 1.0
+    },
+    "support": {
+     "DIRECT_ID": 2543,
+     "FINANCIAL_ID": 1408,
+     "AUTH_SECRET": 581,
+     "QUASI_ID": 828,
+     "SENSITIVE_ATTR": 223
+    },
+    "harm_weighted_recall": 0.9826,
+    "precision": 0.9532,
+    "char_leakage": 0.027,
+    "over_redaction": 0.0096
+   }
+  ],
+  "noisy": [
+   {
+    "config": "presidio only",
+    "layers": [
+     "presidio"
+    ],
+    "recall": {
+     "DIRECT_ID": 0.6819,
+     "FINANCIAL_ID": 0.0646,
+     "AUTH_SECRET": 0.2427,
+     "QUASI_ID": 0.5278,
+     "SENSITIVE_ATTR": 0.0
+    },
+    "class_accuracy": {
+     "DIRECT_ID": 0.8264,
+     "FINANCIAL_ID": 0.3297,
+     "AUTH_SECRET": 0.0,
+     "QUASI_ID": 0.8741,
+     "SENSITIVE_ATTR": null
+    },
+    "support": {
+     "DIRECT_ID": 2543,
+     "FINANCIAL_ID": 1408,
+     "AUTH_SECRET": 581,
+     "QUASI_ID": 828,
+     "SENSITIVE_ATTR": 223
+    },
+    "harm_weighted_recall": 0.4054,
+    "precision": 0.9857,
+    "char_leakage": 0.7978,
+    "over_redaction": 0.0041
+   },
+   {
+    "config": "+ format",
+    "layers": [
+     "presidio",
+     "format"
+    ],
+    "recall": {
+     "DIRECT_ID": 0.757,
+     "FINANCIAL_ID": 0.5959,
+     "AUTH_SECRET": 0.2427,
+     "QUASI_ID": 0.587,
+     "SENSITIVE_ATTR": 0.0
+    },
+    "class_accuracy": {
+     "DIRECT_ID": 0.9299,
+     "FINANCIAL_ID": 0.9988,
+     "AUTH_SECRET": 0.0,
+     "QUASI_ID": 0.893,
+     "SENSITIVE_ATTR": null
+    },
+    "support": {
+     "DIRECT_ID": 2543,
+     "FINANCIAL_ID": 1408,
+     "AUTH_SECRET": 581,
+     "QUASI_ID": 828,
+     "SENSITIVE_ATTR": 223
+    },
+    "harm_weighted_recall": 0.5807,
+    "precision": 0.9853,
+    "char_leakage": 0.6448,
+    "over_redaction": 0.004
+   },
+   {
+    "config": "+ context",
+    "layers": [
+     "presidio",
+     "format",
+     "context"
+    ],
+    "recall": {
+     "DIRECT_ID": 0.8215,
+     "FINANCIAL_ID": 0.5966,
+     "AUTH_SECRET": 0.5852,
+     "QUASI_ID": 0.9577,
+     "SENSITIVE_ATTR": 0.861
+    },
+    "class_accuracy": {
+     "DIRECT_ID": 0.9943,
+     "FINANCIAL_ID": 0.9976,
+     "AUTH_SECRET": 0.9853,
+     "QUASI_ID": 0.9344,
+     "SENSITIVE_ATTR": 1.0
+    },
+    "support": {
+     "DIRECT_ID": 2543,
+     "FINANCIAL_ID": 1408,
+     "AUTH_SECRET": 581,
+     "QUASI_ID": 828,
+     "SENSITIVE_ATTR": 223
+    },
+    "harm_weighted_recall": 0.7174,
+    "precision": 0.9355,
+    "char_leakage": 0.602,
+    "over_redaction": 0.011
+   },
+   {
+    "config": "+ spoken",
+    "layers": [
+     "presidio",
+     "format",
+     "context",
+     "spoken"
+    ],
+    "recall": {
+     "DIRECT_ID": 0.9925,
+     "FINANCIAL_ID": 1.0,
+     "AUTH_SECRET": 0.9776,
+     "QUASI_ID": 0.9577,
+     "SENSITIVE_ATTR": 0.861
+    },
+    "class_accuracy": {
+     "DIRECT_ID": 0.9952,
+     "FINANCIAL_ID": 1.0,
+     "AUTH_SECRET": 0.9912,
+     "QUASI_ID": 0.9344,
+     "SENSITIVE_ATTR": 1.0
+    },
+    "support": {
+     "DIRECT_ID": 2543,
+     "FINANCIAL_ID": 1408,
+     "AUTH_SECRET": 581,
+     "QUASI_ID": 828,
+     "SENSITIVE_ATTR": 223
+    },
+    "harm_weighted_recall": 0.987,
+    "precision": 0.9497,
+    "char_leakage": 0.0128,
+    "over_redaction": 0.0109
+   },
+   {
+    "config": "+ propagate (full)",
+    "layers": [
+     "presidio",
+     "format",
+     "context",
+     "spoken",
+     "propagate"
+    ],
+    "recall": {
+     "DIRECT_ID": 0.9949,
+     "FINANCIAL_ID": 1.0,
+     "AUTH_SECRET": 0.9776,
+     "QUASI_ID": 0.9577,
+     "SENSITIVE_ATTR": 0.861
+    },
+    "class_accuracy": {
+     "DIRECT_ID": 0.9953,
+     "FINANCIAL_ID": 1.0,
+     "AUTH_SECRET": 0.9912,
+     "QUASI_ID": 0.9344,
+     "SENSITIVE_ATTR": 1.0
+    },
+    "support": {
+     "DIRECT_ID": 2543,
+     "FINANCIAL_ID": 1408,
+     "AUTH_SECRET": 581,
+     "QUASI_ID": 828,
+     "SENSITIVE_ATTR": 223
+    },
+    "harm_weighted_recall": 0.9881,
+    "precision": 0.9266,
+    "char_leakage": 0.0126,
+    "over_redaction": 0.0126
+   },
+   {
+    "config": "full minus presidio",
+    "layers": [
+     "format",
+     "context",
+     "spoken",
+     "propagate"
+    ],
+    "recall": {
+     "DIRECT_ID": 0.9678,
+     "FINANCIAL_ID": 1.0,
+     "AUTH_SECRET": 0.9742,
+     "QUASI_ID": 0.9577,
+     "SENSITIVE_ATTR": 0.861
+    },
+    "class_accuracy": {
+     "DIRECT_ID": 0.9939,
+     "FINANCIAL_ID": 1.0,
+     "AUTH_SECRET": 0.9947,
+     "QUASI_ID": 1.0,
+     "SENSITIVE_ATTR": 1.0
+    },
+    "support": {
+     "DIRECT_ID": 2543,
+     "FINANCIAL_ID": 1408,
+     "AUTH_SECRET": 581,
+     "QUASI_ID": 828,
+     "SENSITIVE_ATTR": 223
+    },
+    "harm_weighted_recall": 0.9746,
+    "precision": 0.9507,
+    "char_leakage": 0.0203,
+    "over_redaction": 0.0097
+   }
+  ]
+ },
+ "misses": {
+  "clean": [
+   {
+    "call": "C0001",
+    "type": "OCCUPATION",
+    "text": "hawker"
+   },
+   {
+    "call": "C0045",
+    "type": "OCCUPATION",
+    "text": "financial advisor"
+   },
+   {
+    "call": "C0055",
+    "type": "OCCUPATION",
+    "text": "financial advisor"
+   },
+   {
+    "call": "C0055",
+    "type": "LEGAL",
+    "text": "probate dispute"
+   },
+   {
+    "call": "C0080",
+    "type": "LEGAL",
+    "text": "probate dispute"
+   },
+   {
+    "call": "C0126",
+    "type": "LEGAL",
+    "text": "probate dispute"
+   },
+   {
+    "call": "C0173",
+    "type": "HEALTH",
+    "text": "IVF treatment"
+   },
+   {
+    "call": "C0186",
+    "type": "HEALTH",
+    "text": "IVF treatment"
+   },
+   {
+    "call": "C0209",
+    "type": "HEALTH",
+    "text": "IVF treatment"
+   }
+  ],
+  "noisy": [
+   {
+    "call": "C0001",
+    "type": "OCCUPATION",
+    "text": "hawker"
+   },
+   {
+    "call": "C0045",
+    "type": "OCCUPATION",
+    "text": "financial advisor"
+   },
+   {
+    "call": "C0055",
+    "type": "OCCUPATION",
+    "text": "financial advisor"
+   },
+   {
+    "call": "C0001",
+    "type": "EMPLOYER",
+    "text": "tan tock seng hospital"
+   },
+   {
+    "call": "C0065",
+    "type": "EMPLOYER",
+    "text": "singtel"
+   },
+   {
+    "call": "C0127",
+    "type": "EMPLOYER",
+    "text": "changi airport group"
+   },
+   {
+    "call": "C0026",
+    "type": "OTP",
+    "text": "six seven six double four eight"
+   },
+   {
+    "call": "C0086",
+    "type": "OTP",
+    "text": "nine three seven four double eight"
+   },
+   {
+    "call": "C0091",
+    "type": "OTP",
+    "text": "461334"
+   },
+   {
+    "call": "C0055",
+    "type": "LEGAL",
+    "text": "probate dispute"
+   },
+   {
+    "call": "C0080",
+    "type": "LEGAL",
+    "text": "probate dispute"
+   },
+   {
+    "call": "C0126",
+    "type": "LEGAL",
+    "text": "probate dispute"
+   },
+   {
+    "call": "C0055",
+    "type": "SECURITY_ANSWER",
+    "text": "mochi"
+   },
+   {
+    "call": "C0072",
+    "type": "SECURITY_ANSWER",
+    "text": "lim"
+   },
+   {
+    "call": "C0406",
+    "type": "SECURITY_ANSWER",
+    "text": "bobo"
+   },
+   {
+    "call": "C0090",
+    "type": "PERSON",
+    "text": "koh fatimah"
+   },
+   {
+    "call": "C0142",
+    "type": "PERSON",
+    "text": "chan nurul"
+   },
+   {
+    "call": "C0150",
+    "type": "PERSON",
+    "text": "sim zul"
+   },
+   {
+    "call": "C0173",
+    "type": "HEALTH",
+    "text": "ivf treatment"
+   },
+   {
+    "call": "C0186",
+    "type": "HEALTH",
+    "text": "ivf treatment"
+   },
+   {
+    "call": "C0209",
+    "type": "HEALTH",
+    "text": "ivf treatment"
+   },
+   {
+    "call": "C0243",
+    "type": "PIN",
+    "text": "2611"
+   }
+  ]
+ },
+ "n_calls": 500
+}

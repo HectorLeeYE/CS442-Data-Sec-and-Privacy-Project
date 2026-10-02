@@ -1,0 +1,8 @@
+**/__pycache__
+backend/.venv
+backend/demo.sqlite3*
+backend/data/corpus
+backend/experiments/out/cache_*.pkl
+frontend/node_modules
+frontend/dist
+.git

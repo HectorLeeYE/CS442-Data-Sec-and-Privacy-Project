@@ -1,0 +1,65 @@
+{
+ "n_clients": 300,
+ "conditions": {
+  "clean": [
+   {
+    "condition": "raw transcript",
+    "reidentified": 0.844,
+    "true_client_in_candidates": 1.0,
+    "median_candidates": 1,
+    "direct_id_leak": 1.0
+   },
+   {
+    "condition": "GREEN, quasi-IDs kept",
+    "reidentified": 0.196,
+    "true_client_in_candidates": 0.6,
+    "median_candidates": 16,
+    "direct_id_leak": 0.0
+   },
+   {
+    "condition": "GREEN policy",
+    "reidentified": 0.078,
+    "true_client_in_candidates": 0.608,
+    "median_candidates": 16,
+    "direct_id_leak": 0.0
+   },
+   {
+    "condition": "GREEN policy, perfect detector",
+    "reidentified": 0.084,
+    "true_client_in_candidates": 0.608,
+    "median_candidates": 16,
+    "direct_id_leak": 0.0
+   }
+  ],
+  "noisy": [
+   {
+    "condition": "raw transcript",
+    "reidentified": 0.844,
+    "true_client_in_candidates": 1.0,
+    "median_candidates": 1,
+    "direct_id_leak": 1.0
+   },
+   {
+    "condition": "GREEN, quasi-IDs kept",
+    "reidentified": 0.2,
+    "true_client_in_candidates": 0.598,
+    "median_candidates": 15,
+    "direct_id_leak": 0.024
+   },
+   {
+    "condition": "GREEN policy",
+    "reidentified": 0.096,
+    "true_client_in_candidates": 0.602,
+    "median_candidates": 16,
+    "direct_id_leak": 0.024
+   },
+   {
+    "condition": "GREEN policy, perfect detector",
+    "reidentified": 0.086,
+    "true_client_in_candidates": 0.608,
+    "median_candidates": 16,
+    "direct_id_leak": 0.0
+   }
+  ]
+ }
+}

@@ -10,10 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "lucide-react": "^1.47.0",
+    "apexcharts": "^7.8.0",
+    "lucide-react": "^1.50.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.4"
+    "react-apexcharts": "^2.1.1",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -21,7 +22,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
-    "daisyui": "^5.7.42",
+    "daisyui": "^5.7.47",
     "oxlint": "^1.81.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",

@@ -1,22 +1,29 @@
 # Quietline: sensitive data discovery and redaction for bank call transcripts
 
-CS442 project. Bank–client phone calls are recorded and transcribed. Compliance must read
-high-risk calls in full. The bank also wants the same transcripts to retrain its speech
-model, and the people who would use them hold the lowest security clearance. Quietline
-detects sensitive data in each transcript once, stores one encrypted copy per clearance tier
-under attribute-based encryption, and logs every release in a tamper-evident chain.
+CS442 project. **The data analysis task:** a bank fine-tunes its in-house speech-recognition
+model on transcripts of recorded client calls, because the model performs poorly on
+Singapore-accented English, Singlish and code-switching. The data scientists who would do this
+hold the lowest security clearance, while the same transcripts are banking-secrecy data that only
+compliance may read in full, and only for high-risk calls. Quietline detects sensitive data in
+each transcript once, stores one encrypted copy per clearance tier under attribute-based
+encryption, releases a de-identified training set to data science, and logs every release in a
+tamper-evident chain.
 
-> **Project scope**
-> - Identify an industrial domain/application that handles sensitive data, and the relevant data flows and data disclosure risks
-> - Define a sensitive data taxonomy for the domain/application
-> - Design/apply sensitive data detection and redaction methods
-> - Build a prototype of your design
-> - Gather/generate experimental data
-> - Show a demo of your solution
+> **Project requirements**
+> 1. Identify a realistic data analysis task
+> 2. Define the privacy and utility requirements for the task
+> 3. Present a privacy-preserving solution for the task
+> 4. Build a prototype of your design
+> 5. Gather / generate experimental data
+> 6. Show a demo of your solution
+>
+> [`docs/requirements.md`](docs/requirements.md) maps each one to the evidence, with the measurable
+> privacy and utility targets and whether each was met.
 
 | Document | Contents |
 |---|---|
 | This README | Deploying the demo, the demo script, how each requirement is met, open improvements |
+| [`docs/requirements.md`](docs/requirements.md) | The six requirements, the privacy and utility targets, and the evidence for each |
 | [`docs/design.md`](docs/design.md) | Domain, data flows, risk register, taxonomy, detection, redaction, the prototype, experiment design and findings |
 | [`docs/dpia.md`](docs/dpia.md) | Data protection impact assessment |
 | [`backend/experiments/out/RESULTS.md`](backend/experiments/out/RESULTS.md) | Full experiment tables (generated) |
@@ -158,12 +165,12 @@ RED included, and never stored.
 ```bash
 cd backend
 .venv/bin/python -m data.gen              # 500 calls × {clean, noisy} + 300 clients -> data/corpus/
-.venv/bin/python -m pytest -q             # 29 tests: detection, redaction, CP-ABE, access control, audit, export
+.venv/bin/python -m pytest -q             # 31 tests: detection, redaction, CP-ABE, access control, audit, export
 
 # experiments need the extra dependencies (GLiNER, Whisper, TTS)
 .venv/bin/pip install -r requirements-experiments.txt
 .venv/bin/python -m experiments.run       # E1, E2, E3, E5 -> experiments/out/*.json + RESULTS.md
-.venv/bin/python -m experiments.asr 40    # E4: TTS -> Whisper, ~30–60 min on CPU, needs network for TTS
+.venv/bin/python -m experiments.asr 40    # E4: TTS -> Whisper, 3–6 h on a laptop CPU; resumable, and Whisper output is cached for re-scoring
 
 cd ../frontend && npm run build           # type-check + production build
 ```
@@ -174,18 +181,17 @@ the frontend build and the linter on every push.
 
 ---
 
-## 2. How the implementation meets the requirements
+## 2. For Guomin
 
 | Requirement | What was built | Where |
 |---|---|---|
-| **Domain, data flows, disclosure risks** | Retail-bank client–agent calls with the compliance-referral flow from the brief. Clearance tiers, a data-flow diagram, the data lifecycle, a 15-entry risk register mapped to controls and evidence, and LINDDUN and STRIDE threat models. | [design §1](docs/design.md#1-domain-data-flows-and-disclosure-risks), [`docs/dpia.md`](docs/dpia.md) |
-| **Sensitive data taxonomy** | Five classes (DIRECT_ID, FINANCIAL_ID, AUTH_SECRET, QUASI_ID, SENSITIVE_ATTR) with harm weights, a harm rationale and the regulation behind each, and a class × tier action matrix. It is **a YAML file the code loads**, so the documented policy is the enforced policy. | [design §2](docs/design.md#2-sensitive-data-taxonomy), [`taxonomy.yaml`](backend/taxonomy.yaml) |
-| **Detection methods** | Presidio + spaCy NER; Singapore formats with checksum validation (NRIC, Luhn, IBAN mod-97); filler-tolerant cue phrases and lexicons; a **spoken-form normaliser** (English, Mandarin and Malay digits, homophones); a dialogue-slot layer; within-call propagation. Triage at ingest and a review queue for uncertain calls. | [design §3](docs/design.md#3-detection), [`privacy/`](backend/privacy) |
-| **Redaction methods** | Keep, **shape-preserving surrogate** (HMAC-seeded, checksum-valid, spoken form kept), mask-last-4, pseudonym, generalise, suppress. A k-anonymity gate on every GREEN export. | [design §4](docs/design.md#4-redaction-and-release), [`redact.py`](backend/privacy/redact.py), [`release.py`](backend/privacy/release.py) |
-| **Prototype** | FastAPI + React/daisyUI. **CP-ABE (BSW07 on BLS12-381)** over one copy per tier, with the key authority apart from the database; server-side clearance rules backed by the crypto; break-glass; review hold and release; signed GREEN export; retention and crypto-shredding; Ed25519 receipts; an anchored hash-chained audit log. | [design §5](docs/design.md#5-the-prototype-access-control-encryption-integrity), [`server/`](backend/server), [`frontend/src/`](frontend/src) |
-| **Experimental data** | A generator for 500 calls about 300 synthetic Singapore clients, rendered **clean** and **ASR-noisy** (spoken digits in three languages, homophones, fillers, code-switching), with exact ground-truth spans and risk labels. A **hand-written held-out set** of 24 calls. Synthetic speech for E4. | [design §6](docs/design.md#6-experimental-data), [`data/`](backend/data) |
-| **Demo** | The script above, the attack demo and the tamper demo. | §1 above, [design §5.9](docs/design.md#59-attack-demonstration) |
-| **Evaluation** | E1 leakage, E2 utility, E3 re-identification, E4 real ASR and audio bleeping, E5 cost. | [design §7–8](docs/design.md#8-what-the-experiments-showed) |
+| **1. A realistic data analysis task** | Fine-tuning a bank's in-house ASR model on transcripts of recorded client calls (Singapore-accented English, Singlish, code-switching), by data scientists with the lowest clearance. Secondary flow: compliance review of high-risk calls, as in the brief's BPMN. Data-flow diagram, data lifecycle, 15-entry risk register, LINDDUN and STRIDE threat models. | [design §1](docs/design.md#1-domain-data-flows-and-disclosure-risks), [`docs/dpia.md`](docs/dpia.md) |
+| **2. Privacy and utility requirements** | Privacy: a five-class taxonomy (DIRECT_ID, FINANCIAL_ID, AUTH_SECRET, QUASI_ID, SENSITIVE_ATTR) with harm weights, legal basis and a class × tier action matrix, **a YAML file the code loads**, so the documented policy is the enforced policy. Utility: per tier, what each reader must still be able to do, with measurable targets. | [requirements.md](docs/requirements.md#privacy-and-utility-requirements), [design §2](docs/design.md#2-sensitive-data-taxonomy), [`taxonomy.yaml`](backend/taxonomy.yaml) |
+| **3. A privacy-preserving solution** | Detection: Presidio + spaCy NER; Singapore formats with checksum validation; filler-tolerant cues and lexicons; a **spoken-form normaliser** (English, Mandarin and Malay digits, homophones, number words, ASR digit groups); dialogue-slot tracking; propagation. Redaction per tier: keep, **shape-preserving surrogate**, mask-last-4, pseudonym, generalise, suppress. k-anonymity gate on export; triage; review queue. **CP-ABE** so the stored copies enforce the policy without the server. | [design §3–5](docs/design.md#3-detection), [`privacy/`](backend/privacy) |
+| **4. Prototype** | FastAPI + React/daisyUI. CP-ABE (BSW07 on BLS12-381) over one copy per tier, key authority apart from the database; clearance rules backed by the crypto; break-glass; review hold and release; signed GREEN export; retention and crypto-shredding; Ed25519 receipts; anchored hash-chained audit log. 31 tests. | [design §5](docs/design.md#5-the-prototype-access-control-encryption-integrity), [`server/`](backend/server), [`frontend/src/`](frontend/src) |
+| **5. Experimental data** | A generator for 500 calls about 300 synthetic Singapore clients, rendered **clean** and **ASR-noisy**, with exact ground-truth spans and risk labels. A **hand-written held-out set** of 24 calls. Synthetic speech for E4. | [design §6](docs/design.md#6-experimental-data), [`data/`](backend/data) |
+| **6. Demo** | The 12-step script above, the attack demo and the tamper demo. | §1 above, [design §5.9](docs/design.md#59-attack-demonstration) |
+| **Evaluation** | E1 leakage, E2 utility (perplexity and a downstream triage classifier), E3 re-identification, E4 real ASR and audio bleeping, E5 cost. | [design §7–8](docs/design.md#8-what-the-experiments-showed) |
 
 ---
 
@@ -197,12 +203,16 @@ Full tables are in [`RESULTS.md`](backend/experiments/out/RESULTS.md); the discu
 | E1 harm-weighted recall | Clean (500 calls) | ASR-style (500 calls) | Hand-written held-out (24 calls) |
 |---|---|---|---|
 | Presidio alone | 58.6% | 43.8% | 33.3% |
-| Our full detector | **99.3%** | **97.7%** | **72.7%** |
-| Our detector + GLiNER-PII | 100.0% | 98.6% | 88.4% (precision 51%) |
+| Our full detector | **99.3%** | **97.7%** | **85.1%** (first round 72.7%) |
+| Our detector + GLiNER-PII | 100.0% | 98.6% | 95.7% (precision 52%) |
 
-**The held-out gap is the main finding.** The synthetic numbers overstate real performance; the
-misses on unseen phrasings are lexicon and pattern gaps (amounts in words, employers, OTPs written
-with spaces), listed in full in design §8.1. Triage also misses 44% of the held-out high-risk calls.
+**The held-out gap is the main finding.** The synthetic numbers overstate real performance. The
+first detector reached 72.7% on the hand-written calls; reading those misses for their causes and
+fixing the classes they belong to (credentials written with spaces, amounts and dates spoken as
+number words, Whisper's punctuated digit groups, "read me the code") lifted it to 85.1% without
+moving a synthetic number. The remaining misses are lexicon gaps (occupations, employers, health
+and legal terms) and security answers that are ordinary words, listed in full in design §8.1.
+Triage still misses a third of the held-out high-risk calls (first round: 44%).
 
 | E2: bigram LM trained on… tested on real calls | Perplexity |
 |---|---|
@@ -211,20 +221,27 @@ with spaces), listed in full in design §8.1. Triage also misses 44% of the held
 | PII surrogated | 24.1 |
 | the GREEN policy | 29.4 |
 
+A second utility check trains a high-risk triage classifier on each release and tests it on real
+calls: on synthetic test calls every release scores 97.0%; on the held-out calls GREEN scores
+70.8% against 75.0% for raw, one high-risk call fewer, because GREEN's amount band straddles the
+S$5,000 threshold (design §8.2).
+
 | E3: clients re-identified (clean) | External adversary | Insider with transaction log |
 |---|---|---|
 | raw transcript | 83.8% | — |
 | GREEN policy | 10.0% | 21.4% |
 | GREEN + k-gate | **0.2%** | **2.6%** |
 
-**E4:** on 40 calls read by SG-English TTS and transcribed by Whisper (WER 27.7%), the full
+**E4:** on 40 calls read by SG-English TTS and transcribed by Whisper (WER 27.7%), the first
 detector's harm-weighted recall falls to **82.5%** (Presidio alone: 45.7%). Whisper writes numbers
-as digits broken up by punctuation, which the format layer does not join, so the spoken-form layer
-adds nothing on real ASR. Bleeping the detected words in the audio leaves 17.9% of values
-recoverable by re-transcription, so audio stays at RED.
+as digits broken up by punctuation, which that detector did not join, so the spoken-form layer
+added nothing on real ASR. The current normaliser joins those digit groups, but the E4 rerun with
+it was interrupted before writing results, so its effect on real ASR is not yet measured
+(design §8.4). Bleeping the detected words in the audio leaves 17.9% of values recoverable by
+re-transcription, so audio stays at RED.
 
-**E5:** detection 28 ms per call; a cached read 0.3 ms; the first read under a new ABE policy
-about 360 ms (pure-Python pairings).
+**E5:** detection about 40 ms per call; a cached read 0.1 ms; the first read under a new ABE policy
+about 214 ms (pure-Python pairings).
 
 ---
 
@@ -255,7 +272,7 @@ backend/   Python 3.12
   data/heldout.py, ood/     hand-written held-out set
   experiments/run.py        E1, E2, E3, E5 + RESULTS.md
   experiments/asr.py        E4: TTS -> Whisper, audio bleeping
-  tests/                    pytest (29)
+  tests/                    pytest (31)
 ```
 
 Request path for `GET /api/calls/{id}?tier=AMBER`: verify JWT → re-read the user's clearance from
@@ -269,14 +286,19 @@ ABE key from their attributes → decrypt the copy's data key (ABE, then cached)
 
 In priority order.
 
-1. **A held-out set written outside the team, then close the gaps it shows.** The 72.7% held-out
-   recall is the honest figure. Fixing the listed misses one by one would just tune to the set;
-   a second, independent set is needed to measure any fix.
-2. **Run GLiNER-PII alongside the rules for GREEN releases.** It lifts held-out recall to 88.4%
-   at the cost of 51% precision. For GREEN, where a leak costs more than an extra surrogate, that
-   is probably the right trade, but it needs evaluating on real data first.
-3. **Broaden triage.** Learn fraud cues from labelled calls rather than a fixed list: today 44% of
-   held-out high-risk calls are triaged as low risk.
+1. **A held-out set written outside the team.** The 85.1% held-out recall is the honest figure,
+   and it was measured on a set the team wrote. The round-2 fixes were made by cause, not by
+   string, and left the synthetic numbers untouched, but only an independent set can confirm
+   that. Two or three people outside the team each writing ten calls from a one-paragraph brief,
+   labelled with the markup `data/heldout.py` already reads, is enough.
+2. **Use GLiNER-PII as a fourth review signal.** It lifts held-out recall to 95.7% but drops
+   precision to 52%. Holding a call for review when GLiNER finds a span no layer covers costs no
+   precision on released text and reuses the existing queue.
+3. **Broaden triage.** A third of the held-out high-risk calls (scams via PayNow, Carousell, an
+   identity-theft card) are triaged low because the fraud cue list is short. Take the cues from
+   the Singapore Police Force's scam categories rather than from the held-out set, and treat a
+   client who gave an OTP to someone as high risk. Also align a GREEN amount band edge with the
+   S$5,000 threshold (E2's downstream task).
 4. **Fine-tune Whisper on raw vs GREEN** and compare word error rate, the metric the bank cares
    about. E2's bigram model and E4 stand in for it; it was too heavy for CPU.
 5. **A separate key authority (KMS/HSM).** The server holds the ABE master key and mints users'
@@ -299,16 +321,3 @@ field for third parties (it could only relax redaction; design §2.1).
 * Agent ownership is matched on the agent's display name; a deployment would use a staff ID.
 * Session tokens live in `sessionStorage` with no refresh or revocation list.
 * Changing `taxonomy.yaml` affects only calls ingested afterwards: the raw transcript is not kept.
-
----
-
-## 6. Team and use of AI
-
-| Member | Contribution |
-|---|---|
-| _TODO_ | _TODO_ |
-
-**AI use.** The first version (commit `0b67ca3`) was generated with GPT. Round 2 (CP-ABE, the
-new detection layers, the held-out set, E3–E5, the rewritten design document and the DPIA) was
-written with Claude (Anthropic) in Claude Code. The team reviewed and directed the work; _TODO:
-check against the course's AI-use policy and state who reviewed what._

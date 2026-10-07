@@ -69,7 +69,7 @@ def presidio(text: str) -> list[Span]:
 # ---------------------------------------------------------------- format
 
 def nric_valid(s: str) -> bool:
-    s = re.sub(r"\s", "", s).upper()
+    s = re.sub(r"[\s-]", "", s).upper()
     if not re.fullmatch(r"[STFG]\d{7}[A-Z]", s):
         return False
     total = sum(int(d) * w for d, w in zip(s[1:8], (2, 7, 6, 5, 4, 3, 2))) + (4 if s[0] in "TG" else 0)
@@ -92,14 +92,15 @@ def iban_valid(s: str) -> bool:
 _NB = r"(?<![\w-])"   # not preceded by a word char / hyphen
 _NA = r"(?![\w-])"
 FORMAT = [  # (type, regex, validator)
-    ("NRIC", rf"{_NB}[STFG] ?\d{{7}} ?[A-Z]{_NA}", nric_valid),
+    ("NRIC", rf"{_NB}[STFG](?:[ -]{{0,2}}\d){{7}}[ -]{{0,2}}[A-Z]{_NA}", nric_valid),
     ("CARD_NO", rf"{_NB}(?:\d[ -]?){{12,18}}\d{_NA}", luhn_valid),
     ("PHONE", rf"{_NB}(?:\+65[ -]?)?[689]\d{{3}}[ -]?\d{{4}}{_NA}", None),
     ("ACCOUNT_NO", rf"{_NB}(?:\d{{3}}-\d{{5,6}}-\d|\d{{9,12}}){_NA}", None),
     ("EMAIL", r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+", None),
     ("TXN_REF", rf"{_NB}(?:TXN|REF|FT|CASE|t x n|r e f|c a s e)[- ]?\d{{6,12}}{_NA}", None),
     ("AMOUNT", r"(?:S\$|SGD ?|\$) ?\d[\d,]*(?:\.\d{1,2})?(?: ?(?:k|thousand|million))?"
-               r"|\b\d[\d,]*(?:\.\d{1,2})? ?(?:thousand |million )?(?:dollars|sgd)\b", None),
+               r"|\b\d[\d,]*(?:\.\d{1,2})? ?(?:thousand |million )?(?:dollars|bucks|sgd|usd|pounds|euros?|ringgit|rupees?|yuan|rmb|baht|rupiah|pesos?)\b"
+               r"|\b\d[\d,]* ?k\b", None),
     ("ADDRESS", r"\b(?:blk|block) ?\d+[a-z]? [a-z ]+? (?:street|avenue|road|drive|crescent)(?: \d+)?"
                 r"(?:,? ?#?\d{1,2}[- ]\d{1,4})?(?:,? singapore \d{6})?", None),
     ("DATE", r"\b\d{1,2}(?:st|nd|rd|th)? (?:%s)[a-z]*(?: \d{4})?\b" % "|".join(m[:3] for m in MONTHS), None),
@@ -132,10 +133,10 @@ CUES = [  # (type, regex with group v, trim free text at stopwords)
     ("PERSON", r"\byour (?:full )?name\b[^\n]*\n(?:my name is |it is |it's )?(?P<v>[a-z]+(?: [a-z]+){1,3})", True),
     ("PERSON", rf"\b(?:my name is|this is|name is|speaking (?:to|with)|mr|mrs|ms|mdm|madam|"
                rf"business partner|transfer to|payee is)\.? {_NAME}", True),
-    ("OTP", r"\b(?:otp|one[- ]time (?:password|pin|code)|verification code|sms code)\D{0,15}?(?P<v>\d{4,8})\b", False),
+    ("OTP", r"\b(?:otp|one[- ]time (?:password|pin|code)|verification code|sms code)\D{0,24}?(?P<v>\d{4,8})\b", False),
     ("PIN", r"\bpin\b\D{0,15}?(?P<v>\d{4,6})\b", False),
     ("SECURITY_ANSWER", rf"\b(?:maiden name|first pet|pet's name|security answer)\D{{0,20}}?\b(?:is|was) {_NAME}", True),
-    ("DOB", r"\b(?:date of birth|birthday|born on|dob)\D{0,12}?(?P<v>\d{1,2}(?:st|nd|rd|th)? [a-z]+ \d{4}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})", False),
+    ("DOB", r"\b(?:date of birth|birthday|born on|born|dob)\D{0,12}?(?P<v>(?:\d{1,2}(?:st|nd|rd|th)?|(?:twenty |thirty )?(?:first|second|third|[a-z]+th)) (?:of )?(?:%s)[a-z]* \d{4}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})" % "|".join(m[:3] for m in MONTHS), False),
     ("ACCOUNT_NO", r"\b(?:account(?: number| no)?|acct)\D{0,20}?(?P<v>\d[\d -]{5,16}\d)\b", False),
     ("PHONE", r"\b(?:phone(?: number)?|mobile|handphone|hp|call me at|call you at|reach me at)\D{0,15}?(?P<v>(?:\+65 ?)?\d[\d -]{6,10}\d)\b", False),
     ("TXN_REF", r"\b(?:reference(?: number| no)?|ref(?: no)?|transaction id|case)\W{0,12}(?:is )?(?P<v>[a-z]{0,4}[ -]?\d[\d ]{4,14}\d)\b", False),
@@ -225,7 +226,7 @@ _ASKS = re.compile(r"\b(?:can|could|may) (?:i|you)\b|\bwhat(?:'s| is| was)\b|\bw
                    r"confirm)\b|\bread it\b|\btell me\b|\?", re.I)
 # slot type, what the agent asks about, and how many digits a valid answer has (None = words)
 SLOTS = [
-    ("OTP", re.compile(r"\b(?:otp|one[- ]time (?:password|pin|code)|verification code|sms code)\b", re.I), (4, 8)),
+    ("OTP", re.compile(r"\b(?:otp|one[- ]time (?:password|pin|code)|verification code|sms code|the code)\b", re.I), (4, 8)),
     ("PIN", re.compile(r"\b(?:your|the) pin\b", re.I), (4, 6)),
     # "which account" / "your account number", not "I am freezing the account now"
     ("ACCOUNT_NO", re.compile(r"\b(?:account (?:number|no)|which account|your account)\b", re.I), (6, 14)),

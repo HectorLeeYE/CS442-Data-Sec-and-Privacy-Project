@@ -48,10 +48,10 @@ Missed spans, full detector (clean):
 | presidio only | 43.8% | 31.9% | 76.3% | 96.0% | 38.8% | 0.6% | 69.7% | 11.5% | 25.4% | 47.5% | 14.6% |
 | + format | 60.6% | 52.0% | 61.1% | 96.6% | 52.6% | 0.6% | 76.5% | 67.0% | 25.4% | 51.9% | 14.6% |
 | + context | 77.5% | 71.0% | 50.9% | 93.2% | 66.4% | 0.8% | 84.5% | 71.7% | 62.8% | 95.7% | 84.4% |
-| + spoken | 97.2% | 90.6% | 6.3% | 94.2% | 95.1% | 0.8% | 98.3% | 97.6% | 97.0% | 95.7% | 84.4% |
-| + dialogue | 97.7% | 90.7% | 5.4% | 94.2% | 95.5% | 0.8% | 98.3% | 98.5% | 98.2% | 95.7% | 84.4% |
-| + propagate (full) | 97.7% | 90.8% | 5.3% | 93.8% | 95.5% | 0.9% | 98.4% | 98.5% | 98.2% | 95.7% | 84.4% |
-| full minus presidio | 96.7% | 90.2% | 6.1% | 97.6% | 95.9% | 0.4% | 96.5% | 98.0% | 98.2% | 95.5% | 84.4% |
+| + spoken | 97.2% | 90.5% | 6.2% | 94.1% | 95.1% | 0.8% | 98.3% | 97.6% | 97.0% | 95.7% | 84.4% |
+| + dialogue | 97.7% | 90.7% | 5.4% | 94.1% | 95.5% | 0.8% | 98.3% | 98.5% | 98.2% | 95.7% | 84.4% |
+| + propagate (full) | 97.7% | 90.7% | 5.3% | 93.8% | 95.5% | 0.9% | 98.4% | 98.5% | 98.2% | 95.7% | 84.4% |
+| full minus presidio | 96.7% | 90.2% | 6.0% | 97.5% | 95.9% | 0.4% | 96.5% | 98.0% | 98.2% | 95.5% | 84.4% |
 
 95% CI of harm-weighted recall: full detector [97.3%, 98.1%], Presidio only [42.6%, 44.9%].
 
@@ -140,8 +140,8 @@ noisy:
 | Corpus | Calls queued | Calls with a harmful miss | Of those, queued | Leakage removed by review | Triage accuracy | High-risk recall |
 |---|---|---|---|---|---|---|
 | clean | 0.0% | 48 | 0.0% | 0.0% | 100.0% | 100.0% |
-| noisy | 13.2% | 116 | 55.2% | 56.1% | 100.0% | 100.0% |
-| held-out | 25.0% | 19 | 31.6% | 34.0% | 79.2% | 55.6% |
+| noisy | 13.2% | 116 | 55.2% | 55.8% | 100.0% | 100.0% |
+| held-out | 29.2% | 11 | 54.5% | 59.5% | 83.3% | 66.7% |
 
 ### Baseline: GLiNER-PII (local zero-shot model)
 
@@ -158,27 +158,23 @@ noisy, first 200 calls:
 | Detector | Harm-wtd recall | Strict recall | Char leakage | Precision | Token F1 | Over-redaction | DIRECT_ID | FINANCIAL_ID | AUTH_SECRET | QUASI_ID | SENSITIVE_ATTR |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | GLiNER-PII alone | 44.5% | 35.0% | 78.7% | 46.8% | 29.7% | 6.8% | 35.8% | 54.0% | 39.3% | 69.5% | 95.4% |
-| our full detector | 97.8% | 90.6% | 5.4% | 94.5% | 95.7% | 0.7% | 98.5% | 98.0% | 98.7% | 96.0% | 86.1% |
-| full + GLiNER | 98.6% | 91.6% | 4.4% | 61.7% | 88.3% | 7.4% | 98.7% | 98.0% | 99.1% | 99.5% | 98.0% |
+| our full detector | 97.8% | 90.5% | 5.3% | 94.5% | 95.7% | 0.7% | 98.5% | 98.0% | 98.7% | 96.0% | 86.1% |
+| full + GLiNER | 98.6% | 91.5% | 4.3% | 61.7% | 88.3% | 7.4% | 98.7% | 98.0% | 99.1% | 99.5% | 98.0% |
 
 ### Held-out, hand-written calls
 
-24 calls, 114 spans, written after the detector and never used to tune it. 95% CI of the full detector's harm-weighted recall: [66.0%, 79.5%].
+24 calls, 114 spans, written after the detector and never used to tune it. 95% CI of the full detector's harm-weighted recall: [78.5%, 91.1%].
 
 | Detector | Harm-wtd recall | Strict recall | Char leakage | Precision | Token F1 | Over-redaction | DIRECT_ID | FINANCIAL_ID | AUTH_SECRET | QUASI_ID | SENSITIVE_ATTR |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | presidio only | 33.3% | 25.4% | 77.7% | 72.2% | 32.4% | 2.0% | 60.9% | 10.3% | 0.0% | 24.0% | 0.0% |
-| our full detector | 72.7% | 56.1% | 26.9% | 78.3% | 78.0% | 2.9% | 93.5% | 65.5% | 33.3% | 40.0% | 50.0% |
+| our full detector | 85.1% | 64.9% | 14.0% | 80.2% | 84.7% | 3.0% | 95.7% | 89.7% | 66.7% | 40.0% | 50.0% |
 | GLiNER-PII alone | 59.5% | 57.9% | 56.2% | 44.2% | 47.9% | 10.8% | 63.0% | 62.1% | 16.7% | 88.0% | 87.5% |
-| full + GLiNER | 88.4% | 76.3% | 9.4% | 51.2% | 78.6% | 11.7% | 95.7% | 93.1% | 50.0% | 88.0% | 87.5% |
+| full + GLiNER | 95.7% | 80.7% | 4.2% | 52.3% | 81.3% | 11.7% | 97.8% | 100.0% | 83.3% | 88.0% | 87.5% |
 
 Every miss, full detector:
 
 - `ADDRESS` — "28 Jalan Bukit Merah, #12-344" (O01)
-- `AMOUNT` — "forty thousand dollars" (O02)
-- `AMOUNT` — "1,250 bucks" (O06)
-- `AMOUNT` — "sixty thousand" (O07)
-- `AMOUNT` — "twelve thousand pounds" (O10)
 - `OCCUPATION` — "bus captain" (O03)
 - `OCCUPATION` — "cardiologist" (O07)
 - `OCCUPATION` — "student" (O10)
@@ -188,9 +184,9 @@ Every miss, full detector:
 - `EMPLOYER` — "imperial college" (O10)
 - `EMPLOYER` — "grab" (O15)
 - `PASSPORT` — "Z4471902" (O04)
-- `DOB` — "third of march nineteen eighty five" (O05)
-- `OTP` — "551 902" (O06)
-- `OTP` — "7 1 9 3 3 0" (O22)
+- `AMOUNT` — "sixty thousand" (O07)
+- `AMOUNT` — "two hundred thousand" (O21)
+- `AMOUNT` — "ninety five thousand" (O23)
 - `SECURITY_ANSWER` — "chicken rice" (O08)
 - `SECURITY_ANSWER` — "Rosyth" (O16)
 - `LEGAL` — "probate application" (O09)
@@ -212,7 +208,21 @@ Word-bigram LM trained on 400 released ASR-style calls, evaluated on 100 held-ou
 | pseudonym all | 82.63 | [77.74, 88.22] | 57338.01 | 90.6% | 0.0% |
 | surrogate all | 24.09 | [23.35, 24.89] | 395.6 | 24.3% | 100.0% |
 | GREEN policy | 29.36 | [27.96, 30.88] | 739.19 | 29.7% | 82.9% |
-| GREEN policy, real detector | 28.42 | [27.19, 29.76] | 629.57 | 25.8% | 82.9% |
+| GREEN policy, real detector | 28.42 | [27.19, 29.77] | 629.99 | 25.8% | 82.9% |
+
+### A downstream task: learning the high-risk triage from each release
+
+multinomial naive Bayes, bag of words, trained on the risk label; tested on the synthetic test calls and on the hand-written held-out set, both unredacted. The last row is the rule-based triage the service runs at ingest.
+
+| Training corpus | Synthetic accuracy | Synthetic high-risk recall | Held-out accuracy | Held-out high-risk recall |
+|---|---|---|---|---|
+| raw (upper bound, not releasable) | 97.0% | 100.0% | 75.0% | 55.6% |
+| suppress all | 97.0% | 100.0% | 70.8% | 55.6% |
+| pseudonym all | 97.0% | 100.0% | 70.8% | 55.6% |
+| surrogate all | 97.0% | 100.0% | 79.2% | 55.6% |
+| GREEN policy | 97.0% | 100.0% | 70.8% | 44.4% |
+| GREEN policy, real detector | 97.0% | 100.0% | 70.8% | 44.4% |
+| rule-based triage (reference) | 100.0% | 100.0% | 83.3% | 66.7% |
 
 ## E3 — Re-identification (linkage attack)
 
@@ -319,13 +329,13 @@ GREEN audio: every detected span replaced by a 1 kHz tone using Whisper's word t
 
 | Operation | Time |
 |---|---|
-| detect_ms_per_call | 27.7 ms |
-| render_3_tiers_ms_per_call | 0.5 ms |
-| abe_setup_ms | 388.3 ms |
-| abe_keygen_3_attrs_ms | 384.7 ms |
-| abe_encrypt_4_leaf_policy_ms | 331.9 ms |
-| abe_decrypt_2_leaf_path_ms | 291.1 ms |
-| ingest_encrypt_ms_per_call_incl_new_policies | 131.0 ms |
-| first_open_ms (ABE unlock of the policy key) | 356.7 ms |
-| cached_open_ms_per_call (AES only) | 0.3 ms |
-| export_ms_per_call | 0.5 ms |
+| detect_ms_per_call | 40.4 ms |
+| render_3_tiers_ms_per_call | 0.7 ms |
+| abe_setup_ms | 480.2 ms |
+| abe_keygen_3_attrs_ms | 439.1 ms |
+| abe_encrypt_4_leaf_policy_ms | 383.1 ms |
+| abe_decrypt_2_leaf_path_ms | 360.9 ms |
+| ingest_encrypt_ms_per_call_incl_new_policies | 108.0 ms |
+| first_open_ms (ABE unlock of the policy key) | 214.1 ms |
+| cached_open_ms_per_call (AES only) | 0.1 ms |
+| export_ms_per_call | 0.1 ms |

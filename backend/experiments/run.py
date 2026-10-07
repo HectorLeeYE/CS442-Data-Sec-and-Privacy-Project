@@ -401,7 +401,51 @@ def e2(n_train: int = 400) -> dict:
             "pii_oov": round(oov / pii[1], 4),
             "digit_shape_preserved": round(same / total, 4)})
         print(f"  E2 {name}: test ppl {res['variants'][-1]['perplexity']}, on PII tokens {res['variants'][-1]['pii_perplexity']}")
+
+    # A second, task-level utility check: a data scientist trains a high-risk triage classifier (the brief's
+    # compliance-referral gateway) on each release and applies it to real calls. Naive Bayes on bag-of-words,
+    # so the comparison is about the data, not the model. Tested on the 100 synthetic test calls and on the
+    # hand-written held-out set. The rule-based triage (E1) is the reference row.
+    ood = heldout.load()
+    tests = {"synthetic": test, "held-out": ood}
+    res["task"] = {"model": "multinomial naive Bayes, bag of words, trained on the risk label", "rows": []}
+    for name, fn in variants.items():
+        nb = NaiveBayes([(fn(c, i), c["risk"]) for i, c in enumerate(train)])
+        row = {"variant": name}
+        for tn, calls_ in tests.items():
+            pred = [nb.predict(text_of(c)) for c in calls_]
+            row |= _triage_scores(tn, [c["risk"] for c in calls_], pred)
+        res["task"]["rows"].append(row)
+        print(f"  E2 triage trained on {name}: held-out accuracy {row['held-out_accuracy']}")
+    row = {"variant": "rule-based triage (reference)"}
+    for tn, calls_ in tests.items():
+        pred = [triage.classify(text_of(c), detect.detect(text_of(c)))[0] for c in calls_]
+        row |= _triage_scores(tn, [c["risk"] for c in calls_], pred)
+    res["task"]["rows"].append(row)
     return res
+
+
+def _triage_scores(name: str, gold: list[str], pred: list[str]) -> dict:
+    high = [p for g, p in zip(gold, pred) if g == "high"]
+    return {f"{name}_accuracy": round(sum(g == p for g, p in zip(gold, pred)) / len(gold), 4),
+            f"{name}_high_recall": round(high.count("high") / len(high), 4) if high else None}
+
+
+class NaiveBayes:
+    def __init__(self, labelled: list[tuple[str, str]]):
+        self.prior, self.counts, self.total = Counter(), {}, Counter()
+        for text, label in labelled:
+            self.prior[label] += 1
+            toks = [w for w, _, _ in _tokens(text)]
+            self.counts.setdefault(label, Counter()).update(toks)
+            self.total[label] += len(toks)
+        self.vocab = len({w for c in self.counts.values() for w in c}) + 1
+
+    def predict(self, text: str) -> str:
+        toks = [w for w, _, _ in _tokens(text)]
+        score = {label: math.log(n) + sum(math.log((self.counts[label][w] + 1) / (self.total[label] + self.vocab))
+                                          for w in toks) for label, n in self.prior.items()}
+        return max(score, key=score.get)
 
 
 # ------------------------------------------------------------------ E3
@@ -631,6 +675,15 @@ def report(r: dict) -> str:
         L += [f"| {v['variant']} | {v['perplexity']} | [{v['ci'][0]}, {v['ci'][1]}] | {v['pii_perplexity']} | "
               f"{pct(v['pii_oov'])} | {pct(v['digit_shape_preserved'])} |" for v in r["e2"]["variants"]]
         L.append("")
+        if "task" in r["e2"]:
+            L += ["### A downstream task: learning the high-risk triage from each release", "",
+                  f"{r['e2']['task']['model']}; tested on the synthetic test calls and on the hand-written held-out "
+                  "set, both unredacted. The last row is the rule-based triage the service runs at ingest.", "",
+                  "| Training corpus | Synthetic accuracy | Synthetic high-risk recall | Held-out accuracy | Held-out high-risk recall |",
+                  "|---|---|---|---|---|"]
+            L += [f"| {x['variant']} | {pct(x['synthetic_accuracy'])} | {pct(x['synthetic_high_recall'])} | "
+                  f"{pct(x['held-out_accuracy'])} | {pct(x['held-out_high_recall'])} |" for x in r["e2"]["task"]["rows"]]
+            L.append("")
     if "e3" in r:
         e = r["e3"]
         L += ["## E3 — Re-identification (linkage attack)", "",

@@ -1,6 +1,7 @@
 """E4: does the detector survive real ASR errors, and can the audio itself be redacted?
 
-    python -m experiments.asr [n_calls]      # needs network for TTS the first time; ~15 min on a laptop CPU
+    python -m experiments.asr [n_calls]      # needs network for TTS the first time; hours on a laptop CPU,
+                                             # resumable: Whisper output is cached in audio/whisper.json
 
 1. Speak:      each utterance of n generated calls (clean script) is synthesised by Microsoft's
                Singapore-English neural voices (edge-tts: en-SG-WayneNeural agent, en-SG-LunaNeural client).
@@ -18,6 +19,7 @@ bound on ASR difficulty. Writes out/e4.json and two demo WAVs to experiments/aud
 
 import asyncio
 import difflib
+import hashlib
 import json
 import math
 import re
@@ -109,6 +111,24 @@ def _write_wav(path: Path, x: np.ndarray) -> None:
         w.writeframes((np.clip(x, -1, 1) * 32767).astype(np.int16).tobytes())
 
 
+CACHE = AUDIO / "whisper.json"
+
+
+def _cached(cache: dict, key: str, fn):
+    """Whisper is deterministic and by far the slowest step, and its output does not depend on the
+    detector. Cache it per utterance, written after every call, so a detector change re-scores E4
+    in seconds and an interrupted run resumes where it stopped."""
+    if key not in cache:
+        cache[key] = fn()
+    return cache[key]
+
+
+def _save(cache: dict) -> None:
+    tmp = CACHE.with_suffix(".tmp")
+    tmp.write_text(json.dumps(cache))
+    tmp.replace(CACHE)
+
+
 def main(n: int = 40) -> dict:
     from transformers import pipeline
 
@@ -125,7 +145,9 @@ def main(n: int = 40) -> dict:
 
     def transcribe(x: np.ndarray, words=True):
         out = asr({"raw": x, "sampling_rate": SR}, return_timestamps="word" if words else False, **kw)
-        return out["chunks"] if words else out["text"]
+        return [{"text": c["text"], "timestamp": list(c["timestamp"])} for c in out["chunks"]] if words else out["text"]
+
+    cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
 
     hyp_calls, words_total, errs = [], 0, 0
     dropped = total = 0
@@ -135,7 +157,7 @@ def main(n: int = 40) -> dict:
         ref_off = 0
         for i, u in enumerate(c["utterances"]):
             x = _load(tts / f"{c['id']}_{i:02d}.mp3")
-            chunks = transcribe(x)
+            chunks = _cached(cache, f"{c['id']}_{i:02d}", lambda: transcribe(x))
             toks, hyp, pos = [], "", 0
             for ch in chunks:
                 w = ch["text"].strip()
@@ -162,6 +184,7 @@ def main(n: int = 40) -> dict:
             ref_off += len(u["text"]) + 1
         hyp_calls.append({"id": c["id"], "utterances": [{"speaker": u["speaker"], "text": t}
                                                         for u, t in zip(c["utterances"], texts)], "spans": spans})
+        _save(cache)
         print(f"  ASR {c['id']}: {len(texts)} utterances")
 
     raw = [detect.raw_layers(run.text_of(c)) for c in hyp_calls]
@@ -191,7 +214,9 @@ def main(n: int = 40) -> dict:
                     bleeped += (hi - lo) / SR
             total_s += len(x) / SR
             orig = _norm(u["text"])                     # what Whisper heard before bleeping
-            again = _norm(transcribe(y, words=False)) if not np.array_equal(x, y) else orig
+            # the bleeped audio depends on the detector, so its key carries a hash of the bleeped samples
+            bkey = f"{c['id']}_{i:02d}|bleep|{hashlib.sha256(y.tobytes()).hexdigest()[:16]}"
+            again = _norm(_cached(cache, bkey, lambda: transcribe(y, words=False))) if not np.array_equal(x, y) else orig
             for g in c["spans"]:
                 if off <= g["start"] < off + len(u["text"]):
                     v = _norm(text[g["start"]:g["end"]])
@@ -202,6 +227,7 @@ def main(n: int = 40) -> dict:
             if ci < 2:
                 _write_wav(AUDIO / "demo" / f"{c['id']}_{i:02d}_original.wav", x)
                 _write_wav(AUDIO / "demo" / f"{c['id']}_{i:02d}_GREEN_bleeped.wav", y)
+        _save(cache)
     res["audio"] = {"spans_checked": n_check, "recoverable_before_bleep": round(before / n_check, 4),
                     "recoverable_after_bleep": round(after / n_check, 4), "audio_bleeped": round(bleeped / total_s, 4)}
     (run.OUT / "e4.json").write_text(json.dumps(res, indent=1))

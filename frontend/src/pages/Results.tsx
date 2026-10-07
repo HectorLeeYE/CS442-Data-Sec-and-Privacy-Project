@@ -9,6 +9,7 @@ type E1Row = Metrics & { config: string }
 type Review = { queued: number; calls_with_harmful_miss: number; harmful_miss_calls_caught: number | null; leakage_removed_by_review: number | null }
 type Triage = { accuracy: number; high_risk_recall: number }
 type E2Row = { variant: string; perplexity: number; pii_perplexity: number; pii_oov: number; digit_shape_preserved: number }
+type TaskRow = { variant: string; synthetic_accuracy: number; synthetic_high_recall: number; 'held-out_accuracy': number; 'held-out_high_recall': number }
 type E3Row = { condition: string; reidentified: number; ci: [number, number]; true_client_in_candidates: number; median_candidates: number; direct_id_leak: number }
 type Results = {
   e1?: {
@@ -19,7 +20,7 @@ type Results = {
     gliner: Partial<Record<'clean' | 'noisy', Record<string, Metrics | number>>>
     ood: { n_calls: number; n_spans: number; ci: [number, number]; review: Review; triage: Triage; misses: { call: string; type: string; text: string }[] } & Record<string, unknown>
   }
-  e2?: { n_train: number; n_test: number; model: string; variants: E2Row[] }
+  e2?: { n_train: number; n_test: number; model: string; variants: E2Row[]; task?: { model: string; rows: TaskRow[] } }
   e3?: { n_clients: number; k: number; conditions: Record<'clean' | 'noisy', E3Row[]>; k_anonymity: Record<'clean' | 'noisy', { calls_below_k: number; median_k: number; gated: number }> }
   e4?: {
     n_calls: number; n_utterances: number; voices: string[]; asr_model: string; wer: number; spans_total: number; spans_dropped_by_asr: number
@@ -171,6 +172,15 @@ export default function Results() {
               options={{ ...bars(r.e2.variants.map((v) => v.variant), (v) => v.toFixed(0)), legend: { show: false } }}
               series={[{ name: 'Test perplexity', data: r.e2.variants.map((v) => v.perplexity) }]} />
           </Figure>
+        )}
+
+        {r.e2?.task && (
+          <Panel title="E2 · A downstream task: learning the high-risk triage from each release" question={`${r.e2.task.model}. Trained on each release, tested on unredacted synthetic calls and on the hand-written held-out set. The last row is the rule-based triage the service runs at ingest.`}>
+            <div className="max-w-full overflow-x-auto"><table className="table table-xs tabular-nums">
+              <thead><tr><th>Training corpus</th><th>Synthetic accuracy</th><th>Synthetic high-risk recall</th><th>Held-out accuracy</th><th>Held-out high-risk recall</th></tr></thead>
+              <tbody>{r.e2.task.rows.map((x) => <tr key={x.variant}><td>{x.variant}</td><td>{pct(x.synthetic_accuracy)}</td><td>{pct(x.synthetic_high_recall)}</td><td>{pct(x['held-out_accuracy'])}</td><td>{pct(x['held-out_high_recall'])}</td></tr>)}</tbody>
+            </table></div>
+          </Panel>
         )}
 
         {r.e3 && (

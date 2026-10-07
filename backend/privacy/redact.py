@@ -99,10 +99,11 @@ _MULT = {"k": 1e3, "thousand": 1e3, "million": 1e6, "mil": 1e6}
 
 
 def amount_value(surface: str) -> float | None:
-    m = re.search(r"\d[\d,]*(?:\.\d+)?", spoken.normalize(surface)[0])
+    norm = spoken.normalize(surface)[0]            # "forty thousand dollars" -> "40000 dollars": the scale is spent
+    m = re.search(r"\d[\d,]*(?:\.\d+)?", norm)
     if not m:
         return None
-    unit = re.search(r"\b(k|thousand|million|mil)\b|\dk\b", surface, re.I)
+    unit = re.search(r"\b(k|thousand|million|mil)\b|\dk\b", norm, re.I)
     mult = _MULT[(unit.group(1) or "k").lower()] if unit else 1
     return float(m.group().replace(",", "")) * mult
 

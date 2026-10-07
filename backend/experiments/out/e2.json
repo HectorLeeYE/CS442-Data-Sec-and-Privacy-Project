@@ -63,11 +63,65 @@
    "perplexity": 28.42,
    "ci": [
     27.19,
-    29.76
+    29.77
    ],
-   "pii_perplexity": 629.57,
+   "pii_perplexity": 629.99,
    "pii_oov": 0.2584,
    "digit_shape_preserved": 0.8292
   }
- ]
+ ],
+ "task": {
+  "model": "multinomial naive Bayes, bag of words, trained on the risk label",
+  "rows": [
+   {
+    "variant": "raw (upper bound, not releasable)",
+    "synthetic_accuracy": 0.97,
+    "synthetic_high_recall": 1.0,
+    "held-out_accuracy": 0.75,
+    "held-out_high_recall": 0.5556
+   },
+   {
+    "variant": "suppress all",
+    "synthetic_accuracy": 0.97,
+    "synthetic_high_recall": 1.0,
+    "held-out_accuracy": 0.7083,
+    "held-out_high_recall": 0.5556
+   },
+   {
+    "variant": "pseudonym all",
+    "synthetic_accuracy": 0.97,
+    "synthetic_high_recall": 1.0,
+    "held-out_accuracy": 0.7083,
+    "held-out_high_recall": 0.5556
+   },
+   {
+    "variant": "surrogate all",
+    "synthetic_accuracy": 0.97,
+    "synthetic_high_recall": 1.0,
+    "held-out_accuracy": 0.7917,
+    "held-out_high_recall": 0.5556
+   },
+   {
+    "variant": "GREEN policy",
+    "synthetic_accuracy": 0.97,
+    "synthetic_high_recall": 1.0,
+    "held-out_accuracy": 0.7083,
+    "held-out_high_recall": 0.4444
+   },
+   {
+    "variant": "GREEN policy, real detector",
+    "synthetic_accuracy": 0.97,
+    "synthetic_high_recall": 1.0,
+    "held-out_accuracy": 0.7083,
+    "held-out_high_recall": 0.4444
+   },
+   {
+    "variant": "rule-based triage (reference)",
+    "synthetic_accuracy": 1.0,
+    "synthetic_high_recall": 1.0,
+    "held-out_accuracy": 0.8333,
+    "held-out_high_recall": 0.6667
+   }
+  ]
+ }
 }

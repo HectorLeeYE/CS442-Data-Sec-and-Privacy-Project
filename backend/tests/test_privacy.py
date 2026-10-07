@@ -133,3 +133,27 @@ def test_slot_needs_a_request_for_that_slot():
     assert not review.reasons(t, detect.detect(t, layers=NO_NER))
     t = "Which account will the funds come from?\nFrom my savings."
     assert any("ACCOUNT_NO" in r for r in review.reasons(t, []))
+
+
+def test_normalizer_handles_asr_digit_groups_and_number_words():
+    """Whisper writes "9 ,543 -6 ,140"; people say "forty thousand" and "nineteen eighty five"."""
+    assert spoken.normalize("call 9 ,543 -6 ,140 now")[0] == "call 95436140 now"
+    assert spoken.normalize("forty thousand dollars")[0] == "40000 dollars"
+    assert spoken.normalize("born nineteen eighty five")[0] == "born 1985"
+    assert spoken.normalize("40 thousand dollars")[0] == "40 thousand dollars"     # a lone scale word is left alone
+    assert spoken.normalize("for two weeks")[0] == "for two weeks"
+    layers = ("format", "context", "spoken", "dialogue", "propagate")
+    t = "call me at 9 ,543 -6 ,140\nthey asked for an OTP, and I gave them 551 902\nmy nric is S1 -234 -56 -7D"
+    found = {(t[s.start:s.end], s.type) for s in detect.detect(t, layers=layers)}
+    assert {("9 ,543 -6 ,140", "PHONE"), ("551 902", "OTP"), ("S1 -234 -56 -7D", "NRIC")} <= found
+
+
+def test_spoken_amount_drives_triage():
+    """An overseas transfer of "forty thousand dollars" used to be triaged low: no amount was detected."""
+    from privacy import triage
+    assert redact.amount_value("forty thousand dollars") == 40000
+    assert redact.amount_value("40 thousand dollars") == 40000
+    t = "i want to do a telegraphic transfer\nhow much\nforty thousand dollars"
+    spans = detect.detect(t, layers=("format", "context", "spoken"))
+    assert triage.classify(t, spans)[0] == "high"
+    assert redact.generalize("AMOUNT", "forty thousand dollars") == "between 10,000 and 100,000 dollars"

@@ -6,26 +6,32 @@ fulfils. For deployment, the demo script and the one-page requirement checklist,
 [`backend/experiments/out/RESULTS.md`](../backend/experiments/out/RESULTS.md); the regulatory
 and privacy-impact view is in [`docs/dpia.md`](dpia.md).
 
-The project scope has six items. Each section below opens with a **Scope** line naming the item it
-serves.
+The project has six requirements. Each section below opens with a **Scope** line naming the one it
+serves; [requirements.md](requirements.md) is the one-page map with the measurable targets.
 
-| Scope item | Sections |
+| Requirement | Sections |
 |---|---|
-| S1 Domain, data flows, disclosure risks | [1](#1-domain-data-flows-and-disclosure-risks) |
-| S2 Sensitive data taxonomy | [2](#2-sensitive-data-taxonomy) |
-| S3 Detection and redaction methods | [3](#3-detection), [4](#4-redaction-and-release) |
-| S4 Prototype | [5](#5-the-prototype-access-control-encryption-integrity) |
-| S5 Experimental data | [6](#6-experimental-data) |
-| S6 Demo | [README §1](../README.md#five-minute-demo-script) and the attack demo in [5.9](#59-attack-demonstration) |
-| Evaluation of S3/S4 | [7](#7-experiment-design), [8](#8-what-the-experiments-showed) |
+| R1 A realistic data analysis task | [1.1](#11-the-domain-and-the-analysis-task) |
+| R2 Privacy and utility requirements for the task | [1.2](#12-clearance-tiers-and-where-we-depart-from-the-brief), [1.5](#15-disclosure-risk-register), [2](#2-sensitive-data-taxonomy); targets in [requirements.md](requirements.md#privacy-and-utility-requirements) |
+| R3 A privacy-preserving solution | [3](#3-detection), [4](#4-redaction-and-release), [5.2](#52-attribute-based-encryption-at-rest-cp-abe) |
+| R4 Prototype | [5](#5-the-prototype-access-control-encryption-integrity) |
+| R5 Experimental data | [6](#6-experimental-data) |
+| R6 Demo | [README §1](../README.md#five-minute-demo-script) and the attack demo in [5.9](#59-attack-demonstration) |
+| Evaluation of R3/R4 | [7](#7-experiment-design), [8](#8-what-the-experiments-showed) |
 
 ---
 
 ## 1. Domain, data flows and disclosure risks
 
-**Scope: S1.**
+**Scope: R1 and R2.**
 
-### 1.1 The domain
+### 1.1 The domain and the analysis task
+
+**The analysis task is to fine-tune the bank's in-house speech-recognition model on transcripts of
+recorded client calls**, so that it stops failing on Singapore-accented English, Singlish particles
+and code-switching. The people who do this are data scientists with the lowest clearance; the
+input is banking-secrecy data. The secondary flow is the existing one: compliance reads high-risk
+calls in full.
 
 When a client calls the bank, the agent records the call. If the transaction is high risk (an
 overseas transfer above a threshold, or a fraud report), the recording is transcribed and referred
@@ -145,7 +151,7 @@ LINDDUN is the privacy counterpart of STRIDE. Each category, applied to the flow
 
 ## 2. Sensitive data taxonomy
 
-**Scope: S2.**
+**Scope: R2.** The taxonomy is the privacy requirement stated per data class.
 
 The taxonomy is a file the code reads ([`backend/taxonomy.yaml`](../backend/taxonomy.yaml)). The
 detector tags spans with its types, the redactor looks up its actions, the server reads triage,
@@ -231,7 +237,7 @@ makes it notifiable to the PDPC (PDPA s26B).
 
 ## 3. Detection
 
-**Scope: S3** (detection methods). Implemented in
+**Scope: R3** (detection methods). Implemented in
 [`backend/privacy/detect.py`](../backend/privacy/detect.py) and
 [`spoken.py`](../backend/privacy/spoken.py).
 
@@ -242,7 +248,7 @@ Six layers, each switchable on its own, so E1 can attribute recall to each.
 | **presidio** | Microsoft Presidio with spaCy `en_core_web_lg` NER | Names, places, dates, emails, card numbers |
 | **format** | Singapore-specific regexes with validators: NRIC/FIN mod-11, Luhn for cards, **ISO 13616 mod-97 for IBANs**, phone and account shapes, SWIFT/BIC, amounts, addresses | Structured identifiers. The checksums keep false positives near zero. |
 | **context** | Cue phrases ("the OTP is", "my mother's maiden name is", "my father … is", "I stay in", "*X* branch", "passport number", spelled-out IBAN and SWIFT after their cue) plus lexicons (occupations, health, legal, nationality, towns, **PEP roles, religions**). Runs on **filler-free** text, so "i work *uh* at singtel" still matches. | Values whose format is unremarkable |
-| **spoken** | Re-runs *format* and *context* on **spoken-form-normalised** text and maps hits back to the original words | "nine one two three…", "**wu liu qi ba jiu ling**" (Mandarin), "**satu dua tiga**" (Malay), "nine **for** two three **uh** four" (homophones, fillers), "tan dot wei at gmail dot com" |
+| **spoken** | Re-runs *format* and *context* on **spoken-form-normalised** text and maps hits back to the original words | "nine one two three…", "**wu liu qi ba jiu ling**" (Mandarin), "**satu dua tiga**" (Malay), "nine **for** two three **uh** four" (homophones, fillers), "tan dot wei at gmail dot com", "**forty thousand dollars**", "**nineteen eighty five**", Whisper's "**9 ,543 -6 ,140**" |
 | **dialogue** | **Slot tracking**: if the agent asks for an OTP, PIN, account, phone, card or security answer, the client's next utterance holds that value even without a cue word | "can you read it out?" → "okay six seven six double four eight" |
 | **propagate** | Whatever is found once is searched for everywhere else in the same call | "Mr Tan" after "Tan Wei Ming" |
 
@@ -254,6 +260,20 @@ redaction: ASR output spells numbers out, and no off-the-shelf PII tool handles 
 real digit, so "for two weeks" stays words. It returns arrays that map normalised offsets back to
 original offsets, so the redactor replaces exactly the words "nine one two three". The same offset
 machinery strips fillers before cue matching.
+
+Two extensions came out of the first evaluation round (8.1, 8.4), each fixing a *class* of input
+rather than a string from a test set:
+
+* **Digit groups.** A unit of a run may be a group of digits, not only one digit or digit word.
+  Whisper writes a spoken phone number as "9 ,543 -6 ,140" and an NRIC as "S6 -925 -06 -0B";
+  the run becomes "95436140" and the format layer's phone and NRIC patterns then match. The NRIC
+  pattern itself tolerates a space or hyphen between digits for the same reason.
+* **Number words.** "forty thousand", "one hundred and five", "twelve thousand pounds" become
+  "40000", "105", "12000 pounds"; a teen or "twenty" followed by a tens word is read as a year, so
+  "nineteen eighty five" becomes "1985". A lone scale word is left alone ("40 thousand" keeps its
+  "thousand", which `amount_value` then applies). This matters beyond redaction: triage reads the
+  amount of an overseas transfer, and before this change "forty thousand dollars" was not an amount
+  at all, so the call was triaged low risk.
 
 **Merging.** Coverage is never lost: every character any layer flagged stays redacted. Where
 spans overlap, the most harmful type wins its characters. Ties go to the more precise layer
@@ -279,7 +299,7 @@ the stronger test.
 
 [`privacy/triage.py`](../backend/privacy/triage.py) classifies each call at ingest. Fraud cues
 make a call **high** risk, and so does an overseas-transfer cue with a detected amount of at least
-S$5,000. Everything else is **low**. Thresholds and cue lists live in `taxonomy.yaml`. The result
+S$5,000, whether written ("$40,000") or spoken ("forty thousand dollars"). Everything else is **low**. Thresholds and cue lists live in `taxonomy.yaml`. The result
 decides who may read the call in full (5.4), and E1 measures its accuracy against the generator's
 ground truth and on the held-out set.
 
@@ -302,7 +322,7 @@ leak get caught.
 
 ## 4. Redaction and release
 
-**Scope: S3** (redaction methods). Implemented in
+**Scope: R3** (redaction methods). Implemented in
 [`backend/privacy/redact.py`](../backend/privacy/redact.py) and
 [`release.py`](../backend/privacy/release.py).
 
@@ -343,7 +363,7 @@ times. Per-person k would need the client identity, which GREEN must not have.
 
 ## 5. The prototype: access control, encryption, integrity
 
-**Scope: S4.** FastAPI service ([`backend/server/`](../backend/server)) and React/daisyUI dashboard
+**Scope: R4.** FastAPI service ([`backend/server/`](../backend/server)) and React/daisyUI dashboard
 ([`frontend/src/`](../frontend/src)).
 
 ### 5.1 Ingest: detect once, store copies
@@ -519,7 +539,7 @@ refused on it too.
 
 ## 6. Experimental data
 
-**Scope: S5.**
+**Scope: R5.**
 
 ### 6.1 Synthetic corpus
 
@@ -560,7 +580,7 @@ transcribed by Whisper. See 7.
 
 ## 7. Experiment design
 
-**Scope: evaluation of S3 and S4.** Run with `python -m experiments.run` (E1, E2, E3, E5) and
+**Scope: evaluation of R3 and R4.** Run with `python -m experiments.run` (E1, E2, E3, E5) and
 `python -m experiments.asr` (E4).
 
 | | Question | Method | Risks |
@@ -579,36 +599,54 @@ See [`RESULTS.md`](../backend/experiments/out/RESULTS.md) for every table. Headl
 
 | | Clean | ASR-style | Held-out (hand-written) |
 |---|---|---|---|
-| Harm-weighted recall, full detector | 99.3% [99.1, 99.5] | 97.7% [97.3, 98.1] | **72.7%** [66.0, 79.5] |
+| Harm-weighted recall, full detector | 99.3% [99.1, 99.5] | 97.7% [97.3, 98.1] | **85.1%** [78.5, 91.1] (first round: 72.7%) |
 | Harm-weighted recall, Presidio alone | 58.6% | 43.8% | 33.3% |
-| Precision, full detector | 94.3% | 93.8% | 78.3% |
-| Triage accuracy / high-risk recall | 100% / 100% | 100% / 100% | 79.2% / 55.6% |
+| Precision, full detector | 94.3% | 93.8% | 80.2% |
+| Triage accuracy / high-risk recall | 100% / 100% | 100% / 100% | 83.3% / 66.7% (first round: 79.2% / 55.6%) |
+
+The held-out and E4 columns were measured twice: once with the first detector, and again after
+the two normaliser extensions in section 3 (digit groups, number words), the matching cue and
+format changes, and the "read me the code" dialogue slot. Both figures are given wherever they
+differ. The synthetic numbers did not move, which is the point: the changes fix classes of input
+the generator never produces.
 
 ### 8.1 E1 Leakage: the synthetic numbers overstate real performance
 
 **The most important finding is the gap between the synthetic corpus and the held-out set.** On
 generated calls the full detector reaches 99.3% harm-weighted recall on clean text and 97.7% on
-ASR text; on the 24 hand-written calls it reaches **72.7%**, with a CI of [66.0%, 79.5%]. The
-generator and the detector were written by the same people, so the detector has, in effect,
-learned the templates. The held-out number is the one to plan around.
+ASR text; on the 24 hand-written calls the first detector reached **72.7%** [66.0, 79.5], and the
+current one **85.1%** [78.5, 91.1]. The generator and the detector were written by the same
+people, so the detector had, in effect, learned the templates. The held-out number is the one to
+plan around.
 
-The 26 held-out misses (114 spans) fall into five groups:
+**What closed part of the gap, and why it is not tuning to the set.** The first round's misses were
+read for their *cause*, and only causes that describe a class of input were fixed: credentials
+written with spaces ("551 902"), amounts and dates spoken as number words ("forty thousand
+dollars", "nineteen eighty five"), currencies other than dollars, an agent asking for "the code",
+and an NRIC or phone number that Whisper breaks up with punctuation (8.4). Each fix is a rule
+about how people or ASR systems write numbers, not a string from the held-out file. The checks
+that it did not overfit: synthetic recall, precision and over-redaction are unchanged to the
+decimal, and the held-out misses that remain are exactly the ones no such rule covers. A second
+held-out set written outside the team is still the only honest measure of any further change.
+
+AUTH_SECRET recall on the held-out set went from 33.3% to 66.7% (4 of 6), FINANCIAL_ID from 65.5%
+to 89.7%; QUASI_ID (40.0%) and SENSITIVE_ATTR (50.0%) did not move, because they are lexicon
+gaps. The 22 remaining misses (114 spans) fall into five groups:
 
 | Group | Misses | Examples |
 |---|---|---|
-| Amounts in word or slang form | 4 | "forty thousand dollars", "1,250 bucks", "sixty thousand" |
-| Occupations and employers outside the lexicon | 8 | "bus captain", "cardiologist", "SBS Transit", "Changi General Hospital", "grab" |
-| Credentials in unseen shapes | 4 | OTP "551 902" and "7 1 9 3 3 0"; security answers "chicken rice", "Rosyth" |
-| Identifiers in unseen formats | 4 | passport "Z4471902", "28 Jalan Bukit Merah, #12-344", DOB "third of march nineteen eighty five", Malaysian SWIFT spelled out |
+| Amounts with no currency word | 3 | "sixty thousand", "two hundred thousand", "ninety five thousand" |
+| Occupations and employers outside the lexicon | 8 | "bus captain", "cardiologist", "domestic helper", "SBS Transit", "Changi General Hospital", "grab" |
+| Security answers that are ordinary words | 2 | "chicken rice", "Rosyth" |
+| Identifiers in unseen formats | 3 | passport "Z4471902", "28 Jalan Bukit Merah, #12-344", a Malaysian SWIFT spelled out |
 | Sensitive attributes and context | 6 | "probate application", "lasting power of attorney", "church", "a hip fracture", "Bukit Timah", "the fifth" |
 
-The credential misses matter most: they are AUTH_SECRET, the highest harm weight, so they
-dominate the harm-weighted figure. The OTPs are written with spaces between the digits, a shape
-the format layer does not join, and the security answers are ordinary words that only the
-dialogue context marks as secret. Every group is a lexicon or pattern gap rather than a
-design flaw, but closing them by adding these exact strings would only tune to the held-out set.
-A second held-out set written by people outside the team is needed before any such change can be
-measured honestly.
+The two security answers are the misses that matter most (AUTH_SECRET, weight 10): the agent's
+question ("what did you have for lunch on your first day?") is not one the slot tracker knows.
+The amounts without a currency word are now digits in the normalised text ("60000"), so the
+review queue's residual-number signal holds those calls before GREEN release, which is what the
+queue is for. The lexicon misses would be closed by a larger occupation and employer list, or by
+GLiNER (below), not by rules.
 
 **Layer ablation.** On clean text, Presidio alone reaches 58.6%; the format layer (validated
 regexes) brings it to 85.7% and the context layer (cue words and lexicons) to 99.3%. On ASR text
@@ -631,19 +669,23 @@ depend on the chosen weights (2.2).
 **GLiNER-PII baseline.** The learned zero-shot model alone reaches 70.2% (clean), 44.5% (ASR) and
 59.5% (held-out), with precision of 44–55%. It is strong exactly where we are weak: QUASI_ID and
 SENSITIVE_ATTR on the held-out set (88% vs 40% and 87.5% vs 50%). **Combining it with our detector
-lifts held-out recall from 72.7% to 88.4%**, at the cost of precision (78.3% → 51.2%) and
-over-redaction (2.9% → 11.7%). For a GREEN release, where a leak costs more than an extra
+lifts held-out recall from 85.1% to 95.7%**, at the cost of precision (80.2% → 52.3%) and
+over-redaction (3.0% → 11.7%). For a GREEN release, where a leak costs more than an extra
 surrogate, that trade is worth considering. We did not make it the default: its precision would push
 over-redaction up fourfold, and it would need its own evaluation on real data.
 
 **Review queue.** On ASR text the queue holds 13.2% of calls and catches 55.2% of the calls that
-contain a harmful miss, removing 56.1% of the harm-weighted leakage before release. On clean text
+contain a harmful miss, removing 55.8% of the harm-weighted leakage before release. On clean text
 it holds nothing, although 48 calls leak something: clean-text misses are words or partly
-covered spans, not unanswered slots or stray numbers, which is all the three signals look for. On the held-out set it holds 25% of calls but catches only 31.6% of the leaking ones:
-most held-out misses are words, not numbers, and the residual-number signal cannot see them.
+covered spans, not unanswered slots or stray numbers, which is all the three signals look for. On
+the held-out set it holds 29.2% of calls and catches 54.5% of the 11 that leak (first round: 25%
+and 31.6% of 19), removing 59.5% of the leakage. The improvement comes from the normaliser: an
+amount spoken in words is now a run of digits the residual-number signal can see.
 
-**Triage.** Perfect on generated calls, but on the held-out set accuracy is 79.2% and **only 55.6%
-of high-risk calls are flagged**. The held-out scams (a PayNow scam, an identity-theft card) use
+**Triage.** Perfect on generated calls, but on the held-out set accuracy is 83.3% and **only 66.7%
+of high-risk calls are flagged** (6 of 9; first round 55.6%). The one call recovered is an
+overseas transfer of "forty thousand dollars": with no detected amount, it was low risk. The
+three still missed are scams (a PayNow scam, an identity-theft card, a Carousell seller) whose
 wording the fraud cue list does not contain. Because a missed high-risk call is treated as low
 risk, the effect is that compliance needs break-glass to read it in full. That fails safe for
 confidentiality but is an obstacle for the investigation the brief describes.
@@ -658,6 +700,20 @@ for identifiers, generalisation of quasi-IDs, suppression of sensitive attribute
 detector's misses leave a little more real text in. The GREEN policy keeps the number shape of
 82.9% of number-type PII. The cost of GREEN over raw is real but small next to the cost of
 suppression, which is the case for surrogates (R5).
+
+**A downstream task.** Perplexity is a proxy for the ASR fine-tuning the bank wants. As a second,
+task-level check, E2 trains a high-risk triage classifier (multinomial naive Bayes over bag of
+words, the brief's compliance-referral gateway learned from data) on each release and tests it on
+unredacted calls. On the 100 synthetic test calls every release scores 97.0% accuracy and 100%
+high-risk recall: the scenario words carry the label, and no redaction touches them. On the 24
+held-out calls the picture is less flattering for everyone: trained on raw transcripts the
+classifier reaches 75.0% accuracy and 55.6% high-risk recall; trained on the GREEN release, 70.8%
+and 44.4%, one high-risk call fewer. The one it loses is the transfer whose amount GREEN
+generalises to "between 1,000 and 10,000 dollars", a band that straddles the S$5,000 triage
+threshold. That is a real, if small, utility cost of generalisation, and the fix is a design
+choice (align a band edge with the threshold) rather than a detection problem. The rule-based
+triage the service runs (83.3% / 66.7%) beats every learned variant on the held-out set, which
+says more about training on 400 template calls than about the releases.
 
 ### 8.3 E3 Re-identification
 
@@ -702,10 +758,18 @@ Strict recall is low (10.1%) mostly because the aligned ground-truth spans carry
 punctuation, so exact boundaries rarely match even when the value is covered.
 
 What this says for a deployment: the normaliser has to target the ASR system actually in use. For
-Whisper that means a digit-joining pass that tolerates punctuation between digit groups, which is
-a small change to the format layer. We did not make it, because E4 is the only test set that would
-measure it. AUTH_SECRET recall stays high (95.2%): the dialogue-slot and cue layers do not depend
-on how the value is written.
+Whisper that means joining digit groups across punctuation. Round 3 made that change (section 3:
+digit groups in the normaliser, separators in the NRIC pattern), and a unit test confirms that
+E4-style shapes such as "9 ,543 -6 ,140" and "S1 -234 -56 -7D" are now caught. AUTH_SECRET recall
+stays high (95.2%): the dialogue-slot and cue layers do not depend on how the value is written.
+
+**The E4 figures in this section are from the first detector.** The rerun with the current
+detector was interrupted after six hours on a laptop CPU, before it wrote any results, because
+Whisper's output was held only in memory. The script now caches Whisper's output per utterance, so
+the next run resumes where it stops and any later detector change re-scores E4 in seconds. Until
+that run completes, the effect of the digit-group fix on real ASR is unmeasured. Note also that
+the fix was chosen by reading these 40 calls' misses, so re-scoring the same calls is not an
+independent test; a fresh set of TTS calls would be.
 
 **Audio redaction.** Bleeping every detected span with a 1 kHz tone at Whisper's word timestamps
 covers 22.1% of the audio. Re-transcribing the bleeped audio recovers **17.9%** of the ground-truth
@@ -716,11 +780,14 @@ to release to GREEN on its own, which supports keeping audio at RED (R11).
 
 ### 8.5 E5 Cost
 
-Detection takes **27.7 ms per call** and rendering all three tiers 0.5 ms. ABE operations take
-about 300–390 ms each (setup, keygen, a 4-leaf encryption, a 2-leaf decryption) in pure Python
-(`py_ecc`). The hybrid layout keeps this off the hot path: ingest costs 131 ms per call including
-new policies, the first read under a policy 357 ms, and every later read 0.3 ms because only the
-AES layer is touched. A GREEN export costs 0.5 ms per call. A C pairing library (for example
+Detection takes **40 ms per call** and rendering all three tiers 0.7 ms. ABE operations take
+about 361–480 ms each (setup, keygen, a 4-leaf encryption, a 2-leaf decryption) in pure Python
+(`py_ecc`). The hybrid layout keeps this off the hot path: ingest costs 108 ms per call including
+new policies, the first read under a policy 214 ms, and every later read 0.1 ms because only the
+AES layer is touched. A GREEN export costs 0.1 ms per call. Single runs on a laptop vary by
+a factor of about two (detection measured 28–72 ms across runs), so these are orders of magnitude, not
+benchmarks. On the same machine and calls, the round-3 normaliser costs about 4 ms per call (29.6 → 33.4 ms,
+best of three). A C pairing library (for example
 `charm-crypto` or `blst`) would cut the ABE figures by two orders of magnitude, but they are not
 the bottleneck.
 

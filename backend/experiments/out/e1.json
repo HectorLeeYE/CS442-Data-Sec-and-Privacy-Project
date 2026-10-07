@@ -385,11 +385,11 @@
      "SENSITIVE_ATTR": 384
     },
     "harm_weighted_recall": 0.9721,
-    "strict_recall": 0.9057,
-    "precision": 0.9416,
-    "char_leakage": 0.0627,
-    "over_redaction": 0.0081,
-    "token_f1": 0.9511
+    "strict_recall": 0.9054,
+    "precision": 0.9409,
+    "char_leakage": 0.0624,
+    "over_redaction": 0.0082,
+    "token_f1": 0.951
    },
    {
     "config": "+ dialogue",
@@ -422,10 +422,10 @@
      "SENSITIVE_ATTR": 384
     },
     "harm_weighted_recall": 0.9766,
-    "strict_recall": 0.907,
-    "precision": 0.9418,
-    "char_leakage": 0.0539,
-    "over_redaction": 0.0081,
+    "strict_recall": 0.9067,
+    "precision": 0.941,
+    "char_leakage": 0.0536,
+    "over_redaction": 0.0082,
     "token_f1": 0.9554
    },
    {
@@ -460,11 +460,11 @@
      "SENSITIVE_ATTR": 384
     },
     "harm_weighted_recall": 0.9771,
-    "strict_recall": 0.9075,
-    "precision": 0.9385,
-    "char_leakage": 0.0534,
+    "strict_recall": 0.9071,
+    "precision": 0.9378,
+    "char_leakage": 0.0531,
     "over_redaction": 0.0085,
-    "token_f1": 0.9552
+    "token_f1": 0.9551
    },
    {
     "config": "full minus presidio",
@@ -497,11 +497,11 @@
      "SENSITIVE_ATTR": 384
     },
     "harm_weighted_recall": 0.967,
-    "strict_recall": 0.9021,
-    "precision": 0.9756,
-    "char_leakage": 0.0609,
-    "over_redaction": 0.0037,
-    "token_f1": 0.9588
+    "strict_recall": 0.9018,
+    "precision": 0.9748,
+    "char_leakage": 0.0605,
+    "over_redaction": 0.0038,
+    "token_f1": 0.9587
    }
   ]
  },
@@ -834,7 +834,7 @@
    "queued": 0.132,
    "calls_with_harmful_miss": 116,
    "harmful_miss_calls_caught": 0.5517,
-   "leakage_removed_by_review": 0.5607
+   "leakage_removed_by_review": 0.5579
   }
  },
  "triage": {
@@ -1090,11 +1090,11 @@
      "SENSITIVE_ATTR": 151
     },
     "harm_weighted_recall": 0.9781,
-    "strict_recall": 0.9056,
-    "precision": 0.9453,
-    "char_leakage": 0.0541,
+    "strict_recall": 0.9052,
+    "precision": 0.9449,
+    "char_leakage": 0.0533,
     "over_redaction": 0.0074,
-    "token_f1": 0.9571
+    "token_f1": 0.9574
    },
    "full + GLiNER": {
     "recall": {
@@ -1119,11 +1119,11 @@
      "SENSITIVE_ATTR": 151
     },
     "harm_weighted_recall": 0.9863,
-    "strict_recall": 0.9158,
+    "strict_recall": 0.9153,
     "precision": 0.6174,
-    "char_leakage": 0.0441,
+    "char_leakage": 0.0433,
     "over_redaction": 0.0744,
-    "token_f1": 0.8828
+    "token_f1": 0.8831
    }
   }
  },
@@ -1156,14 +1156,14 @@
   "n_spans": 114,
   "our full detector": {
    "recall": {
-    "DIRECT_ID": 0.9348,
-    "FINANCIAL_ID": 0.6552,
-    "AUTH_SECRET": 0.3333,
+    "DIRECT_ID": 0.9565,
+    "FINANCIAL_ID": 0.8966,
+    "AUTH_SECRET": 0.6667,
     "QUASI_ID": 0.4,
     "SENSITIVE_ATTR": 0.5
    },
    "class_accuracy": {
-    "DIRECT_ID": 0.907,
+    "DIRECT_ID": 0.9318,
     "FINANCIAL_ID": 1.0,
     "AUTH_SECRET": 1.0,
     "QUASI_ID": 0.9,
@@ -1176,12 +1176,12 @@
     "QUASI_ID": 25,
     "SENSITIVE_ATTR": 8
    },
-   "harm_weighted_recall": 0.7273,
-   "strict_recall": 0.5614,
-   "precision": 0.783,
-   "char_leakage": 0.2685,
-   "over_redaction": 0.0295,
-   "token_f1": 0.7798
+   "harm_weighted_recall": 0.8512,
+   "strict_recall": 0.6491,
+   "precision": 0.8017,
+   "char_leakage": 0.1401,
+   "over_redaction": 0.0303,
+   "token_f1": 0.8473
   },
   "presidio only": {
    "recall": {
@@ -1213,34 +1213,14 @@
    "token_f1": 0.324
   },
   "ci": [
-   0.6602,
-   0.7945
+   0.7852,
+   0.9115
   ],
   "misses": [
    {
     "call": "O01",
     "type": "ADDRESS",
     "text": "28 Jalan Bukit Merah, #12-344"
-   },
-   {
-    "call": "O02",
-    "type": "AMOUNT",
-    "text": "forty thousand dollars"
-   },
-   {
-    "call": "O06",
-    "type": "AMOUNT",
-    "text": "1,250 bucks"
-   },
-   {
-    "call": "O07",
-    "type": "AMOUNT",
-    "text": "sixty thousand"
-   },
-   {
-    "call": "O10",
-    "type": "AMOUNT",
-    "text": "twelve thousand pounds"
    },
    {
     "call": "O03",
@@ -1288,19 +1268,19 @@
     "text": "Z4471902"
    },
    {
-    "call": "O05",
-    "type": "DOB",
-    "text": "third of march nineteen eighty five"
+    "call": "O07",
+    "type": "AMOUNT",
+    "text": "sixty thousand"
    },
    {
-    "call": "O06",
-    "type": "OTP",
-    "text": "551 902"
+    "call": "O21",
+    "type": "AMOUNT",
+    "text": "two hundred thousand"
    },
    {
-    "call": "O22",
-    "type": "OTP",
-    "text": "7 1 9 3 3 0"
+    "call": "O23",
+    "type": "AMOUNT",
+    "text": "ninety five thousand"
    },
    {
     "call": "O08",
@@ -1349,20 +1329,20 @@
    }
   ],
   "review": {
-   "queued": 0.25,
-   "calls_with_harmful_miss": 19,
-   "harmful_miss_calls_caught": 0.3158,
-   "leakage_removed_by_review": 0.3403
+   "queued": 0.2917,
+   "calls_with_harmful_miss": 11,
+   "harmful_miss_calls_caught": 0.5455,
+   "leakage_removed_by_review": 0.5948
   },
   "triage": {
    "confusion": {
     "low->low": 14,
-    "high->high": 5,
+    "high->high": 6,
     "low->high": 1,
-    "high->low": 4
+    "high->low": 3
    },
-   "accuracy": 0.7917,
-   "high_risk_recall": 0.5556
+   "accuracy": 0.8333,
+   "high_risk_recall": 0.6667
   },
   "GLiNER-PII alone": {
    "recall": {
@@ -1395,16 +1375,16 @@
   },
   "full + GLiNER": {
    "recall": {
-    "DIRECT_ID": 0.9565,
-    "FINANCIAL_ID": 0.931,
-    "AUTH_SECRET": 0.5,
+    "DIRECT_ID": 0.9783,
+    "FINANCIAL_ID": 1.0,
+    "AUTH_SECRET": 0.8333,
     "QUASI_ID": 0.88,
     "SENSITIVE_ATTR": 0.875
    },
    "class_accuracy": {
-    "DIRECT_ID": 0.9318,
+    "DIRECT_ID": 0.9556,
     "FINANCIAL_ID": 1.0,
-    "AUTH_SECRET": 0.6667,
+    "AUTH_SECRET": 0.8,
     "QUASI_ID": 0.9545,
     "SENSITIVE_ATTR": 0.8571
    },
@@ -1415,12 +1395,12 @@
     "QUASI_ID": 25,
     "SENSITIVE_ATTR": 8
    },
-   "harm_weighted_recall": 0.8843,
-   "strict_recall": 0.7632,
-   "precision": 0.5116,
-   "char_leakage": 0.0941,
+   "harm_weighted_recall": 0.9566,
+   "strict_recall": 0.807,
+   "precision": 0.5227,
+   "char_leakage": 0.0423,
    "over_redaction": 0.1167,
-   "token_f1": 0.7859
+   "token_f1": 0.8133
   }
  },
  "n_calls": 500

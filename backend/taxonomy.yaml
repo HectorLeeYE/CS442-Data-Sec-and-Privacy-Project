@@ -1,13 +1,17 @@
 # Sensitive data taxonomy for bank-client call transcripts.
-# This file IS the policy: privacy/taxonomy.py loads it, the detector tags spans
-# with these types, and the redactor looks up actions here. Edit it, restart, done.
+# This file IS the policy: privacy/taxonomy.py loads it, the detector tags spans with these
+# types, the redactor looks up actions here, and the server reads triage / review / release /
+# retention settings from it. The dashboard's Redaction policy page renders it.
+# Changing it changes how NEW calls are rendered and encrypted (copies are materialized at ingest).
 
-tiers: [GREEN, AMBER, RED]          # ascending clearance (PDF security ratings)
+tiers: [GREEN, AMBER, RED]          # ascending clearance
 
+# The brief rates agents and compliance RED and data scientists GREEN. AMBER is our
+# least-privilege refinement: an agent needs their own calls, not every client's call.
 tier_roles:
-  RED: Compliance / risk team — assesses high-risk calls before approval
-  AMBER: Call agents / QA — see their own calls, never credentials
-  GREEN: Data scientists / model training — de-identified corpus only
+  RED: Compliance / risk team. Full view of high-risk calls; low-risk calls only by break-glass with a logged reason.
+  AMBER: Call agents / QA. Their own calls only, identifiers pseudonymised or masked, never credentials.
+  GREEN: Data scientists and the ASR training pipeline (incl. the model itself). De-identified corpus only.
 
 # Redaction actions, most to least utility preserved:
 #   keep        unchanged
@@ -20,33 +24,45 @@ classes:
   DIRECT_ID:
     harm: 5
     description: Identifies one person on its own.
+    harm_rationale: Enables targeting of a named person (phishing, social engineering); reversible by re-issuing some identifiers but not names or NRICs.
+    regulation: [PDPA s2 personal data, PDPC Advisory Guidelines on NRIC numbers, Banking Act s47 customer information]
     actions: {RED: keep, AMBER: pseudonym, GREEN: surrogate}
   FINANCIAL_ID:
     harm: 5
     description: Enables fraud or is regulated banking secrecy data.
+    harm_rationale: Direct fraud loss and a breach of banking secrecy; the account can be closed, so the harm is bounded.
+    regulation: [Banking Act s47 customer information, PDP (Notification of Data Breaches) Regulations 2021 Schedule Part 1 items 3-4 (card and bank account numbers) and 8-16 (deposits; payments; debts), MAS TRM Guidelines s11 data and infrastructure security, PCI DSS (card numbers)]
     actions: {RED: keep, AMBER: mask_last4, GREEN: surrogate}
   AUTH_SECRET:
     harm: 10
     description: Live credential. No business reason for anyone to read it, so nobody does.
+    harm_rationale: Immediate account takeover, irreversible once funds move; twice the weight of an identifier.
+    regulation: [PDP (Notification of Data Breaches) Regulations 2021 reg 3(1)(b) (account identifier plus a password or security answer), MAS TRM Guidelines s9 access control, PDPA s24 protection, PDPA s25 retention limitation]
     actions: {RED: suppress, AMBER: suppress, GREEN: suppress}
   QUASI_ID:
     harm: 1
     description: Harmless alone, identifying in combination (linkage attack).
+    harm_rationale: One attribute rarely identifies anyone; the risk is cumulative and is measured by E3 and the k-anonymity gate instead.
+    regulation: [PDPA s2 (personal data includes data identifying in combination), PDPC Guide to Basic Anonymisation]
     actions: {RED: keep, AMBER: keep, GREEN: generalize}
   SENSITIVE_ATTR:
     harm: 3
     description: Harmful to disclose even when de-identified.
+    harm_rationale: Discrimination and reputational harm that cannot be undone, but not directly monetisable.
+    regulation: [PDP (Notification of Data Breaches) Regulations 2021 Schedule Part 1 items 18-19 (listed medical conditions and treatments), MAS Notice 626 (PEP status is AML/CFT data), Banking Act s47]
     actions: {RED: keep, AMBER: keep, GREEN: suppress}
 
 # Per-type `actions` override the class default for the listed tiers only.
 types:
-  PERSON:          {class: DIRECT_ID, description: "Client, agent or payee name"}
+  PERSON:          {class: DIRECT_ID, description: "Client, agent, payee or relative name"}
   NRIC:            {class: DIRECT_ID, description: Singapore NRIC/FIN (checksum-validated)}
+  PASSPORT:        {class: DIRECT_ID, description: Passport number}
   PHONE:           {class: DIRECT_ID, description: Singapore phone number}
   EMAIL:           {class: DIRECT_ID, description: 'Email address, written or spoken ("tan dot wei at gmail dot com")'}
   ADDRESS:         {class: DIRECT_ID, description: Residential address}
   DOB:             {class: DIRECT_ID, description: Date of birth}
   ACCOUNT_NO:      {class: FINANCIAL_ID, description: Bank account number}
+  IBAN:            {class: FINANCIAL_ID, description: International account number (ISO 13616 mod-97 validated)}
   CARD_NO:         {class: FINANCIAL_ID, description: Payment card number (Luhn-validated)}
   TXN_REF:         {class: FINANCIAL_ID, description: Transaction / case reference}
   AMOUNT:
@@ -56,10 +72,36 @@ types:
   OTP:             {class: AUTH_SECRET, description: One-time password}
   PIN:             {class: AUTH_SECRET, description: Card / account PIN}
   SECURITY_ANSWER: {class: AUTH_SECRET, description: Answer to a security question}
-  LOCATION:        {class: QUASI_ID, description: Town or branch}
+  LOCATION:        {class: QUASI_ID, description: Town the client lives in}
+  BRANCH:          {class: QUASI_ID, description: Home branch of the client}
+  SWIFT:           {class: QUASI_ID, description: Payee bank SWIFT/BIC (identifies a bank, not a person)}
   EMPLOYER:        {class: QUASI_ID, description: Employer name}
   OCCUPATION:      {class: QUASI_ID, description: Job title}
   NATIONALITY:     {class: QUASI_ID, description: Nationality}
   DATE:            {class: QUASI_ID, description: Calendar date other than DOB}
   HEALTH:          {class: SENSITIVE_ATTR, description: Medical condition or treatment}
   LEGAL:           {class: SENSITIVE_ATTR, description: Legal / family proceedings}
+  RELIGION:        {class: SENSITIVE_ATTR, description: Religious affiliation}
+  PEP:             {class: SENSITIVE_ATTR, description: Politically exposed person status (self or family)}
+
+# The brief's BPMN gateway: "is the transaction considered high risk?" Only high-risk calls
+# are referred to compliance in full (privacy/triage.py).
+triage:
+  overseas_transfer_threshold: 5000      # S$; overseas transfers at or above this are high risk
+  fraud_cues: [fraud, scam, scammer, pretending to be from the bank, suspicious activity, police report]
+  transfer_cues: [overseas transfer, transfer overseas, telegraphic transfer, remittance, wire transfer, iban, swift]
+
+# Calls the detector is unsure about are held from GREEN until a RED reviewer approves them
+# (privacy/review.py).
+review:
+  min_ner_score: 0.6        # a span found only by statistical NER below this score is "uncertain"
+  residual_digits: 4        # a run of this many digits left in the GREEN rendering is a likely leak
+
+# GREEN bulk export gate (privacy/release.py).
+release:
+  k: 5                      # calls whose quasi-ID combination is shared by fewer than k calls lose their quasi-IDs
+
+# PDPA retention limitation: erase (crypto-shred) calls older than this.
+retention_days:
+  high: 1825                # 5 years: compliance assessment of a referred transaction
+  low: 365

@@ -63,3 +63,18 @@ SURROGATE_SURNAMES = ["Quek", "Seah", "Toh", "Lau", "Heng", "Foo", "Yap", "Kwek"
                       "Wee", "Iyer", "Rao", "Das", "Osman", "Yusof", "Salleh", "Aziz", "Pereira", "Danker"]
 SURROGATE_GIVEN = ["Li Ting", "Pei Shan", "Zi Han", "Zhen Yu", "Qiu Yan", "Si Qi", "Rui En", "Kok Leong",
                    "Nadia", "Iskandar", "Hidayah", "Ridzuan", "Meena", "Vikram", "Shalini", "Gopal"]
+
+# Added in round 2 (A6): types the plan listed but the first version never generated.
+RELIGIONS = ["Buddhist", "Christian", "Muslim", "Hindu", "Taoist", "Catholic", "Sikh"]
+PEP_ROLES = ["a member of parliament", "a minister", "an ambassador", "a senior civil servant",
+             "a judge", "a grassroots leader"]
+RELATIONS = ["mother", "father", "wife", "husband", "son", "daughter", "brother", "sister"]
+# SWIFT/BIC -> whether the bank is local (the GREEN generalization of a SWIFT code)
+SWIFT_CODES = ["DBSSSGSG", "OCBCSGSG", "UOVBSGSG", "HSBCGB2L", "DEUTDEFF", "BNPAFRPP", "CITIUS33", "MBBEMYKL"]
+IBAN_BANKS = ["NWBK", "BARC", "LOYD", "MIDL"]          # GB IBANs carry a 4-letter bank code
+
+# Spoken digits in the other languages of a Singapore call (A7): Mandarin pinyin, Malay.
+PINYIN_DIGITS = ["ling", "yi", "er", "san", "si", "wu", "liu", "qi", "ba", "jiu"]
+MALAY_DIGITS = ["kosong", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "lapan", "sembilan"]
+# What ASR writes for a digit it mishears as a common word.
+HOMOPHONES = {"four": "for", "two": "to", "eight": "ate", "one": "won"}

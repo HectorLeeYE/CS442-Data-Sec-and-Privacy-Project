@@ -1,0 +1,219 @@
+# Out-of-distribution test calls. Hand-written AFTER the detector, in scenarios and phrasings the
+# generator never produces, and NOT used to tune anything: results are reported as they came out.
+# Markup: {{TYPE:value}} marks a ground-truth span. "### <id> <risk>" starts a call.
+# Lines: "A:" agent, "C:" client. Lowercase unpunctuated lines imitate ASR output.
+
+### O01 low
+A: Good evening, you're through to the mortgage desk, {{PERSON:Benjamin Lee}} here.
+C: Hi Benjamin, I'm calling about refinancing. The flat is at {{ADDRESS:28 Jalan Bukit Merah, #12-344}}.
+A: Sure. Can I get your IC number?
+C: {{NRIC:S8301661B}}.
+A: And the loan account?
+C: It's {{ACCOUNT_NO:472-118390-5}}. We still owe about {{AMOUNT:$310,000}}.
+A: Got it. I'll email the package to the address we have, is that still {{EMAIL:bennylim88@gmail.com}}?
+C: No, use {{EMAIL:lim.siewchoo@hotmail.com}}, my wife handles it.
+
+### O02 high
+a: fraud hotline this is {{PERSON:nadia}} how can i help
+c: my mother got a call from someone saying they are from mas and she transferred {{AMOUNT:forty thousand dollars}}
+a: oh no im sorry what is your mothers full name
+c: {{PERSON:goh siew choo}} she is seventy two this year
+a: and her nric
+c: {{NRIC:t one eight six zero nine one three j}}
+a: which account did the money go out from
+c: {{ACCOUNT_NO:zero three one five five two eight one nine four}}
+a: i have flagged it under case {{TXN_REF:c a s e four four one nine two seven five five}} please make a police report today
+
+### O03 low
+A: Thank you for holding. I understand you'd like to raise your credit limit?
+C: Yes, I just got promoted, I'm now a {{OCCUPATION:bus captain}} supervisor at {{EMPLOYER:SBS Transit}}.
+A: Congratulations. What is your new monthly salary?
+C: {{AMOUNT:$5,800}} before CPF.
+A: For verification, what's the last four digits of your card?
+C: {{CARD_NO:4319 4875 7491 1860}}, the whole thing.
+A: Thank you, I only needed the last four. I'll submit the request.
+
+### O04 high
+A: Remittance desk, how may I help?
+C: I want to send money home to Chennai, {{AMOUNT:S$8,200}}, to my brother {{PERSON:Muthu Krishnan}}.
+A: Is this to an Indian bank account?
+C: Yes, State Bank, account {{ACCOUNT_NO:30419927451}}, the SWIFT is {{SWIFT:SBININBB}}.
+A: And your passport number since you're on a work pass?
+C: {{PASSPORT:Z4471902}}. I am {{NATIONALITY:Indian}}, working in {{LOCATION:Tuas}}.
+A: Overseas transfers above five thousand go to compliance for review, it takes one working day.
+
+### O05 low
+a: hello thank you for calling customer service my name is {{PERSON:farah}}
+c: hi i lost my phone so i need to change my mobile number for the otp
+a: no problem what is the new number
+c: {{PHONE:plus six five nine seven three two one one eight four}}
+a: and the old number
+c: {{PHONE:eight one double two four nine nine three}}
+a: to verify you what is your date of birth
+c: {{DOB:third of march nineteen eighty five}}
+
+### O06 high
+A: You're speaking with Marcus from the anti-scam unit.
+C: I think I've been scammed. I paid a seller on Carousell via PayNow to {{PHONE:+65 9123 7781}}.
+A: How much did you send?
+C: {{AMOUNT:1,250 bucks}}. Then they asked me for an OTP, and I gave them {{OTP:551 902}}.
+A: Please don't share codes like that. Can I have your name?
+C: {{PERSON:Darren Ho Wei Jie}}.
+A: I'm locking your digital banking now, reference {{TXN_REF:FR-20231147}}.
+
+### O07 low
+A: Wealth management, {{PERSON:Sharon}} speaking.
+C: Hello, this is {{PERSON:Dr. Rajan Pillay}}. I'd like to complain about an investment product.
+A: I'm sorry to hear that. Which product?
+C: The structured note your RM sold me in {{DATE:June 2022}}. I lost {{AMOUNT:sixty thousand}}.
+A: May I ask your occupation for the suitability record?
+C: I'm a {{OCCUPATION:cardiologist}} at {{EMPLOYER:Changi General Hospital}}. I am not a finance person.
+A: Understood, I'll log the complaint and our team will call you.
+
+### O08 low
+a: hi this is the cards team you called about a declined transaction
+c: yes my card kept getting declined at the clinic i was paying for my {{HEALTH:dialysis}}
+a: sorry about that can i have the card number
+c: {{CARD_NO:four two five two seven six zero one eight nine five five five nine seven eight}}
+a: thank you and what was the security answer you set your favourite food
+c: {{SECURITY_ANSWER:chicken rice}}
+a: okay i see a fraud block i have lifted it
+
+### O09 low
+A: Good morning, branch services. Which branch do you usually visit?
+C: The one at {{BRANCH:Jurong Point}}. I need to close my late husband's account.
+A: My condolences. What was his name?
+C: {{PERSON:Abdul Rahman bin Osman}}. He passed on {{DATE:12 August}}.
+A: We'll need the death certificate and the grant of probate if it's above the threshold.
+C: Our lawyer said there's a {{LEGAL:probate application}} pending.
+A: That's fine. Please bring his IC, {{NRIC:S9960308I}}, if you still have it.
+
+### O10 high
+a: overseas transfers desk good afternoon
+c: hi i want to send {{AMOUNT:twelve thousand pounds}} to my daughter in london for her school fees
+a: may i have the iban
+c: {{IBAN:g b zero nine n w b k seven five two nine one seven zero three four two three six six seven}}
+a: and the beneficiary name
+c: {{PERSON:chloe tan}}
+a: what is the purpose of transfer
+c: tuition at {{EMPLOYER:imperial college}} she is a {{OCCUPATION:student}}
+
+### O11 low
+A: Thanks for calling. Could you confirm your identity with your FIN?
+C: Sure, {{NRIC:F2601815M}}. I'm {{NATIONALITY:Filipino}}, a {{OCCUPATION:domestic helper}}.
+A: Thank you. What can I do for you today?
+C: My employer pays my salary into my account but it didn't come this month.
+A: Let me check. Your employer is {{PERSON:Mrs Wong Mei Lan}}?
+C: Yes, ma'am. She lives in {{LOCATION:Bukit Timah}}.
+A: The payment is pending, it should arrive tomorrow.
+
+### O12 high
+a: you are through to the fraud team
+c: someone used my card overseas in bangkok {{AMOUNT:three thousand four hundred}} baht and {{AMOUNT:nine hundred sgd}}
+a: ok can i verify your identity whats your full name and pin is not needed
+c: {{PERSON:kelvin ong}} my pin is {{PIN:two zero zero eight}} do you need it
+a: no please never tell anyone your pin i will cancel the card ending four six five zero
+c: ok thanks my email is {{EMAIL:kelvin underscore ong at yahoo dot com dot sg}}
+
+### O13 low
+A: Hello, how can I help?
+C: Hi, I need a letter confirming my account for my visa, I'm moving to Melbourne.
+A: Sure. Your name and date of birth please?
+C: {{PERSON:Priyanka Sharma}}, {{DOB:14/11/1990}}.
+A: And your contact number in case we need to reach you?
+C: {{PHONE:8822 6195}}.
+A: Thank you. The letter will be mailed to {{ADDRESS:Blk 115 Rivervale Drive, #05-21, Singapore 540115}}.
+
+### O14 high
+A: Compliance-referred call, transfer verification. Ma'am, are you making this transfer of your own will?
+C: Yes, it's {{AMOUNT:$250,000}} to my nephew's company in Hong Kong.
+A: Is anyone pressuring you or telling you what to say?
+C: No, no. My nephew {{PERSON:Jason Liu}} is a {{PEP:deputy minister}} there actually, very trusted.
+A: I see. Could you read me the payee account?
+C: {{ACCOUNT_NO:012-883-4410-77}} at {{SWIFT:HSBCHKHH}}.
+A: Thank you, we'll complete our checks before release.
+
+### O15 low
+a: hello ah you call about the loan
+c: ya ya wo yao ask about car loan for my {{OCCUPATION:grab driver}} work
+a: okay can i have your ic
+c: {{NRIC:s nine zero nine three seven eight six c}}
+a: and how much you want to borrow
+c: around {{AMOUNT:fifty k}} can or not
+a: can we will need your last three months {{EMPLOYER:grab}} statements
+
+### O16 low
+A: Customer service, {{PERSON:Wei Ling}} here. How can I help?
+C: I want to update my address. I moved to {{ADDRESS:21 Punggol Field Walk, #08-110}}.
+A: Sure. For security, what was the name of your primary school?
+C: {{SECURITY_ANSWER:Rosyth}}.
+A: Thank you. Please hold while I update it.
+C: Also my wife {{PERSON:Hannah Teo}} is pregnant, can she be added to the account? She works at {{EMPLOYER:NTUC FairPrice}}.
+
+### O17 high
+a: hello this is the bank calling about a transaction of {{AMOUNT:eighteen thousand five hundred dollars}} to an overseas account
+c: yes that was me its for my property in johor
+a: can you confirm the one time password we just sent
+c: {{OTP:eight eight three one zero four}}
+a: thank you and the receiving bank
+c: maybank {{SWIFT:m b b e m y k l}}
+a: noted it is above our threshold so compliance will review
+
+### O18 low
+A: Good afternoon. I see you want to set up a GIRO for donations?
+C: Yes, monthly {{AMOUNT:$100}} to my {{RELIGION:church}}, Bethesda.
+A: Sure. Which account should it debit?
+C: My savings, {{ACCOUNT_NO:105-772640-3}}.
+A: And the start date?
+C: From {{DATE:1 January}} next year.
+
+### O19 low
+a: thank you for calling may i know who im speaking to
+c: this is {{PERSON:tan ah kow}} calling for my father hes eighty nine he has {{HEALTH:dementia}}
+a: im sorry to hear that are you his lasting power of attorney
+c: yes i have the {{LEGAL:lasting power of attorney}} from the court
+a: okay what is your fathers nric
+c: {{NRIC:s one two three four five six seven d}}
+
+### O20 high
+A: Fraud and disputes, good morning.
+C: Morning. Someone opened a credit card in my name. I never applied. My name is {{PERSON:Siti Nurhaliza binte Ahmad}}.
+A: That's serious. What's your NRIC?
+C: {{NRIC:T4628194I}}. I live in {{LOCATION:Woodlands}}.
+A: And the card number on the statement you received?
+C: {{CARD_NO:4971 1471 0497 4650}}. It was sent to {{ADDRESS:Blk 678 Woodlands Avenue 6, #03-15}}.
+A: I'm opening an identity theft case, number {{TXN_REF:REF77013452}}.
+
+### O21 low
+a: good morning priority banking {{PERSON:james}} speaking
+c: morning james its {{PERSON:mr chandran}} can you check if my fixed deposit has matured
+a: sure sir can i verify your date of birth
+c: {{DOB:second june nineteen fifty eight}}
+a: thank you yes the deposit of {{AMOUNT:two hundred thousand}} matured on {{DATE:the fifth}}
+c: please roll it over and send the confirmation to {{EMAIL:r chandran at singnet dot com dot sg}}
+
+### O22 low
+A: Hello, digital banking support.
+C: Hi, I can't log in. It keeps asking for the code but the SMS never comes.
+A: Can you confirm the mobile number on file?
+C: {{PHONE:9734 5521}}.
+A: I'll resend it now. Can you read me the code when it arrives?
+C: Okay... it's {{OTP:7 1 9 3 3 0}}.
+A: You're in. Please don't share that code with anyone else.
+
+### O23 high
+a: compliance team calling to verify your transfer request
+c: yes i am sending {{AMOUNT:ninety five thousand}} to my business partner in germany
+a: the iban please
+c: {{IBAN:DE89 3704 0044 0532 0130 00}}
+a: and your role at the company
+c: im the {{OCCUPATION:director}} of {{EMPLOYER:lim and sons trading}}
+a: are you or your family politically exposed
+c: my uncle is a {{PEP:member of parliament}} in malaysia
+
+### O24 low
+A: Card services, {{PERSON:Hafiz}} speaking.
+C: Hello, I'm calling for {{PERSON:Mdm Lee Ah Moi}}, I'm her son. She's in hospital for {{HEALTH:a hip fracture}} and missed her card payment.
+A: I'm sorry. I can waive the late fee once. What's the card ending?
+C: 7788.
+A: Thank you. The waiver of {{AMOUNT:$100}} will show on the next statement.

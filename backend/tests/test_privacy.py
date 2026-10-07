@@ -68,3 +68,68 @@ def test_name_glued_to_spoken_nric_does_not_leak():
     spans = detect.detect(text, layers=("format", "context", "spoken", "propagate"))
     out = redact.render(utts, spans, "GREEN", "C1", KEY)[1]["text"]
     assert "hassan" not in out and "siew" not in out
+
+
+NO_NER = ("format", "context", "spoken", "dialogue", "propagate")
+
+
+def found(text):
+    return {(text[s.start:s.end], s.type) for s in detect.detect(text, layers=NO_NER)}
+
+
+def test_asian_context_spoken_forms():
+    assert spoken.normalize("otp is wu liu qi ba jiu ling")[0] == "otp is 567890"          # Mandarin
+    assert spoken.normalize("pin satu dua tiga empat")[0] == "pin 1234"                     # Malay
+    assert spoken.normalize("nine for two three uh four five")[0] == "942345"               # homophone + filler
+    assert spoken.normalize("for two weeks")[0] == "for two weeks"                          # edges stay words
+    assert ("wu liu qi ba jiu ling", "OTP") in found("the otp is wu liu qi ba jiu ling")
+
+
+def test_slot_tracking_and_filler_tolerant_cues():
+    t = ("can you read out the one-time password\nokay six seven six double four eight\n"
+         "what was the name of your first pet\nmy first pet bobo lah\ni'm a nurse i work uh at singtel")
+    f = found(t)
+    assert ("six seven six double four eight", "OTP") in f      # no cue word in the reply
+    assert ("bobo", "SECURITY_ANSWER") in f                     # "was" dropped by ASR
+    assert ("singtel", "EMPLOYER") in f                         # cue split by a filler
+
+
+def test_new_types_and_validators():
+    assert detect.iban_valid("GB29 NWBK 6016 1331 9268 19") and not detect.iban_valid("GB28 NWBK 6016 1331 9268 19")
+    f = found("IBAN GB29 NWBK 6016 1331 9268 19, SWIFT code DBSSSGSG.\nMy father Tan Ah Kow is a member of parliament, "
+              "I'm Buddhist.\nPassport number K1234567A.")
+    assert {("GB29 NWBK 6016 1331 9268 19", "IBAN"), ("DBSSSGSG", "SWIFT"), ("Tan Ah Kow", "PERSON"),
+            ("member of parliament", "PEP"), ("Buddhist", "RELIGION"), ("K1234567A", "PASSPORT")} <= f
+    spans = [Span(5, 32, "IBAN", "format")]
+    out = redact.render([{"speaker": "client", "text": "IBAN GB29 NWBK 6016 1331 9268 19"}], spans, "GREEN", "C1", KEY)
+    fake = out[0]["text"][5:]
+    assert fake != "GB29 NWBK 6016 1331 9268 19" and detect.iban_valid(fake)   # a realistic, valid fake
+
+
+def test_triage_review_and_release_gate():
+    from privacy import release, review, triage
+    t = "i want an overseas transfer\nS$12,000 please"
+    assert triage.classify(t, detect.detect(t, layers=NO_NER))[0] == "high"
+    t = "i want an overseas transfer\nS$120 please"
+    assert triage.classify(t, detect.detect(t, layers=NO_NER))[0] == "low"
+    t = "what is the otp\nsorry it has not come\nmy reference is 55512345"
+    reasons = review.reasons(t, [])
+    assert any("OTP" in r for r in reasons) and any("unclassified number" in r for r in reasons)
+
+    def green(region):
+        return [{"speaker": "client", "text": region, "pieces": [
+            {"text": region, "entity": {"type": "LOCATION", "class": "QUASI_ID", "action": "generalize"}}]}]
+    calls = {f"C{i}": green("the East") for i in range(5)} | {"C9": green("the West")}
+    out, report = release.gate(calls, k=5)
+    assert report["C0"] == {"k": 5, "gated": False} and report["C9"] == {"k": 1, "gated": True}
+    assert out["C9"][0]["text"] == "[REDACTED]" and out["C0"][0]["text"] == "the East"
+
+
+def test_slot_needs_a_request_for_that_slot():
+    """Regression (found in the live demo): 'freezing the account. When did this happen?' is not
+    a request for an account number, so the date reply must not hold the call for review."""
+    from privacy import review
+    t = "I am freezing the account now. When did this happen?\nYesterday, 3 May."
+    assert not review.reasons(t, detect.detect(t, layers=NO_NER))
+    t = "Which account will the funds come from?\nFrom my savings."
+    assert any("ACCOUNT_NO" in r for r in review.reasons(t, []))

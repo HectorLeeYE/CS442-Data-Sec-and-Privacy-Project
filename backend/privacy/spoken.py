@@ -1,7 +1,9 @@
 """Spoken-form normalizer: ASR output -> written form, with an offset map back.
 
     "my nric is s nine eight seven six five four three a"  ->  "my nric is s 9876543 a"
-    "wei dot ming at gmail dot com"                         ->  "wei.ming@gmail.com"
+    "otp is wu liu qi ba jiu ling"                        ->  "otp is 567890"        (Mandarin)
+    "nine for two three uh four five"                     ->  "942345"               (homophone, filler)
+    "wei dot ming at gmail dot com"                        ->  "wei.ming@gmail.com"
 
 Detectors run on the normalized text; spans are mapped back onto the ORIGINAL
 words so the redactor replaces "nine eight seven ..." and not something else.
@@ -10,49 +12,49 @@ This is the gap between document redaction and transcript redaction.
 
 import re
 
-from privacy.vocab import DIGIT_WORDS
+from privacy.vocab import DIGIT_WORDS, HOMOPHONES, MALAY_DIGITS, PINYIN_DIGITS
 
-_D = "|".join(DIGIT_WORDS + ["oh"])
-_UNIT = rf"(?:(?:double|triple) (?:{_D})|{_D}|\d)"
-# >= 3 units: "one" or "oh" on its own stays a word.
-_DIGIT_RUN = rf"\b{_UNIT}(?:[ ,-]+{_UNIT}){{2,}}\b"
+_VAL = ({w: str(i) for i, w in enumerate(DIGIT_WORDS)} | {"oh": "0"}
+        | {w: str(i) for i, w in enumerate(PINYIN_DIGITS)} | {"yao": "1"}       # "yao": 1 in phone numbers
+        | {w: str(i) for i, w in enumerate(MALAY_DIGITS)})
+_HOMO = {h: _VAL[d] for d, h in HOMOPHONES.items()} | {"too": "2"}
+_REAL = rf"(?:(?:double|triple) (?:{'|'.join(_VAL)})|{'|'.join(_VAL)}|\d)"
+_ANY = rf"(?:{_REAL}|{'|'.join(_HOMO)})"
+_SEP = r"(?:[ ,-]+(?:(?:uh|um) )?)"
+# >= 3 units, starting and ending on a real digit word, so "one" or "oh" alone and
+# "for"/"to" at the edge of a run stay words.
+_DIGIT_RUN = rf"\b{_REAL}(?:{_SEP}{_ANY}){{0,}}{_SEP}{_REAL}\b"
 _EMAIL = r"\b[a-z0-9]+(?: dot [a-z0-9]+)* at [a-z0-9]+(?: dot [a-z]{2,})+\b"
 _RX = re.compile(rf"(?P<email>{_EMAIL})|(?P<digits>{_DIGIT_RUN})", re.I)
-_VAL = {w: str(i) for i, w in enumerate(DIGIT_WORDS)} | {"oh": "0"}
+_FILLER = re.compile(r"\b(?:uh|um|erm)\b ?", re.I)
 
 
 def _digits(run: str) -> str:
     out, mult = [], 1
-    for tok in re.findall(rf"double|triple|{_D}|\d", run, re.I):
+    for tok in re.findall(rf"double|triple|{_ANY}|\d", run, re.I):
         tok = tok.lower()
         if tok in ("double", "triple"):
             mult = 2 if tok == "double" else 3
             continue
-        out.append((_VAL.get(tok) or tok) * mult)
+        out.append((_VAL.get(tok) or _HOMO.get(tok) or tok) * mult)
         mult = 1
     return "".join(out)
 
 
-def normalize(text: str) -> tuple[str, list[int], list[int]]:
-    """Returns (norm, starts, ends).
-
-    For a span [s, e) in norm, the original span is [starts[s], ends[e]).
-    Characters inside a rewritten region all map to that region's bounds.
-    """
+def _rewrite(text: str, matches, rep) -> tuple[str, list[int], list[int]]:
+    """Replace each match with rep(match). Returns (norm, starts, ends): a span [s, e) of norm
+    maps to [starts[s], ends[e]) of text. Characters inside a rewritten region map to its bounds."""
     parts, starts, ends, pos = [], [], [0], 0
-    for m in _RX.finditer(text):
+    for m in matches:
+        if m.start() < pos:
+            continue
         for i in range(pos, m.start()):           # copied verbatim
             starts.append(i)
             ends.append(i + 1)
-        if m.group("email"):
-            rep = re.sub(r" dot ", ".", m.group(), flags=re.I)
-            rep = re.sub(r" at ", "@", rep, count=1, flags=re.I)
-        else:
-            rep = _digits(m.group())
-        parts.append(text[pos:m.start()])
-        parts.append(rep)
-        starts += [m.start()] * len(rep)
-        ends += [m.end()] * len(rep)
+        r = rep(m)
+        parts += [text[pos:m.start()], r]
+        starts += [m.start()] * len(r)
+        ends += [m.end()] * len(r)
         pos = m.end()
     for i in range(pos, len(text)):
         starts.append(i)
@@ -62,6 +64,35 @@ def normalize(text: str) -> tuple[str, list[int], list[int]]:
     return "".join(parts), starts, ends
 
 
+def _norm_one(m) -> str:
+    if m.group("email"):
+        rep = re.sub(r" dot ", ".", m.group(), flags=re.I)
+        return re.sub(r" at ", "@", rep, count=1, flags=re.I)
+    return _digits(m.group())
+
+
+def _regions(text: str) -> list:
+    """Non-overlapping rewrite regions. A digit run only counts if it holds >= 3 digits once
+    "double"/"triple" expand: "for two three" is two words and a number, not a 3-digit run."""
+    return [m for m in _RX.finditer(text) if m.group("email") or len(_digits(m.group())) >= 3]
+
+
+def normalize(text: str) -> tuple[str, list[int], list[int]]:
+    return _rewrite(text, _regions(text), _norm_one)
+
+
+def strip_fillers(text: str) -> tuple[str, list[int], list[int]]:
+    """'i work uh at singtel' -> 'i work at singtel', with the same offset map as normalize."""
+    return _rewrite(text, _FILLER.finditer(text), lambda m: "")
+
+
 def changed_regions(text: str) -> list[tuple[int, int]]:
     """Original-text regions the normalizer rewrote."""
-    return [m.span() for m in _RX.finditer(text)]
+    return [m.span() for m in _regions(text)]
+
+
+def to_digits(text: str) -> str:
+    """Every digit word in text as a digit, everything else dropped: for checksum validation of
+    a spoken identifier ("g b two nine n w b k ...")."""
+    toks = re.findall(rf"double|triple|{_ANY}|\d|[a-z]", text, re.I)
+    return _digits(" ".join(t for t in toks if not (len(t) == 1 and t.isalpha())))

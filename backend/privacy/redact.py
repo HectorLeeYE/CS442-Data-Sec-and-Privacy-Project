@@ -10,12 +10,13 @@ import random
 import re
 
 from privacy import spoken, taxonomy
-from privacy.detect import Span, nric_valid
+from privacy.detect import Span, iban_valid, nric_valid
 from privacy.vocab import (DIGIT_WORDS, EMAIL_DOMAINS, EMPLOYERS, HEALTH, LEGAL, MONTHS, NATIONALITIES,
-                           OCCUPATIONS, PETS, STREET_KINDS, SURROGATE_GIVEN, SURROGATE_SURNAMES, TOWNS)
+                           OCCUPATIONS, PEP_ROLES, PETS, RELIGIONS, STREET_KINDS, SURROGATE_GIVEN,
+                           SURROGATE_SURNAMES, TOWNS)
 
 _UNITS = re.compile(r"\d|\b(?:%s)\b" % "|".join(DIGIT_WORDS + ["oh"]), re.I)
-DIGITY = {"NRIC", "PHONE", "ACCOUNT_NO", "CARD_NO", "TXN_REF", "OTP", "PIN", "AMOUNT"}
+DIGITY = {"NRIC", "PASSPORT", "PHONE", "ACCOUNT_NO", "IBAN", "CARD_NO", "TXN_REF", "OTP", "PIN", "AMOUNT"}
 
 
 def _key(surface: str) -> str:
@@ -57,6 +58,10 @@ def _shape(surface: str, rng: random.Random, keep_first: bool = False) -> str:
     if re.fullmatch(r"[STFG]\d{7}[A-Z]", out, re.I):   # keep NRICs checksum-valid
         letters = [c for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" if nric_valid(out[:8] + c)]
         out = out[:8] + _match_case(out[8], letters[0])
+    compact = re.sub(r"\s", "", out)
+    if re.fullmatch(r"[A-Z]{2}\d{2}[A-Z0-9]{11,30}", compact, re.I) and not iban_valid(compact):
+        n = int("".join(str(int(c, 36)) for c in compact[4:] + compact[:2].upper() + "00"))
+        out = out[:2] + f"{98 - n % 97:02d}" + out[4:]                  # keep IBANs mod-97 valid
     return out
 
 
@@ -85,7 +90,7 @@ def surrogate(etype: str, surface: str, rng: random.Random) -> str:
     else:
         pool = {"LOCATION": list(TOWNS), "EMPLOYER": list(EMPLOYERS), "OCCUPATION": list(OCCUPATIONS),
                 "NATIONALITY": NATIONALITIES, "HEALTH": HEALTH, "LEGAL": LEGAL,
-                "SECURITY_ANSWER": PETS}.get(etype)
+                "SECURITY_ANSWER": PETS, "RELIGION": RELIGIONS, "PEP": PEP_ROLES}.get(etype)
         rep = rng.choice(pool) if pool else "[REDACTED]"
     return _match_case(surface, rep)
 
@@ -112,9 +117,12 @@ def generalize(etype: str, surface: str) -> str:
             if v < hi:
                 return _match_case(surface, f"between {lo:,.0f} and {hi:,.0f} dollars")
         return _match_case(surface, "over a million dollars")
-    if etype == "LOCATION":
+    if etype in ("LOCATION", "BRANCH"):
         towns = {t.lower(): r for t, r in TOWNS.items()}
         return _match_case(surface, towns.get(low, "Singapore"))
+    if etype == "SWIFT":
+        letters = re.sub(r"[^a-z0-9]", "", low)
+        return "a local bank" if letters[4:6] == "sg" else "a foreign bank"
     if etype == "EMPLOYER":
         for name, sector in EMPLOYERS.items():
             if name.lower() in low or low in name.lower():

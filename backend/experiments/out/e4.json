@@ -1,0 +1,377 @@
+{
+ "n_calls": 40,
+ "n_utterances": 683,
+ "voices": [
+  "en-SG-WayneNeural",
+  "en-SG-LunaNeural"
+ ],
+ "asr_model": "openai/whisper-base",
+ "wer": 0.2771,
+ "spans_total": 518,
+ "spans_dropped_by_asr": 1,
+ "detectors": {
+  "presidio only": {
+   "recall": {
+    "DIRECT_ID": 0.5415,
+    "FINANCIAL_ID": 0.1485,
+    "AUTH_SECRET": 0.6667,
+    "QUASI_ID": 0.4466,
+    "SENSITIVE_ATTR": 0.2381
+   },
+   "class_accuracy": {
+    "DIRECT_ID": 0.7177,
+    "FINANCIAL_ID": 0.0,
+    "AUTH_SECRET": 0.0,
+    "QUASI_ID": 0.6739,
+    "SENSITIVE_ATTR": 0.0
+   },
+   "support": {
+    "DIRECT_ID": 229,
+    "FINANCIAL_ID": 101,
+    "AUTH_SECRET": 42,
+    "QUASI_ID": 103,
+    "SENSITIVE_ATTR": 42
+   },
+   "harm_weighted_recall": 0.4572,
+   "strict_recall": 0.0619,
+   "precision": 0.8182,
+   "char_leakage": 0.7556,
+   "over_redaction": 0.0208,
+   "token_f1": 0.3595
+  },
+  "full minus spoken": {
+   "recall": {
+    "DIRECT_ID": 0.7642,
+    "FINANCIAL_ID": 0.8713,
+    "AUTH_SECRET": 0.9524,
+    "QUASI_ID": 0.7184,
+    "SENSITIVE_ATTR": 0.8571
+   },
+   "class_accuracy": {
+    "DIRECT_ID": 0.8686,
+    "FINANCIAL_ID": 0.9318,
+    "AUTH_SECRET": 0.975,
+    "QUASI_ID": 0.7973,
+    "SENSITIVE_ATTR": 0.9722
+   },
+   "support": {
+    "DIRECT_ID": 229,
+    "FINANCIAL_ID": 101,
+    "AUTH_SECRET": 42,
+    "QUASI_ID": 103,
+    "SENSITIVE_ATTR": 42
+   },
+   "harm_weighted_recall": 0.8251,
+   "strict_recall": 0.1006,
+   "precision": 0.8324,
+   "char_leakage": 0.5411,
+   "over_redaction": 0.0274,
+   "token_f1": 0.5933
+  },
+  "our full detector": {
+   "recall": {
+    "DIRECT_ID": 0.7642,
+    "FINANCIAL_ID": 0.8713,
+    "AUTH_SECRET": 0.9524,
+    "QUASI_ID": 0.7184,
+    "SENSITIVE_ATTR": 0.8571
+   },
+   "class_accuracy": {
+    "DIRECT_ID": 0.8686,
+    "FINANCIAL_ID": 0.9318,
+    "AUTH_SECRET": 0.975,
+    "QUASI_ID": 0.7973,
+    "SENSITIVE_ATTR": 0.9722
+   },
+   "support": {
+    "DIRECT_ID": 229,
+    "FINANCIAL_ID": 101,
+    "AUTH_SECRET": 42,
+    "QUASI_ID": 103,
+    "SENSITIVE_ATTR": 42
+   },
+   "harm_weighted_recall": 0.8251,
+   "strict_recall": 0.1006,
+   "precision": 0.8324,
+   "char_leakage": 0.5411,
+   "over_redaction": 0.0274,
+   "token_f1": 0.5933
+  }
+ },
+ "misses": [
+  {
+   "call": "C0001",
+   "type": "ADDRESS",
+   "text": "be OK679 .0 .58 hashtag 19 -46D1 Singapore 373798."
+  },
+  {
+   "call": "C0008",
+   "type": "ADDRESS",
+   "text": "MBLK -796 -Bission -Evenue45 -022 -328 Singapore 431 -322."
+  },
+  {
+   "call": "C0009",
+   "type": "ADDRESS",
+   "text": "be LK620 Pungo Avenue 85 Hashtag 02 -62 Singapore 737 -670?"
+  },
+  {
+   "call": "C0003",
+   "type": "PERSON",
+   "text": "Yee -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e"
+  },
+  {
+   "call": "C0003",
+   "type": "PERSON",
+   "text": "June J .A."
+  },
+  {
+   "call": "C0005",
+   "type": "PERSON",
+   "text": "Halleakshmi."
+  },
+  {
+   "call": "C0013",
+   "type": "PERSON",
+   "text": "Fernandez -Soulon."
+  },
+  {
+   "call": "C0003",
+   "type": "NRIC",
+   "text": "-e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e -e"
+  },
+  {
+   "call": "C0007",
+   "type": "NRIC",
+   "text": "S6 -925 -06 -0B"
+  },
+  {
+   "call": "C0014",
+   "type": "NRIC",
+   "text": "you"
+  },
+  {
+   "call": "C0016",
+   "type": "NRIC",
+   "text": "-T -7607099C"
+  },
+  {
+   "call": "C0003",
+   "type": "OCCUPATION",
+   "text": "contractor,"
+  },
+  {
+   "call": "C0004",
+   "type": "OCCUPATION",
+   "text": "contractor."
+  },
+  {
+   "call": "C0025",
+   "type": "OCCUPATION",
+   "text": "hawker."
+  },
+  {
+   "call": "C0037",
+   "type": "OCCUPATION",
+   "text": "financial advisor."
+  },
+  {
+   "call": "C0003",
+   "type": "BRANCH",
+   "text": "you shun"
+  },
+  {
+   "call": "C0004",
+   "type": "BRANCH",
+   "text": "Toa Pio"
+  },
+  {
+   "call": "C0004",
+   "type": "BRANCH",
+   "text": "to a pale"
+  },
+  {
+   "call": "C0006",
+   "type": "BRANCH",
+   "text": "vision"
+  },
+  {
+   "call": "C0003",
+   "type": "EMAIL",
+   "text": "onand .io at Outlook .com."
+  },
+  {
+   "call": "C0004",
+   "type": "EMAIL",
+   "text": "shoe .file .com."
+  },
+  {
+   "call": "C0005",
+   "type": "EMAIL",
+   "text": "dpa .poly at"
+  },
+  {
+   "call": "C0007",
+   "type": "EMAIL",
+   "text": "Siresh .tann at gmail .com"
+  },
+  {
+   "call": "C0003",
+   "type": "PHONE",
+   "text": "9 ,543 -6 ,140"
+  },
+  {
+   "call": "C0004",
+   "type": "PHONE",
+   "text": "9 ,598 5 ,690 tree"
+  },
+  {
+   "call": "C0007",
+   "type": "PHONE",
+   "text": "8 ,072 ,372"
+  },
+  {
+   "call": "C0008",
+   "type": "PHONE",
+   "text": "8 ,120 3958."
+  },
+  {
+   "call": "C0004",
+   "type": "LOCATION",
+   "text": "I pay all."
+  },
+  {
+   "call": "C0009",
+   "type": "PIN",
+   "text": "13 .55,"
+  },
+  {
+   "call": "C0010",
+   "type": "SWIFT",
+   "text": "GB 2L"
+  },
+  {
+   "call": "C0014",
+   "type": "SWIFT",
+   "text": "33."
+  },
+  {
+   "call": "C0018",
+   "type": "SWIFT",
+   "text": "-DBSSGSG."
+  },
+  {
+   "call": "C0026",
+   "type": "SWIFT",
+   "text": "GB2L."
+  },
+  {
+   "call": "C0011",
+   "type": "PASSPORT",
+   "text": "P -1 -1 -2 -2 -3 -5 -7 -B"
+  },
+  {
+   "call": "C0035",
+   "type": "PASSPORT",
+   "text": "2840229A"
+  },
+  {
+   "call": "C0011",
+   "type": "TXN_REF",
+   "text": "N82887741."
+  },
+  {
+   "call": "C0012",
+   "type": "TXN_REF",
+   "text": "KSTXN28295032."
+  },
+  {
+   "call": "C0013",
+   "type": "TXN_REF",
+   "text": "KSTXN33479272."
+  },
+  {
+   "call": "C0028",
+   "type": "TXN_REF",
+   "text": "KSTXN13146331."
+  },
+  {
+   "call": "C0014",
+   "type": "IBAN",
+   "text": "GB 088 and WBK 04947697873215, Suif"
+  },
+  {
+   "call": "C0029",
+   "type": "IBAN",
+   "text": "GB -03 BRC 8660 -6740 -3722 -740 -3,"
+  },
+  {
+   "call": "C0030",
+   "type": "IBAN",
+   "text": "GB56 LYD01445619501635,"
+  },
+  {
+   "call": "C0032",
+   "type": "IBAN",
+   "text": "GB05 BRC 2560 -8929 -9959 -5430,"
+  },
+  {
+   "call": "C0016",
+   "type": "EMPLOYER",
+   "text": "your own pot."
+  },
+  {
+   "call": "C0018",
+   "type": "LEGAL",
+   "text": "probate dispute,"
+  },
+  {
+   "call": "C0024",
+   "type": "LEGAL",
+   "text": "card case,"
+  },
+  {
+   "call": "C0030",
+   "type": "LEGAL",
+   "text": "probate dispute,"
+  },
+  {
+   "call": "C0031",
+   "type": "LEGAL",
+   "text": "caught case,"
+  },
+  {
+   "call": "C0018",
+   "type": "PEP",
+   "text": "a grassroots leader,"
+  },
+  {
+   "call": "C0030",
+   "type": "AMOUNT",
+   "text": "One million nine hundred forty one thousand five hundred fifty Singapore dollars"
+  },
+  {
+   "call": "C0040",
+   "type": "AMOUNT",
+   "text": "140 Trees Singapore Dollars"
+  },
+  {
+   "call": "C0032",
+   "type": "OTP",
+   "text": "209 ,224"
+  }
+ ],
+ "examples": [
+  "Hello, Malayan bank cuts hotline. This is pre -earned their speaking.",
+  "Hi, there is a charge on my cart I don't recognize all.",
+  "I'm sorry to hear that. Can I have your card number?",
+  "Cut number 4, 4, 6, 0, 3, 5, 3, 6, 8, 4, 3, 9, 9, 9, 10, 6.",
+  "and your full name as printed on the cart.",
+  "on your show."
+ ],
+ "audio": {
+  "spans_checked": 507,
+  "recoverable_before_bleep": 1.0,
+  "recoverable_after_bleep": 0.1795,
+  "audio_bleeped": 0.2215
+ }
+}

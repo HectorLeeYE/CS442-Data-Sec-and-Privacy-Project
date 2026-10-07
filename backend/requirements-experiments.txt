@@ -1,0 +1,9 @@
+# Extra dependencies for the GLiNER baseline (E1) and the TTS -> Whisper experiment (E4) only.
+# The service and the tests do not need these.
+-r requirements.txt
+gliner
+transformers
+torch
+edge-tts
+av
+numpy

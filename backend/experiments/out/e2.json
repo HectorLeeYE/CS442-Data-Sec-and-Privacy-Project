@@ -5,45 +5,69 @@
  "variants": [
   {
    "variant": "raw (upper bound, not releasable)",
-   "perplexity": 13.44,
-   "pii_perplexity": 60.26,
-   "pii_oov": 0.0783,
+   "perplexity": 15.16,
+   "ci": [
+    14.6,
+    15.71
+   ],
+   "pii_perplexity": 72.99,
+   "pii_oov": 0.0773,
    "digit_shape_preserved": 1.0
   },
   {
    "variant": "suppress all",
-   "perplexity": 74.94,
-   "pii_perplexity": 60181.06,
-   "pii_oov": 0.9297,
+   "perplexity": 82.62,
+   "ci": [
+    77.73,
+    88.21
+   ],
+   "pii_perplexity": 57312.93,
+   "pii_oov": 0.9061,
    "digit_shape_preserved": 0.0
   },
   {
    "variant": "pseudonym all",
-   "perplexity": 74.95,
-   "pii_perplexity": 60203.84,
-   "pii_oov": 0.9297,
+   "perplexity": 82.63,
+   "ci": [
+    77.74,
+    88.22
+   ],
+   "pii_perplexity": 57338.01,
+   "pii_oov": 0.9061,
    "digit_shape_preserved": 0.0
   },
   {
    "variant": "surrogate all",
-   "perplexity": 19.72,
-   "pii_perplexity": 258.61,
-   "pii_oov": 0.234,
+   "perplexity": 24.09,
+   "ci": [
+    23.35,
+    24.89
+   ],
+   "pii_perplexity": 395.6,
+   "pii_oov": 0.2434,
    "digit_shape_preserved": 1.0
   },
   {
    "variant": "GREEN policy",
-   "perplexity": 23.3,
-   "pii_perplexity": 431.38,
-   "pii_oov": 0.273,
-   "digit_shape_preserved": 0.8189
+   "perplexity": 29.36,
+   "ci": [
+    27.96,
+    30.88
+   ],
+   "pii_perplexity": 739.19,
+   "pii_oov": 0.2972,
+   "digit_shape_preserved": 0.8292
   },
   {
    "variant": "GREEN policy, real detector",
-   "perplexity": 22.56,
-   "pii_perplexity": 353.52,
-   "pii_oov": 0.1906,
-   "digit_shape_preserved": 0.8189
+   "perplexity": 28.42,
+   "ci": [
+    27.19,
+    29.76
+   ],
+   "pii_perplexity": 629.57,
+   "pii_oov": 0.2584,
+   "digit_shape_preserved": 0.8292
   }
  ]
 }

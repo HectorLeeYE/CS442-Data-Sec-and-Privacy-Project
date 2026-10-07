@@ -5,9 +5,14 @@ import TierBadge from '../components/TierBadge'
 type Taxonomy = {
   tiers: Tier[]
   tier_roles: Record<Tier, string>
-  classes: Record<string, { harm: number; description: string; actions: Record<Tier, string> }>
+  classes: Record<string, { harm: number; description: string; harm_rationale: string; regulation: string[]; actions: Record<Tier, string> }>
   types: Record<string, { class: string; description: string; actions?: Partial<Record<Tier, string>> }>
   matrix: Record<string, Record<Tier, string>>
+  triage: { overseas_transfer_threshold: number; fraud_cues: string[]; transfer_cues: string[] }
+  review: { min_ner_score: number; residual_digits: number }
+  release: { k: number }
+  retention_days: { high: number; low: number }
+  version: string
 }
 
 const ACTION_CLS: Record<string, string> = {
@@ -35,7 +40,7 @@ export default function Policy() {
       <p className="max-w-3xl text-sm text-base-content/70">
         This matrix is read from <code className="font-mono">backend/taxonomy.yaml</code> at startup, so it is exactly what the
         redactor applies. Per-type overrides are marked with a dot. Actions left to right preserve less utility:
-        keep, surrogate, mask, pseudonym, generalize, suppress.
+        keep, surrogate, mask, pseudonym, generalize, suppress. Policy version <code className="font-mono">{t.version}</code>.
       </p>
       <div className="grid gap-3 md:grid-cols-3">
         {TIERS.map((tier) => (
@@ -57,6 +62,8 @@ export default function Policy() {
                   <th colSpan={2 + TIERS.length} className="font-normal">
                     <span className="font-mono font-medium">{CLASS_CODE[cls]} · {cls}</span>
                     <span className="ml-2 text-xs text-base-content/70">harm weight {c.harm} — {c.description}</span>
+                    <span className="mt-1 block text-xs text-base-content/70">Why this weight: {c.harm_rationale}</span>
+                    <span className="mt-1 block text-xs text-base-content/70">Legal basis: {c.regulation.join('; ')}</span>
                   </th>
                 </tr>
                 {Object.entries(t.types).filter(([, ty]) => ty.class === cls).map(([name, ty]) => (
@@ -77,6 +84,19 @@ export default function Policy() {
             ))}
           </table>
         </div>
+      </section>
+      <section aria-labelledby="ops-title" className="rounded-box border border-base-300 bg-base-100 p-4">
+        <h2 id="ops-title" className="font-semibold">Operating policy (same file)</h2>
+        <dl className="mt-2 grid gap-x-4 gap-y-2 text-sm md:grid-cols-[14rem_minmax(0,1fr)]">
+          <dt className="text-base-content/70">High-risk triage</dt>
+          <dd>Fraud cues ({t.triage.fraud_cues.join(', ')}), or an overseas transfer of at least S${t.triage.overseas_transfer_threshold.toLocaleString()}. Only high-risk calls are referred to RED in full; low-risk calls need a break-glass reason.</dd>
+          <dt className="text-base-content/70">Held for review before GREEN</dt>
+          <dd>An agent request (OTP, PIN, account, pet's name…) with no matching answer found, NER spans below score {t.review.min_ner_score}, or {t.review.residual_digits}+ unclassified digits.</dd>
+          <dt className="text-base-content/70">GREEN export gate</dt>
+          <dd>k-anonymity with k = {t.release.k}: a call whose quasi-identifier combination is rarer loses its quasi-identifiers.</dd>
+          <dt className="text-base-content/70">Retention (PDPA)</dt>
+          <dd>High-risk calls {t.retention_days.high} days, low-risk {t.retention_days.low} days, then crypto-shredded.</dd>
+        </dl>
       </section>
     </div>
   )

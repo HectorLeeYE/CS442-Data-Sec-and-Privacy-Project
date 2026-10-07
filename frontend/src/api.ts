@@ -6,19 +6,34 @@ export type User = { username: string; display_name: string; tier: Tier; agent_n
 export type Entity = { type: string; class: string; action: string; layer: string; score: number }
 export type Piece = { text: string; entity?: Entity }
 export type Utterance = { speaker: 'agent' | 'client'; text: string; pieces: Piece[] }
-export type CallSummary = { id: string; scenario: string; source: string; created_at: string; mine: boolean }
+export type CallSummary = {
+  id: string; scenario: string; source: string; created_at: string; mine: boolean
+  risk: 'high' | 'low'; review: 'none' | 'pending' | 'approved'
+  risk_reason?: string; review_reasons?: string[] // RED only
+}
+export type Receipt = { seq: number; ts: string; username: string; call_id: string; view_tier: Tier; digest: string; signature: string }
 export type CallView = {
-  call: Omit<CallSummary, 'mine'>
+  call: CallSummary
   tier: Tier
   utterances: Utterance[]
   digest: string
   actions: Record<string, number>
+  receipt: Receipt
 }
+export type AuditAction = 'view' | 'deny' | 'ingest' | 'breakglass' | 'review' | 'erase' | 'export'
 export type AuditEntry = {
-  seq: number; ts: string; username: string; user_tier: Tier; action: 'view' | 'deny' | 'ingest'
-  call_id: string | null; view_tier: Tier | null; digest: string | null; prev: string; hash: string
+  seq: number; ts: string; username: string; user_tier: Tier; action: AuditAction
+  call_id: string | null; view_tier: Tier | null; digest: string | null; detail: string | null; prev: string; hash: string
 }
-export type Chain = { ok: boolean; broken_at: number | null; checked: number }
+export type Chain = { ok: boolean; broken_at: number | null; checked: number; anchored?: number; reason: string | null }
+export type ExportResult = {
+  manifest: {
+    created: string; requested_by: string; policy_version: string; k: number; n_calls: number; n_gated: number
+    withheld_for_review: string[]; per_call: Record<string, { k: number; gated: boolean }>; sha256: string; audit_seq: number
+  }
+  signature: string
+  jsonl: string
+}
 
 export class ApiError extends Error {
   status: number

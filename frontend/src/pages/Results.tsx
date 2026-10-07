@@ -4,13 +4,53 @@ import { useEffect, useState } from 'react'
 import Chart from 'react-apexcharts'
 import { api } from '../api'
 
-type E1Row = { config: string; harm_weighted_recall: number; char_leakage: number; precision: number; over_redaction: number; recall: Record<string, number | null> }
+type Metrics = { harm_weighted_recall: number; strict_recall: number; char_leakage: number; precision: number; over_redaction: number; token_f1: number | null; recall: Record<string, number | null> }
+type E1Row = Metrics & { config: string }
+type Review = { queued: number; calls_with_harmful_miss: number; harmful_miss_calls_caught: number | null; leakage_removed_by_review: number | null }
+type Triage = { accuracy: number; high_risk_recall: number }
 type E2Row = { variant: string; perplexity: number; pii_perplexity: number; pii_oov: number; digit_shape_preserved: number }
-type E3Row = { condition: string; reidentified: number; true_client_in_candidates: number; median_candidates: number; direct_id_leak: number }
+type E3Row = { condition: string; reidentified: number; ci: [number, number]; true_client_in_candidates: number; median_candidates: number; direct_id_leak: number }
 type Results = {
-  e1?: { n_calls: number; ablation: Record<'clean' | 'noisy', E1Row[]> }
+  e1?: {
+    n_calls: number; ablation: Record<'clean' | 'noisy', E1Row[]>
+    ci: Record<'clean' | 'noisy', Record<string, [number, number]>>
+    seeds: Record<'clean' | 'noisy', { values: number[]; mean: number; sd: number }>
+    review: Record<'clean' | 'noisy', Review>; triage: Record<'clean' | 'noisy', Triage>
+    gliner: Partial<Record<'clean' | 'noisy', Record<string, Metrics | number>>>
+    ood: { n_calls: number; n_spans: number; ci: [number, number]; review: Review; triage: Triage; misses: { call: string; type: string; text: string }[] } & Record<string, unknown>
+  }
   e2?: { n_train: number; n_test: number; model: string; variants: E2Row[] }
-  e3?: { n_clients: number; conditions: Record<'clean' | 'noisy', E3Row[]> }
+  e3?: { n_clients: number; k: number; conditions: Record<'clean' | 'noisy', E3Row[]>; k_anonymity: Record<'clean' | 'noisy', { calls_below_k: number; median_k: number; gated: number }> }
+  e4?: {
+    n_calls: number; n_utterances: number; voices: string[]; asr_model: string; wer: number; spans_total: number; spans_dropped_by_asr: number
+    detectors: Record<string, Metrics>; audio?: { recoverable_before_bleep: number; recoverable_after_bleep: number; audio_bleeped: number }
+  }
+  e5?: Record<string, number>
+}
+
+const ci = (v?: [number, number]) => (v ? `${pct(v[0])}–${pct(v[1])}` : '—')
+
+function MetricTable({ rows }: { rows: [string, Metrics][] }) {
+  return (
+    <div className="max-w-full overflow-x-auto"><table className="table table-xs tabular-nums">
+      <thead><tr><th>Detector</th><th>Recall (harm-wtd)</th><th>Strict recall</th><th>Char leakage</th><th>Precision</th><th>Token F1</th><th>Over-redaction</th></tr></thead>
+      <tbody>{rows.map(([name, x]) => (
+        <tr key={name}><td>{name}</td><td>{pct(x.harm_weighted_recall)}</td><td>{pct(x.strict_recall)}</td><td>{pct(x.char_leakage)}</td><td>{pct(x.precision)}</td><td>{x.token_f1 == null ? '—' : pct(x.token_f1)}</td><td>{pct(x.over_redaction)}</td></tr>
+      ))}</tbody>
+    </table></div>
+  )
+}
+
+function Panel({ title, question, children }: { title: string; question: string; children: React.ReactNode }) {
+  return (
+    <section className="card card-border min-w-0 border-base-300 bg-base-100">
+      <div className="card-body min-w-0 gap-2 p-4">
+        <h2 className="card-title text-base">{title}</h2>
+        <p className="text-sm text-base-content/70">{question}</p>
+        {children}
+      </div>
+    </section>
+  )
 }
 
 // Validated with the dataviz palette checker (light surface): blue, orange.
@@ -85,7 +125,7 @@ export default function Results() {
         <div className="stat">
           <div className="stat-title">Harm-weighted recall, ASR text</div>
           <div className="stat-value text-2xl tabular-nums">{full('noisy') ? pct(full('noisy')!.harm_weighted_recall) : '—'}</div>
-          <div className="stat-desc">Full detector; clean transcripts {full('clean') ? pct(full('clean')!.harm_weighted_recall) : '—'}</div>
+          <div className="stat-desc">95% CI {ci(r.e1?.ci?.noisy?.['+ propagate (full)'])}; clean {full('clean') ? pct(full('clean')!.harm_weighted_recall) : '—'}; hand-written held-out {r.e1?.ood ? pct((r.e1.ood['our full detector'] as Metrics).harm_weighted_recall) : '—'}</div>
         </div>
         <div className="stat">
           <div className="stat-title">Model trained on GREEN, tested on real calls</div>
@@ -95,7 +135,7 @@ export default function Results() {
         <div className="stat">
           <div className="stat-title">Clients re-identified from GREEN</div>
           <div className="stat-value text-2xl tabular-nums">{policy ? pct(policy.reidentified) : '—'}</div>
-          <div className="stat-desc">Linkage attack with a {r.e3?.n_clients ?? '—'}-client side table</div>
+          <div className="stat-desc">95% CI {ci(policy?.ci)}; linkage attack with a {r.e3?.n_clients ?? '—'}-client side table</div>
         </div>
       </div>
 
@@ -151,6 +191,61 @@ export default function Results() {
                 { name: 'ASR output', data: r.e3.conditions.noisy.map((x) => x.reidentified) },
               ]} />
           </Figure>
+        )}
+
+        {r.e1?.ood && (
+          <Panel title="E1 · Hand-written held-out calls" question={`${r.e1.ood.n_calls} calls (${r.e1.ood.n_spans} spans) written after the detector, in scenarios the generator never produces, never used for tuning. 95% CI of the full detector: ${ci(r.e1.ood.ci)}.`}>
+            <MetricTable rows={(['presidio only', 'our full detector', 'GLiNER-PII alone', 'full + GLiNER'] as const)
+              .filter((k) => r.e1!.ood[k]).map((k) => [k, r.e1!.ood[k] as Metrics])} />
+            <details className="text-sm">
+              <summary className="cursor-pointer text-xs text-base-content/70">Every miss ({r.e1.ood.misses.length})</summary>
+              <ul className="mt-2 flex flex-col gap-1 text-xs">{r.e1.ood.misses.map((m, i) => <li key={i}><code className="font-mono">{m.type}</code> “{m.text}” ({m.call})</li>)}</ul>
+            </details>
+          </Panel>
+        )}
+
+        {r.e1 && (
+          <Panel title="E1 · Baseline, seeds, review queue and triage" question="A local zero-shot PII model on the same calls; the detector on four more random corpora; whether held calls are the leaky ones; whether triage matches the ground truth.">
+            {(['clean', 'noisy'] as const).filter((m) => r.e1!.gliner?.[m]).map((m) => (
+              <div key={m}>
+                <h3 className="text-xs font-medium">GLiNER-PII vs ours, {m === 'noisy' ? 'ASR' : 'clean'} ({r.e1!.gliner[m]!.n_calls as number} calls)</h3>
+                <MetricTable rows={Object.entries(r.e1!.gliner[m]!).filter(([k]) => k !== 'n_calls') as [string, Metrics][]} />
+              </div>
+            ))}
+            <div className="max-w-full overflow-x-auto"><table className="table table-xs tabular-nums">
+              <thead><tr><th>Corpus</th><th>Recall over 5 seeds</th><th>Queued for review</th><th>Harmful-miss calls queued</th><th>Leakage removed by review</th><th>Triage accuracy</th></tr></thead>
+              <tbody>
+                {(['clean', 'noisy'] as const).map((m) => (
+                  <tr key={m}><td>{m === 'noisy' ? 'ASR' : 'clean'}</td><td>{pct(r.e1!.seeds[m].mean)} ± {pct(r.e1!.seeds[m].sd)}</td><td>{pct(r.e1!.review[m].queued)}</td>
+                    <td>{r.e1!.review[m].harmful_miss_calls_caught == null ? '—' : pct(r.e1!.review[m].harmful_miss_calls_caught!)}</td>
+                    <td>{r.e1!.review[m].leakage_removed_by_review == null ? '—' : pct(r.e1!.review[m].leakage_removed_by_review!)}</td><td>{pct(r.e1!.triage[m].accuracy)}</td></tr>
+                ))}
+                <tr><td>held-out</td><td>—</td><td>{pct(r.e1.ood.review.queued)}</td>
+                  <td>{r.e1.ood.review.harmful_miss_calls_caught == null ? '—' : pct(r.e1.ood.review.harmful_miss_calls_caught)}</td>
+                  <td>{r.e1.ood.review.leakage_removed_by_review == null ? '—' : pct(r.e1.ood.review.leakage_removed_by_review)}</td><td>{pct(r.e1.ood.triage.accuracy)}</td></tr>
+              </tbody>
+            </table></div>
+          </Panel>
+        )}
+
+        {r.e4 && (
+          <Panel title="E4 · Real ASR errors: Singapore-English TTS → Whisper" question={`${r.e4.n_calls} calls (${r.e4.n_utterances} utterances) spoken by ${r.e4.voices.join(' and ')}, transcribed by ${r.e4.asr_model}. Word error rate ${pct(r.e4.wer)}; ${r.e4.spans_dropped_by_asr} of ${r.e4.spans_total} PII spans vanished in transcription.`}>
+            <MetricTable rows={Object.entries(r.e4.detectors)} />
+            {r.e4.audio && (
+              <p className="text-sm">
+                Audio redaction: bleeping detected words by Whisper's word timestamps leaves {pct(r.e4.audio.recoverable_after_bleep)} of PII values
+                recoverable by re-transcription (from {pct(r.e4.audio.recoverable_before_bleep)}), bleeping {pct(r.e4.audio.audio_bleeped)} of the audio.
+              </p>
+            )}
+          </Panel>
+        )}
+
+        {r.e5 && (
+          <Panel title="E5 · What it costs" question="Per-call latency on a laptop CPU. CP-ABE pairings happen once per user and access policy; a page view is AES.">
+            <div className="max-w-full overflow-x-auto"><table className="table table-xs tabular-nums">
+              <tbody>{Object.entries(r.e5).filter(([k]) => k !== 'n_calls').map(([k, v]) => <tr key={k}><td>{k.replaceAll('_', ' ')}</td><td>{v} ms</td></tr>)}</tbody>
+            </table></div>
+          </Panel>
         )}
       </div>
     </div>

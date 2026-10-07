@@ -1,4 +1,5 @@
-import { Bot, Headset, Lock, UserRound } from 'lucide-react'
+import { Bot, Headset, Lock, Siren, UserRound } from 'lucide-react'
+import { useState } from 'react'
 import { CLASS_CODE, type Entity, type Piece, type Tier, type Utterance } from '../api'
 
 // Full class strings, never built dynamically, so Tailwind sees them.
@@ -63,6 +64,26 @@ export function Locked({ tier, reason, onTry }: { tier: Tier; reason: string; on
         </button>
       )}
     </div>
+  )
+}
+
+/** A RED user opening a low-risk call: the reason is logged with the release. */
+export function BreakGlass({ id, reason, min, onOpen }: { id: string; reason: string; min: number; onOpen: (why: string) => void }) {
+  const [why, setWhy] = useState('')
+  const ok = why.trim().length >= min
+  return (
+    <form
+      className="flex flex-col gap-2 rounded-box border border-dashed border-base-300 p-3 text-sm"
+      onSubmit={(e) => { e.preventDefault(); if (ok) onOpen(why.trim()) }}
+    >
+      <span className="inline-flex items-center gap-2 font-medium"><Siren size={14} aria-hidden="true" /> Break-glass access</span>
+      <span className="text-base-content/70">{reason}</span>
+      <fieldset className="fieldset min-w-0 py-0">
+        <label className="label whitespace-normal" htmlFor={id}>Business reason (logged, at least {min} characters)</label>
+        <textarea id={id} aria-label="Break-glass business reason" className="textarea textarea-sm h-16 w-full" value={why} onChange={(e) => setWhy(e.target.value)} />
+      </fieldset>
+      <button className="btn btn-xs self-start" disabled={!ok}>Open with this reason</button>
+    </form>
   )
 }
 

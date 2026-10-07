@@ -4,9 +4,11 @@ import { api, session, type Tier, type User } from '../api'
 import TierBadge from '../components/TierBadge'
 
 const DEMO: { username: string; who: string; tier: Tier; sees: string }[] = [
-  { username: 'compliance', who: 'Rachel Ong, compliance', tier: 'RED', sees: 'Full transcript; credentials still withheld.' },
+  { username: 'compliance', who: 'Rachel Ong, compliance', tier: 'RED', sees: 'High-risk calls in full, credentials still withheld; low-risk calls only with a logged reason.' },
   { username: 'priya', who: 'Priya Nair, call agent', tier: 'AMBER', sees: 'Own calls with names pseudonymised and accounts masked.' },
-  { username: 'datasci', who: 'Alex Chua, data science', tier: 'GREEN', sees: 'De-identified training text with realistic surrogates.' },
+  { username: 'daniel', who: 'Daniel Koh, call agent', tier: 'AMBER', sees: 'Same as Priya, for his own calls; not hers.' },
+  { username: 'datasci', who: 'Alex Chua, data science', tier: 'GREEN', sees: 'De-identified training text with realistic surrogates; the training-set export.' },
+  { username: 'model', who: 'ASR training pipeline', tier: 'GREEN', sees: 'Service account: the model gets GREEN data, not raw.' },
 ]
 
 export default function SignIn({ onSignedIn }: { onSignedIn: (u: User) => void }) {

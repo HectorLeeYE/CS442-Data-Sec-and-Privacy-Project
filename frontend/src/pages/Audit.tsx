@@ -1,13 +1,18 @@
-import { CircleCheck, CircleX, Eye, FileInput, Link2, RefreshCw, ShieldOff } from 'lucide-react'
+import { CircleCheck, CircleX, Download, Eraser, Eye, FileInput, Link2, RefreshCw, ShieldCheck, ShieldOff, Siren } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { api, ApiError, TIER_RANK, type AuditEntry, type Chain, type User } from '../api'
+import { api, ApiError, TIER_RANK, type AuditAction, type AuditEntry, type Chain, type User } from '../api'
 import TierBadge from '../components/TierBadge'
 
-const ACTION = {
+const ACTION: Record<AuditAction, { label: string; Icon: typeof Eye; cls: string }> = {
   view: { label: 'Released', Icon: Eye, cls: 'badge badge-sm badge-ghost' },
+  breakglass: { label: 'Break-glass', Icon: Siren, cls: 'badge badge-sm badge-soft badge-warning' },
   deny: { label: 'Denied', Icon: ShieldOff, cls: 'badge badge-sm badge-soft badge-error' },
   ingest: { label: 'Ingested', Icon: FileInput, cls: 'badge badge-sm badge-ghost' },
-} as const
+  review: { label: 'Review release', Icon: ShieldCheck, cls: 'badge badge-sm badge-ghost' },
+  export: { label: 'Export', Icon: Download, cls: 'badge badge-sm badge-ghost' },
+  erase: { label: 'Erased', Icon: Eraser, cls: 'badge badge-sm badge-ghost' },
+}
+const FILTERS: ('all' | AuditAction)[] = ['all', 'view', 'breakglass', 'deny', 'export', 'review', 'erase', 'ingest']
 
 export default function Audit({ user }: { user: User }) {
   const [data, setData] = useState<{ entries: AuditEntry[]; chain: Chain } | null>(null)
@@ -40,13 +45,14 @@ export default function Audit({ user }: { user: User }) {
 
   const rows = data?.entries.filter((e) => filter === 'all' || e.action === filter) ?? []
   const counts = data ? {
-    view: data.entries.filter((e) => e.action === 'view').length,
+    view: data.entries.filter((e) => e.action === 'view' || e.action === 'breakglass' || e.action === 'export').length,
+    breakglass: data.entries.filter((e) => e.action === 'breakglass').length,
     deny: data.entries.filter((e) => e.action === 'deny').length,
   } : null
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="stats stats-vertical w-full border border-base-300 bg-base-100 md:stats-horizontal">
+      <div className="stats stats-vertical w-full border border-base-300 bg-base-100 md:stats-horizontal [&_.stat-desc]:whitespace-normal">
         <div className="stat">
           <div className="stat-figure">
             {!data ? <span className="loading loading-spinner loading-sm" /> : data.chain.ok
@@ -56,14 +62,19 @@ export default function Audit({ user }: { user: User }) {
           <div className="stat-value text-2xl">{!data ? '…' : data.chain.ok ? 'Intact' : 'Broken'}</div>
           <div className="stat-desc">
             {!data ? 'Verifying' : data.chain.ok
-              ? `${data.chain.checked} entries re-hashed from genesis`
-              : `Entry #${data.chain.broken_at} does not match its predecessor`}
+              ? `${data.chain.checked} entries re-hashed; ${data.chain.anchored ?? 0} match the external anchor`
+              : `Entry #${data.chain.broken_at}: ${data.chain.reason}`}
           </div>
         </div>
         <div className="stat">
           <div className="stat-title">Releases</div>
           <div className="stat-value text-2xl tabular-nums">{counts?.view ?? '…'}</div>
           <div className="stat-desc">Each with a SHA-256 of the exact text released</div>
+        </div>
+        <div className="stat">
+          <div className="stat-title">Break-glass openings</div>
+          <div className="stat-value text-2xl tabular-nums">{counts?.breakglass ?? '…'}</div>
+          <div className="stat-desc">Low-risk calls opened in full, each with a reason</div>
         </div>
         <div className="stat">
           <div className="stat-title">Denied requests</div>
@@ -82,8 +93,8 @@ export default function Audit({ user }: { user: User }) {
 
       <section className="min-w-0 rounded-box border border-base-300 bg-base-100">
         <div className="flex flex-wrap items-center gap-2 border-b border-base-300 p-3">
-          <div role="tablist" aria-label="Filter by action" className="tabs tabs-box tabs-xs">
-            {(['all', 'view', 'deny', 'ingest'] as const).map((f) => (
+          <div role="tablist" aria-label="Filter by action" className="tabs tabs-box tabs-xs flex-wrap">
+            {FILTERS.map((f) => (
               <button key={f} role="tab" aria-selected={filter === f} className={filter === f ? 'tab tab-active' : 'tab'} onClick={() => setFilter(f)}>
                 {f === 'all' ? 'All' : ACTION[f].label}
               </button>
@@ -96,11 +107,11 @@ export default function Audit({ user }: { user: User }) {
         <div className="max-w-full overflow-x-auto">
           <table className="table table-sm">
             <thead>
-              <tr><th>#</th><th>Time (UTC)</th><th>User</th><th>Event</th><th>Call</th><th>View</th><th>Released digest</th><th>Entry hash</th></tr>
+              <tr><th>#</th><th>Time (UTC)</th><th>User</th><th>Event</th><th>Call</th><th>View</th><th>Reason / detail</th><th>Released digest</th><th>Entry hash</th></tr>
             </thead>
             <tbody className="tabular-nums">
-              {!data && [0, 1, 2].map((i) => <tr key={i}><td colSpan={8}><div className="skeleton h-5 w-full" /></td></tr>)}
-              {data && rows.length === 0 && <tr><td colSpan={8} className="text-sm text-base-content/60">No {filter === 'all' ? '' : ACTION[filter].label.toLowerCase()} entries yet. Open a call to create one.</td></tr>}
+              {!data && [0, 1, 2].map((i) => <tr key={i}><td colSpan={9}><div className="skeleton h-5 w-full" /></td></tr>)}
+              {data && rows.length === 0 && <tr><td colSpan={9} className="text-sm text-base-content/60">No {filter === 'all' ? '' : ACTION[filter].label.toLowerCase()} entries yet. Open a call to create one.</td></tr>}
               {rows.map((e) => {
                 const a = ACTION[e.action]
                 return (
@@ -111,6 +122,7 @@ export default function Audit({ user }: { user: User }) {
                     <td><span className={a.cls}><a.Icon size={12} aria-hidden="true" />{a.label}</span></td>
                     <td className="font-mono text-xs">{e.call_id ?? '—'}</td>
                     <td>{e.view_tier ? <TierBadge tier={e.view_tier} /> : '—'}</td>
+                    <td className="min-w-48 text-xs">{e.detail ?? '—'}</td>
                     <td className="font-mono text-xs">{e.digest ? `${e.digest.slice(0, 10)}…` : '—'}</td>
                     <td className="font-mono text-xs">
                       <span className="tooltip tooltip-left" data-tip={`prev ${e.prev.slice(0, 10)}…`}>

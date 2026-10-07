@@ -6,3 +6,5 @@ backend/experiments/out/cache_*.pkl
 frontend/node_modules
 frontend/dist
 .git
+backend/keys
+backend/experiments/audio

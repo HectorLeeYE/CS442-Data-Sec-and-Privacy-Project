@@ -8,3 +8,4 @@ presidio-analyzer
 spacy>=3.7,<3.9
 pytest
 httpx
+py_ecc>=8

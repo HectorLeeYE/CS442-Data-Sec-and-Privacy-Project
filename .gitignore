@@ -6,3 +6,6 @@ backend/demo.sqlite3*
 backend/data/corpus/
 backend/experiments/out/cache_*.pkl
 .pytest_cache/
+backend/keys/
+backend/experiments/audio/
+backend/experiments/out/gliner_*.pkl

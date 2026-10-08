@@ -1,7 +1,5 @@
-import type { ApexOptions } from 'apexcharts'
 import { FlaskConical, Terminal } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import Chart from 'react-apexcharts'
 import { api } from '../api'
 
 type Metrics = { harm_weighted_recall: number; strict_recall: number; char_leakage: number; precision: number; over_redaction: number; token_f1: number | null; recall: Record<string, number | null> }
@@ -56,23 +54,39 @@ function Panel({ title, question, children }: { title: string; question: string;
 
 // Validated with the dataviz palette checker (light surface): blue, orange.
 const SERIES = ['#2a78d6', '#eb6834']
-const SURFACE = '#fbfcfd'
 const pct = (v: number) => `${(v * 100).toFixed(1)}%`
-const pctAxis = (v: number) => `${Math.round(v * 100)}%`
 
-function bars(categories: string[], fmt: (v: number) => string, max?: number, axisFmt = fmt): ApexOptions {
-  return {
-    chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'IBM Plex Sans, sans-serif', animations: { enabled: false } },
-    plotOptions: { bar: { horizontal: true, borderRadius: 4, borderRadiusApplication: 'end', barHeight: '70%' } },
-    colors: SERIES,
-    stroke: { show: true, width: 2, colors: [SURFACE] },
-    dataLabels: { enabled: false },
-    grid: { borderColor: 'oklch(91% 0.01 250)', strokeDashArray: 3, xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } } },
-    xaxis: { categories, min: 0, max, tickAmount: 4, labels: { formatter: (v: string) => axisFmt(Number(v)) } },
-    yaxis: { labels: { maxWidth: 220, style: { fontSize: '12px' } } },
-    legend: { position: 'top', horizontalAlign: 'left', fontSize: '12px' },
-    tooltip: { shared: true, intersect: false, y: { formatter: (v: number) => fmt(v) } },
-  }
+/** Horizontal bars, one group per label, one bar per series; every value is printed. */
+function Bars({ labels, series, fmt, max }: { labels: string[]; series: { name: string; data: number[] }[]; fmt: (v: number) => string; max?: number }) {
+  const top = max ?? Math.max(...series.flatMap((s) => s.data))
+  return (
+    <div className="flex flex-col gap-2 text-xs">
+      {series.length > 1 && (
+        <div className="flex flex-wrap gap-3">
+          {series.map((s, j) => (
+            <span key={s.name} className="inline-flex items-center gap-1">
+              <span className="size-2.5 rounded-sm" style={{ background: SERIES[j] }} />{s.name}
+            </span>
+          ))}
+        </div>
+      )}
+      {labels.map((label, i) => (
+        <div key={label} className="grid grid-cols-[minmax(0,40%)_1fr] items-center gap-2">
+          <span>{label}</span>
+          <div className="flex flex-col gap-0.5">
+            {series.map((s, j) => (
+              <div key={s.name} className="flex items-center gap-1.5">
+                <div className="h-2.5 flex-1">
+                  <div className="h-full rounded-r-sm" style={{ width: `${(s.data[i] / top) * 100}%`, background: SERIES[j] }} />
+                </div>
+                <span className="w-12 text-right tabular-nums text-base-content/70">{fmt(s.data[i])}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 function Figure({ title, question, children, table }: { title: string; question: string; children: React.ReactNode; table: React.ReactNode }) {
@@ -147,8 +161,7 @@ export default function Results() {
                 )))}</tbody>
               </table></div>
             }>
-            <Chart type="bar" height={320}
-              options={bars(r.e1.ablation.clean.map((x) => x.config), pct, 1, pctAxis)}
+            <Bars labels={r.e1.ablation.clean.map((x) => x.config)} fmt={pct} max={1}
               series={[
                 { name: 'Clean transcripts', data: r.e1.ablation.clean.map((x) => x.harm_weighted_recall) },
                 { name: 'ASR output', data: r.e1.ablation.noisy.map((x) => x.harm_weighted_recall) },
@@ -164,8 +177,7 @@ export default function Results() {
                 <tbody>{r.e2.variants.map((v) => <tr key={v.variant}><td>{v.variant}</td><td>{v.perplexity}</td><td>{v.pii_perplexity}</td><td>{pct(v.pii_oov)}</td><td>{pct(v.digit_shape_preserved)}</td></tr>)}</tbody>
               </table></div>
             }>
-            <Chart type="bar" height={320}
-              options={{ ...bars(r.e2.variants.map((v) => v.variant), (v) => v.toFixed(0)), legend: { show: false } }}
+            <Bars labels={r.e2.variants.map((v) => v.variant)} fmt={(v) => v.toFixed(0)}
               series={[{ name: 'Test perplexity', data: r.e2.variants.map((v) => v.perplexity) }]} />
           </Figure>
         )}
@@ -190,8 +202,7 @@ export default function Results() {
                 )))}</tbody>
               </table></div>
             }>
-            <Chart type="bar" height={280}
-              options={bars(r.e3.conditions.clean.map((x) => x.condition), pct, 1, pctAxis)}
+            <Bars labels={r.e3.conditions.clean.map((x) => x.condition)} fmt={pct} max={1}
               series={[
                 { name: 'Clean transcripts', data: r.e3.conditions.clean.map((x) => x.reidentified) },
                 { name: 'ASR output', data: r.e3.conditions.noisy.map((x) => x.reidentified) },

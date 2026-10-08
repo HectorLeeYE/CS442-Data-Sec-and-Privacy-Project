@@ -1,13 +1,12 @@
 import { BarChart3, FileLock2, LogOut, Menu, ScrollText, Table2 } from 'lucide-react'
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api, session, type User } from './api'
 import TierBadge from './components/TierBadge'
 import Audit from './pages/Audit'
 import Calls from './pages/Calls'
 import Policy from './pages/Policy'
+import Results from './pages/Results'
 import SignIn from './pages/SignIn'
-
-const Results = lazy(() => import('./pages/Results')) // ApexCharts is most of the bundle
 
 const ROUTES = [
   { path: 'calls', label: 'Calls', Icon: FileLock2, Page: Calls },
@@ -79,9 +78,7 @@ export default function App() {
           </div>
         </nav>
         <main className="min-w-0 flex-1 overflow-x-clip p-3 md:p-5">
-          <Suspense fallback={<div className="skeleton h-80 w-full" />}>
-            <current.Page user={user} />
-          </Suspense>
+          <current.Page user={user} />
         </main>
       </div>
       <div className="drawer-side z-20">

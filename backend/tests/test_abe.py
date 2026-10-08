@@ -12,7 +12,7 @@ def test_policy_gates_and_serialization():
     policy = OR(AND(attr("tier:RED"), attr("breakglass")), AND(attr("tier:AMBER"), attr("agent:Priya Nair")))
     key, ct = abe.encrypt(PK, policy)
     ct = abe.load_ct(abe.dump_ct(ct))                                    # survives storage
-    agent = abe.load_sk(abe.dump_sk(abe.keygen(PK, MSK, {"tier:AMBER", "tier:GREEN", "agent:Priya Nair"})))
+    agent = abe.keygen(PK, MSK, {"tier:AMBER", "tier:GREEN", "agent:Priya Nair"})
     assert abe.decrypt(agent, ct) == key
     assert abe.decrypt(abe.keygen(PK, MSK, {"tier:RED", "breakglass"}), ct) == key
     for attrs in ({"tier:RED"}, {"tier:AMBER", "agent:Daniel Koh"}, {"tier:GREEN"}):

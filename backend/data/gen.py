@@ -17,6 +17,8 @@ import random
 import re
 from pathlib import Path
 
+from privacy import taxonomy
+from privacy.detect import iban_check
 from privacy.vocab import (AGENTS, BANKS, DIGIT_WORDS, EMAIL_DOMAINS, EMPLOYERS, GIVEN, HEALTH, HOMOPHONES,
                            IBAN_BANKS, LEGAL, MALAY_DIGITS, MONTHS, NATIONALITIES, OCCUPATIONS, PEP_ROLES, PETS,
                            PINYIN_DIGITS, RELATIONS, RELIGIONS, STREET_KINDS, SURNAMES, SWIFT_CODES, TOWNS)
@@ -25,7 +27,7 @@ OUT = Path(__file__).parent / "corpus"
 SEED = 442
 N_CLIENTS = 300
 N_CALLS = 500
-HIGH_RISK_TRANSFER = 5_000     # overseas transfers at or above this go to compliance (taxonomy.yaml: triage)
+HIGH_RISK_TRANSFER = taxonomy.load()["triage"]["overseas_transfer_threshold"]   # at or above: referred to compliance
 
 # placeholder -> PII type (None = not sensitive)
 TYPES = {"agent": "PERSON", "name": "PERSON", "surname": "PERSON", "payee": "PERSON", "relative": "PERSON",
@@ -145,12 +147,6 @@ def luhn_card(rng: random.Random) -> str:
     s = sum(x if i % 2 else (x * 2 - 9 if x > 4 else x * 2) for i, x in enumerate(reversed(d)))
     d.append((10 - s % 10) % 10)
     return " ".join("".join(map(str, d[i:i + 4])) for i in range(0, 16, 4))
-
-
-def iban_check(country: str, bban: str) -> str:
-    """ISO 13616 check digits: move country+00 to the end, letters -> 10..35, 98 - (n mod 97)."""
-    n = int("".join(str(int(c, 36)) for c in bban + country + "00"))
-    return f"{98 - n % 97:02d}"
 
 
 def iban(rng: random.Random) -> str:

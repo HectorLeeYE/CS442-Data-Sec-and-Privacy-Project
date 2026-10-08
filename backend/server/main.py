@@ -11,12 +11,13 @@ import json
 import os
 import random
 import re
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import jwt
-from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.responses import PlainTextResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -135,6 +136,11 @@ def me(user: dict = Depends(current_user)):
 
 # ------------------------------------------------------------ calls
 
+def is_breakglass(user: dict, call, tier: str) -> bool:
+    """RED opening the full (RED/AMBER) view of a low-risk call that is not their own."""
+    return user["tier"] == "RED" and call["risk"] == "low" and tier != "GREEN" and call["agent"] != user["agent_name"]
+
+
 def can_view(user: dict, call, tier: str, justification: str | None) -> tuple[int, str] | None:
     """None if allowed, else (status, reason). 428 = allowed only with a break-glass justification."""
     if taxonomy.rank(user["tier"]) < taxonomy.rank(tier):
@@ -142,7 +148,7 @@ def can_view(user: dict, call, tier: str, justification: str | None) -> tuple[in
     own = call["agent"] == user["agent_name"]
     if tier == "AMBER" and user["tier"] == "AMBER" and not own:
         return 403, "Agents may only open the AMBER view of their own calls."
-    if tier in ("RED", "AMBER") and user["tier"] == "RED" and call["risk"] == "low" and not own:
+    if is_breakglass(user, call, tier):
         if not justification or len(justification.strip()) < MIN_JUSTIFICATION:
             return 428, ("Low-risk call: it was never referred to compliance. Opening it is a break-glass "
                          f"access and needs a reason of at least {MIN_JUSTIFICATION} characters.")
@@ -183,7 +189,7 @@ def view_call(call_id: str, tier: str, justification: str | None = None,
     if refused := can_view(user, row, tier, justification):
         store.audit(db, user["username"], user["tier"], "deny", call_id, tier, detail=refused[1][:120])
         raise HTTPException(*refused)
-    breakglass = user["tier"] == "RED" and row["risk"] == "low" and tier != "GREEN" and row["agent"] != user["agent_name"]
+    breakglass = is_breakglass(user, row, tier)
     try:
         utterances = store.open_copy(db, call_id, tier, store.user_key(user, breakglass))
     except abe.PolicyNotSatisfied as e:     # defence in depth: the rules above passed, the crypto did not
@@ -192,11 +198,7 @@ def view_call(call_id: str, tier: str, justification: str | None = None,
     released = [{"speaker": u["speaker"], "text": u["text"]} for u in utterances]
     entry = store.audit(db, user["username"], user["tier"], "breakglass" if breakglass else "view", call_id, tier,
                         released, detail=justification.strip() if breakglass else None)
-    actions = {}
-    for u in utterances:
-        for p in u["pieces"]:
-            if "entity" in p:
-                actions[p["entity"]["action"]] = actions.get(p["entity"]["action"], 0) + 1
+    actions = Counter(p["entity"]["action"] for u in utterances for p in u["pieces"] if "entity" in p)
     return {"call": _call_summary(row, user), "tier": tier, "utterances": utterances, "digest": entry["digest"],
             "actions": actions, "receipt": _receipt(entry)}
 
@@ -269,7 +271,7 @@ def export(user: dict = Depends(current_user), db=Depends(get_db)):
     key = store.user_key(user)
     held = [r["id"] for r in rows if r["review"] == "pending"]
     green = {r["id"]: store.open_copy(db, r["id"], "GREEN", key) for r in rows if r["review"] != "pending"}
-    k = taxonomy.setting("release")["k"]
+    k = taxonomy.load()["release"]["k"]
     gated, report = release.gate(green, k)
     lines = [json.dumps({"id": cid, "utterances": [{"speaker": u["speaker"], "text": u["text"]} for u in utts]})
              for cid, utts in gated.items()]
@@ -316,10 +318,5 @@ def results(user: dict = Depends(current_user)):
 # ------------------------------------------------------------ frontend (production build)
 
 DIST = ROOT.parent / "frontend" / "dist"
-if DIST.exists():
-    app.mount("/assets", StaticFiles(directory=DIST / "assets"), name="assets")
-
-    @app.get("/{path:path}", include_in_schema=False)
-    def spa(path: str, request: Request):
-        f = DIST / path
-        return FileResponse(f if path and f.is_file() else DIST / "index.html")
+if DIST.exists():   # the UI routes by #hash, so no index.html fallback is needed
+    app.mount("/", StaticFiles(directory=DIST, html=True), name="spa")

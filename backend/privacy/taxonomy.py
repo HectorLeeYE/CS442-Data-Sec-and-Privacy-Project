@@ -39,11 +39,6 @@ def matrix() -> dict:
     return {e: {t: action(e, t) for t in tiers()} for e in load()["types"]}
 
 
-def setting(name: str):
-    """Non-class policy: triage, review, release, retention_days."""
-    return load()[name]
-
-
 @lru_cache
 def version() -> str:
     """Content hash of the policy file, stamped on every export manifest."""

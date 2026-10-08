@@ -15,7 +15,7 @@ from privacy.detect import Span
 
 
 def reasons(text: str, spans: list[Span]) -> list[str]:
-    cfg = taxonomy.setting("review")
+    cfg = taxonomy.load()["review"]
     out = []
     for t, s, e in detect.slots(text):
         if not any(sp.type == t and sp.start < e and s < sp.end for sp in spans):

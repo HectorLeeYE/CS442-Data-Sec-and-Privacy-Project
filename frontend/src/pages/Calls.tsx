@@ -103,53 +103,42 @@ export default function Calls({ user }: { user: User }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, user.tier, fetchTier])
 
-  async function create(path: string, body?: object) {
+  async function withBusy(fn: () => Promise<void>, fallback: string) {
     setBusy(true)
     try {
-      const { id } = await api<{ id: string }>(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined })
-      await loadList()
-      setSelected(id)
-      notify(`Call ${id} ingested, triaged, detected and encrypted under its access policies.`)
+      await fn()
     } catch (e) {
-      notify(e instanceof Error ? e.message : 'Ingest failed')
+      notify(e instanceof Error ? e.message : fallback)
     } finally {
       setBusy(false)
     }
   }
 
-  async function decide() {
-    if (!selected || !decision) return
-    setBusy(true)
-    try {
-      await api(`/api/calls/${selected}/${decision}`, { method: 'POST', body: JSON.stringify({ reason }) })
-      decisionDialog.current?.close()
-      setReason('')
-      const list = await loadList()
-      if (decision === 'erase') {
-        notify(`Call ${selected} erased: its data keys were destroyed.`)
-        setSelected(list[0]?.id ?? null)
-      } else {
-        notify(`Call ${selected} released to GREEN.`)
-        fetchTier(selected, 'GREEN')
-      }
-    } catch (e) {
-      notify(e instanceof Error ? e.message : 'Request failed')
-    } finally {
-      setBusy(false)
-    }
-  }
+  const create = (path: string, body?: object) => withBusy(async () => {
+    const { id } = await api<{ id: string }>(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined })
+    await loadList()
+    setSelected(id)
+    notify(`Call ${id} ingested, triaged, detected and encrypted under its access policies.`)
+  }, 'Ingest failed')
 
-  async function runExport() {
-    setBusy(true)
-    try {
-      setExported(await api<ExportResult>('/api/export'))
-      exportDialog.current?.showModal()
-    } catch (e) {
-      notify(e instanceof Error ? e.message : 'Export failed')
-    } finally {
-      setBusy(false)
+  const decide = () => selected && decision && withBusy(async () => {
+    await api(`/api/calls/${selected}/${decision}`, { method: 'POST', body: JSON.stringify({ reason }) })
+    decisionDialog.current?.close()
+    setReason('')
+    const list = await loadList()
+    if (decision === 'erase') {
+      notify(`Call ${selected} erased: its data keys were destroyed.`)
+      setSelected(list[0]?.id ?? null)
+    } else {
+      notify(`Call ${selected} released to GREEN.`)
+      fetchTier(selected, 'GREEN')
     }
-  }
+  }, 'Request failed')
+
+  const runExport = () => withBusy(async () => {
+    setExported(await api<ExportResult>('/api/export'))
+    exportDialog.current?.showModal()
+  }, 'Export failed')
 
   function download() {
     if (!exported) return

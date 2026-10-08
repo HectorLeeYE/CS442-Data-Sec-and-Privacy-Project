@@ -77,17 +77,13 @@ function bars(categories: string[], fmt: (v: number) => string, max?: number, ax
 
 function Figure({ title, question, children, table }: { title: string; question: string; children: React.ReactNode; table: React.ReactNode }) {
   return (
-    <section className="card card-border min-w-0 border-base-300 bg-base-100">
-      <div className="card-body min-w-0 gap-2 p-4">
-        <h2 className="card-title text-base">{title}</h2>
-        <p className="text-sm text-base-content/70">{question}</p>
-        {children}
-        <details className="text-sm">
-          <summary className="cursor-pointer text-xs text-base-content/70">Show as table</summary>
-          <div className="mt-2">{table}</div>
-        </details>
-      </div>
-    </section>
+    <Panel title={title} question={question}>
+      {children}
+      <details className="text-sm">
+        <summary className="cursor-pointer text-xs text-base-content/70">Show as table</summary>
+        <div className="mt-2">{table}</div>
+      </details>
+    </Panel>
   )
 }
 

@@ -124,9 +124,3 @@ def changed_regions(text: str) -> list[tuple[int, int]]:
     """Original-text regions the normalizer rewrote."""
     return [m.span() for m in _regions(text)]
 
-
-def to_digits(text: str) -> str:
-    """Every digit word in text as a digit, everything else dropped: for checksum validation of
-    a spoken identifier ("g b two nine n w b k ...")."""
-    toks = re.findall(rf"double|triple|{_ANY}|\d|[a-z]", text, re.I)
-    return _digits(" ".join(t for t in toks if not (len(t) == 1 and t.isalpha())))

@@ -3,12 +3,13 @@ import { useState } from 'react'
 import { CLASS_CODE, type Entity, type Piece, type Tier, type Utterance } from '../api'
 
 // Full class strings, never built dynamically, so Tailwind sees them.
+const CHIP_BASE = 'rounded-sm px-0.5 font-mono text-[0.85em] text-base-content ring-1 ring-inset focus-visible:outline-2 focus-visible:outline-primary'
 const CHIP: Record<string, string> = {
-  AUTH_SECRET: 'rounded-sm px-0.5 font-mono text-[0.85em] ring-1 ring-inset focus-visible:outline-2 focus-visible:outline-primary bg-error/15 text-base-content ring-error/40',
-  FINANCIAL_ID: 'rounded-sm px-0.5 font-mono text-[0.85em] ring-1 ring-inset focus-visible:outline-2 focus-visible:outline-primary bg-warning/25 text-base-content ring-warning/60',
-  DIRECT_ID: 'rounded-sm px-0.5 font-mono text-[0.85em] ring-1 ring-inset focus-visible:outline-2 focus-visible:outline-primary bg-info/15 text-base-content ring-info/40',
-  QUASI_ID: 'rounded-sm px-0.5 font-mono text-[0.85em] ring-1 ring-inset focus-visible:outline-2 focus-visible:outline-primary bg-base-300 text-base-content ring-base-content/20',
-  SENSITIVE_ATTR: 'rounded-sm px-0.5 font-mono text-[0.85em] ring-1 ring-inset focus-visible:outline-2 focus-visible:outline-primary bg-secondary/15 text-base-content ring-secondary/40',
+  AUTH_SECRET: 'bg-error/15 ring-error/40',
+  FINANCIAL_ID: 'bg-warning/25 ring-warning/60',
+  DIRECT_ID: 'bg-info/15 ring-info/40',
+  QUASI_ID: 'bg-base-300 ring-base-content/20',
+  SENSITIVE_ATTR: 'bg-secondary/15 ring-secondary/40',
 }
 
 const ACTION_TEXT: Record<string, string> = {
@@ -31,7 +32,7 @@ function Chip({ text, e }: { text: string; e: Entity }) {
       <mark
         tabIndex={0}
         aria-label={`${text}. ${e.type}, ${e.action}, found by ${e.layer}`}
-        className={CHIP[e.class]}
+        className={`${CHIP_BASE} ${CHIP[e.class]}`}
       >
         {text}
         <sup className="ml-0.5 font-mono text-[0.6rem] font-medium text-base-content/60">{CLASS_CODE[e.class]}</sup>

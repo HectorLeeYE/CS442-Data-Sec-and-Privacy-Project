@@ -288,7 +288,7 @@ def erase(db, call_id: str) -> None:
 def expired(db, at: datetime | None = None) -> list[str]:
     """Calls past their retention period (taxonomy.yaml: retention_days, by risk)."""
     at = at or datetime.now(timezone.utc)
-    days = taxonomy.setting("retention_days")
+    days = taxonomy.load()["retention_days"]
     return [r["id"] for r in db.execute("SELECT id, risk, created_at FROM calls")
             if datetime.fromisoformat(r["created_at"]) < at - timedelta(days=days[r["risk"]])]
 

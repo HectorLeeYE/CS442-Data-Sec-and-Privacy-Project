@@ -15,7 +15,7 @@ name glued to an NRIC is surrogated as a name, not as an NRIC whose letters are 
 """
 
 import re
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from functools import lru_cache
 
 from privacy import spoken, taxonomy
@@ -31,9 +31,6 @@ class Span:
     type: str
     layer: str
     score: float = 1.0
-
-    def to_dict(self) -> dict:
-        return asdict(self)
 
 
 # ---------------------------------------------------------------- presidio
@@ -81,6 +78,12 @@ def luhn_valid(s: str) -> bool:
     d = [int(c) for c in re.sub(r"\D", "", s)][::-1]
     return 13 <= len(d) <= 19 and sum(x if i % 2 == 0 else (x * 2 - 9 if x > 4 else x * 2)
                                       for i, x in enumerate(d)) % 10 == 0
+
+
+def iban_check(country: str, bban: str) -> str:
+    """ISO 13616 check digits: move country+00 to the end, letters -> 10..35, 98 - (n mod 97)."""
+    n = int("".join(str(int(c, 36)) for c in bban + country + "00"))
+    return f"{98 - n % 97:02d}"
 
 
 def iban_valid(s: str) -> bool:

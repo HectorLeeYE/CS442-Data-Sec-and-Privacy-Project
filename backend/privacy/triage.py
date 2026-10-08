@@ -14,7 +14,7 @@ from privacy.redact import amount_value
 
 def classify(text: str, spans: list[Span]) -> tuple[str, str]:
     """-> ("high" | "low", reason)."""
-    cfg = taxonomy.setting("triage")
+    cfg = taxonomy.load()["triage"]
     low = text.lower()
     if hit := next((c for c in cfg["fraud_cues"] if re.search(rf"\b{re.escape(c)}\b", low)), None):
         return "high", f'fraud report ("{hit}")'

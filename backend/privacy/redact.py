@@ -10,7 +10,7 @@ import random
 import re
 
 from privacy import spoken, taxonomy
-from privacy.detect import Span, iban_valid, nric_valid
+from privacy.detect import Span, iban_check, iban_valid, nric_valid
 from privacy.vocab import (DIGIT_WORDS, EMAIL_DOMAINS, EMPLOYERS, HEALTH, LEGAL, MONTHS, NATIONALITIES,
                            OCCUPATIONS, PEP_ROLES, PETS, RELIGIONS, STREET_KINDS, SURROGATE_GIVEN,
                            SURROGATE_SURNAMES, TOWNS)
@@ -60,8 +60,7 @@ def _shape(surface: str, rng: random.Random, keep_first: bool = False) -> str:
         out = out[:8] + _match_case(out[8], letters[0])
     compact = re.sub(r"\s", "", out)
     if re.fullmatch(r"[A-Z]{2}\d{2}[A-Z0-9]{11,30}", compact, re.I) and not iban_valid(compact):
-        n = int("".join(str(int(c, 36)) for c in compact[4:] + compact[:2].upper() + "00"))
-        out = out[:2] + f"{98 - n % 97:02d}" + out[4:]                  # keep IBANs mod-97 valid
+        out = out[:2] + iban_check(compact[:2].upper(), compact[4:]) + out[4:]   # keep IBANs mod-97 valid
     return out
 
 

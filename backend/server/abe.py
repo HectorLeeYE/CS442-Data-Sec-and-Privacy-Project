@@ -74,13 +74,6 @@ def show(node) -> str:
     return f"({inner})"
 
 
-def satisfies(node, attrs: set[str]) -> bool:
-    if node[0] == "attr":
-        return node[1] in attrs
-    hits = [satisfies(c, attrs) for c in node[1]]
-    return all(hits) if node[0] == "and" else any(hits)
-
-
 # ------------------------------------------------------------------ scheme
 
 def setup() -> tuple[dict, dict]:
@@ -177,10 +170,6 @@ def _g2(v):
     return (FQ2(v[0]), FQ2(v[1]), FQ2.one())
 
 
-def _gt(v):
-    return FQ12(v)
-
-
 def _tree_out(n):
     return ["attr", n[1], _pt(n[2]), _pt(n[3])] if n[0] == "attr" else [n[0], [_tree_out(c) for c in n[1]]]
 
@@ -200,7 +189,7 @@ def dump_ct(ct: dict) -> str:
 
 def load_ct(s: str) -> dict:
     d = json.loads(s)
-    return {"policy": _policy_in(d["policy"]), "C": _gt(d["C"]), "Ct": _g1(d["Ct"]), "tree": _tree_in(d["tree"])}
+    return {"policy": _policy_in(d["policy"]), "C": FQ12(d["C"]), "Ct": _g1(d["Ct"]), "tree": _tree_in(d["tree"])}
 
 
 def dump_keys(pk: dict, msk: dict) -> str:
@@ -210,14 +199,6 @@ def dump_keys(pk: dict, msk: dict) -> str:
 
 def load_keys(s: str) -> tuple[dict, dict]:
     d = json.loads(s)
-    pk = {"h": _g1(d["pk"]["h"]), "Y": _gt(d["pk"]["Y"]), "egg": _gt(d["pk"]["egg"])}
+    pk = {"h": _g1(d["pk"]["h"]), "Y": FQ12(d["pk"]["Y"]), "egg": FQ12(d["pk"]["egg"])}
     return pk, {"beta": d["msk"]["beta"], "g2a": _g2(d["msk"]["g2a"])}
 
-
-def dump_sk(sk: dict) -> str:
-    return json.dumps({"D": _pt(sk["D"]), "attrs": {a: [_pt(x), _pt(y)] for a, (x, y) in sk["attrs"].items()}})
-
-
-def load_sk(s: str) -> dict:
-    d = json.loads(s)
-    return {"D": _g2(d["D"]), "attrs": {a: (_g2(x), _g1(y)) for a, (x, y) in d["attrs"].items()}}

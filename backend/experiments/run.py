@@ -18,6 +18,7 @@ import os
 import pickle
 import random
 import re
+import statistics
 import sys
 import tempfile
 import time
@@ -289,9 +290,7 @@ def e1() -> dict:
             res["seeds"][mode].append(score(cs, [detect.combine(text_of(c), r) for c, r in zip(cs, raw)])["harm_weighted_recall"])
     for mode in ("clean", "noisy"):
         v = res["seeds"][mode]
-        mean = sum(v) / len(v)
-        res["seeds"][mode] = {"values": v, "mean": round(mean, 4),
-                              "sd": round(math.sqrt(sum((x - mean) ** 2 for x in v) / (len(v) - 1)), 4)}
+        res["seeds"][mode] = {"values": v, "mean": round(statistics.mean(v), 4), "sd": round(statistics.stdev(v), 4)}
 
     # held-out, hand-written calls: never used to tune anything
     ood = heldout.load()
@@ -494,7 +493,7 @@ def link_with_log(text: str, clients: list[dict], log: set[tuple]) -> list[dict]
 def e3() -> dict:
     clients = json.loads((CORPUS / "clients.json").read_text())
     by_id = {c["id"]: c for c in clients}
-    k = taxonomy.setting("release")["k"]
+    k = taxonomy.load()["release"]["k"]
     keep_quasi = lambda t: "keep" if taxonomy.class_of(t) == "QUASI_ID" else taxonomy.action(t, "GREEN")
     res = {"n_clients": len(clients), "k": k, "conditions": {}, "k_anonymity": {}}
     for mode in ("clean", "noisy"):
@@ -592,7 +591,7 @@ def e5(n: int = 40) -> dict:
         store.open_copy(db, c["id"], "GREEN", gkey)
     res["cached_open_ms_per_call (AES only)"] = ms(t, n - 1)
     t = time.time()
-    release.gate({c["id"]: store.open_copy(db, c["id"], "GREEN", gkey) for c in calls}, taxonomy.setting("release")["k"])
+    release.gate({c["id"]: store.open_copy(db, c["id"], "GREEN", gkey) for c in calls}, taxonomy.load()["release"]["k"])
     res["export_ms_per_call"] = ms(t, n)
     return res
 

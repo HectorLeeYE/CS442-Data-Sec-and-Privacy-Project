@@ -27,7 +27,6 @@ tamper-evident chain.
 | [`docs/design.md`](docs/design.md) | Domain, data flows, risk register, taxonomy, detection, redaction, the prototype, experiment design and findings |
 | [`docs/dpia.md`](docs/dpia.md) | Data protection impact assessment |
 | [`backend/experiments/out/RESULTS.md`](backend/experiments/out/RESULTS.md) | Full experiment tables (generated) |
-| [`PLAN.md`](PLAN.md) | The original plan and the round-2 improvement plan (§11), with status |
 
 All transcripts, clients and names are synthetic sample data.
 
@@ -165,7 +164,7 @@ RED included, and never stored.
 ```bash
 cd backend
 .venv/bin/python -m data.gen              # 500 calls × {clean, noisy} + 300 clients -> data/corpus/
-.venv/bin/python -m pytest -q             # 31 tests: detection, redaction, CP-ABE, access control, audit, export
+.venv/bin/pip install pytest httpx && .venv/bin/python -m pytest -q          # 31 tests: detection, redaction, CP-ABE, access control, audit, export
 
 # experiments need the extra dependencies (GLiNER, Whisper, TTS)
 .venv/bin/pip install -r requirements-experiments.txt

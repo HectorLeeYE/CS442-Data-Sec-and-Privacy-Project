@@ -1,22 +1,28 @@
-import { BarChart3, FileLock2, LogOut, Menu, ScrollText, Table2 } from 'lucide-react'
+import { BarChart3, FileLock2, House, LayoutDashboard, LogOut, Menu, Radio, ScrollText, Table2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { api, session, type User } from './api'
 import TierBadge from './components/TierBadge'
 import Audit from './pages/Audit'
 import Calls from './pages/Calls'
+import Dashboard from './pages/Dashboard'
+import Live from './pages/Live'
+import Overview from './pages/Overview'
 import Policy from './pages/Policy'
 import Results from './pages/Results'
 import SignIn from './pages/SignIn'
 
 const ROUTES = [
+  { path: 'overview', label: 'Project overview', Icon: House, Page: Overview },
   { path: 'calls', label: 'Calls', Icon: FileLock2, Page: Calls },
+  { path: 'live', label: 'Live anonymiser', Icon: Radio, Page: Live },
   { path: 'audit', label: 'Disclosure log', Icon: ScrollText, Page: Audit },
   { path: 'policy', label: 'Redaction policy', Icon: Table2, Page: Policy },
-  { path: 'results', label: 'Experiment results', Icon: BarChart3, Page: Results },
+  { path: 'dashboard', label: 'Results dashboard', Icon: LayoutDashboard, Page: Dashboard },
+  { path: 'results', label: 'Experiment tables', Icon: BarChart3, Page: Results },
 ] as const
 
 function useHashRoute() {
-  const read = () => window.location.hash.replace(/^#\/?/, '') || 'calls'
+  const read = () => window.location.hash.replace(/^#\/?/, '') || 'overview'
   const [route, setRoute] = useState(read)
   useEffect(() => {
     const on = () => setRoute(read())

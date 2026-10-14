@@ -4,8 +4,15 @@ node_modules/
 frontend/dist/
 backend/demo.sqlite3*
 backend/data/corpus/
+backend/data/nsc/
 backend/experiments/out/cache_*.pkl
 .pytest_cache/
 backend/keys/
+backend/keyauthority/
 backend/experiments/audio/
 backend/experiments/out/gliner_*.pkl
+
+docs/improvement-plan.md
+backend/pytest.ini
+reports/
+research_notes/

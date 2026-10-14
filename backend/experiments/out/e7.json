@@ -1,0 +1,994 @@
+{
+ "source": "MERaLiON/Multitask-National-Speech-Corpus-v1, ASR-PART{3,4,5,6}-Test",
+ "parts": [
+  {
+   "part": 3,
+   "label": "Everyday conversation",
+   "clips": 1000,
+   "utterances": 5728,
+   "words": 74234,
+   "detections_per_1000_words": 10.88,
+   "by_class_per_1000_words": {
+    "DIRECT_ID": 4.66,
+    "FINANCIAL_ID": 0.28,
+    "AUTH_SECRET": 0.11,
+    "QUASI_ID": 5.51,
+    "SENSITIVE_ATTR": 0.32
+   },
+   "by_layer": {
+    "presidio": 556,
+    "spoken": 22,
+    "dialogue": 7,
+    "context": 173,
+    "propagate": 50
+   },
+   "top_types": [
+    [
+     "PERSON",
+     345
+    ],
+    [
+     "LOCATION",
+     251
+    ],
+    [
+     "NATIONALITY",
+     113
+    ],
+    [
+     "OCCUPATION",
+     28
+    ],
+    [
+     "AMOUNT",
+     20
+    ],
+    [
+     "RELIGION",
+     14
+    ],
+    [
+     "EMPLOYER",
+     10
+    ],
+    [
+     "SECURITY_ANSWER",
+     8
+    ]
+   ],
+   "clips_with_detection": 0.351,
+   "words_redacted_at_green": 0.0144,
+   "held_for_review": 0.025,
+   "review_reasons": [
+    [
+     "unclassified number",
+     24
+    ],
+    [
+     "unanswered SECURITY_ANSWER request",
+     1
+    ]
+   ],
+   "triaged_high": 0.003,
+   "spoken_normaliser_fired": 0.128
+  },
+  {
+   "part": 4,
+   "label": "Code-switching conversation",
+   "clips": 1000,
+   "utterances": 4506,
+   "words": 72014,
+   "detections_per_1000_words": 15.62,
+   "by_class_per_1000_words": {
+    "DIRECT_ID": 9.61,
+    "FINANCIAL_ID": 0.25,
+    "AUTH_SECRET": 0.0,
+    "QUASI_ID": 5.49,
+    "SENSITIVE_ATTR": 0.28
+   },
+   "by_layer": {
+    "presidio": 756,
+    "propagate": 189,
+    "context": 159,
+    "spoken": 21
+   },
+   "top_types": [
+    [
+     "PERSON",
+     692
+    ],
+    [
+     "LOCATION",
+     233
+    ],
+    [
+     "NATIONALITY",
+     88
+    ],
+    [
+     "EMPLOYER",
+     27
+    ],
+    [
+     "OCCUPATION",
+     24
+    ],
+    [
+     "DATE",
+     23
+    ],
+    [
+     "AMOUNT",
+     18
+    ],
+    [
+     "HEALTH",
+     14
+    ]
+   ],
+   "clips_with_detection": 0.436,
+   "words_redacted_at_green": 0.0262,
+   "held_for_review": 0.033,
+   "review_reasons": [
+    [
+     "unclassified number",
+     32
+    ],
+    [
+     "unanswered SECURITY_ANSWER request",
+     1
+    ]
+   ],
+   "triaged_high": 0.002,
+   "spoken_normaliser_fired": 0.152
+  },
+  {
+   "part": 5,
+   "label": "Debate, finance, emotion",
+   "clips": 1000,
+   "utterances": 2542,
+   "words": 70220,
+   "detections_per_1000_words": 5.2,
+   "by_class_per_1000_words": {
+    "DIRECT_ID": 1.42,
+    "FINANCIAL_ID": 0.47,
+    "AUTH_SECRET": 0.01,
+    "QUASI_ID": 3.13,
+    "SENSITIVE_ATTR": 0.16
+   },
+   "by_layer": {
+    "presidio": 210,
+    "context": 111,
+    "propagate": 10,
+    "spoken": 33,
+    "dialogue": 1
+   },
+   "top_types": [
+    [
+     "LOCATION",
+     120
+    ],
+    [
+     "PERSON",
+     100
+    ],
+    [
+     "NATIONALITY",
+     47
+    ],
+    [
+     "EMPLOYER",
+     36
+    ],
+    [
+     "AMOUNT",
+     33
+    ],
+    [
+     "OCCUPATION",
+     14
+    ],
+    [
+     "HEALTH",
+     5
+    ],
+    [
+     "LEGAL",
+     4
+    ]
+   ],
+   "clips_with_detection": 0.232,
+   "words_redacted_at_green": 0.007,
+   "held_for_review": 0.023,
+   "review_reasons": [
+    [
+     "unclassified number",
+     22
+    ],
+    [
+     "unanswered PHONE request",
+     1
+    ]
+   ],
+   "triaged_high": 0.004,
+   "spoken_normaliser_fired": 0.11
+  },
+  {
+   "part": 6,
+   "label": "Role-played service calls",
+   "clips": 1000,
+   "utterances": 2737,
+   "words": 66016,
+   "detections_per_1000_words": 9.41,
+   "by_class_per_1000_words": {
+    "DIRECT_ID": 3.47,
+    "FINANCIAL_ID": 2.03,
+    "AUTH_SECRET": 0.0,
+    "QUASI_ID": 3.71,
+    "SENSITIVE_ATTR": 0.2
+   },
+   "by_layer": {
+    "presidio": 256,
+    "context": 165,
+    "spoken": 163,
+    "propagate": 30,
+    "dialogue": 7
+   },
+   "top_types": [
+    [
+     "PERSON",
+     195
+    ],
+    [
+     "AMOUNT",
+     130
+    ],
+    [
+     "LOCATION",
+     128
+    ],
+    [
+     "NATIONALITY",
+     47
+    ],
+    [
+     "DATE",
+     27
+    ],
+    [
+     "OCCUPATION",
+     27
+    ],
+    [
+     "PHONE",
+     25
+    ],
+    [
+     "EMPLOYER",
+     16
+    ]
+   ],
+   "clips_with_detection": 0.35,
+   "words_redacted_at_green": 0.0189,
+   "held_for_review": 0.078,
+   "review_reasons": [
+    [
+     "unclassified number",
+     74
+    ],
+    [
+     "unanswered PHONE request",
+     5
+    ]
+   ],
+   "triaged_high": 0.003,
+   "spoken_normaliser_fired": 0.346
+  }
+ ],
+ "heldout": {
+  "clips": 1000,
+  "words": 73293,
+  "before": {
+   "detections": 2242,
+   "detections_per_1000_words": 30.59,
+   "words_redacted_at_green": 0.0446,
+   "top_types": [
+    [
+     "PERSON",
+     1603
+    ],
+    [
+     "LOCATION",
+     380
+    ],
+    [
+     "NATIONALITY",
+     118
+    ],
+    [
+     "OCCUPATION",
+     34
+    ],
+    [
+     "AMOUNT",
+     25
+    ],
+    [
+     "EMPLOYER",
+     21
+    ]
+   ],
+   "judged": 100,
+   "correct": 11,
+   "precision": 0.11,
+   "precision_ci": [
+    0.0562,
+    0.1883
+   ]
+  },
+  "after": {
+   "detections": 1443,
+   "detections_per_1000_words": 19.69,
+   "words_redacted_at_green": 0.0272,
+   "top_types": [
+    [
+     "PERSON",
+     850
+    ],
+    [
+     "LOCATION",
+     340
+    ],
+    [
+     "NATIONALITY",
+     117
+    ],
+    [
+     "OCCUPATION",
+     35
+    ],
+    [
+     "AMOUNT",
+     25
+    ],
+    [
+     "EMPLOYER",
+     20
+    ]
+   ],
+   "judged": 100,
+   "correct": 32,
+   "precision": 0.32,
+   "precision_ci": [
+    0.2302,
+    0.4208
+   ]
+  },
+  "judge": "Claude (Opus 5.5), one blind pass"
+ },
+ "bank_dev": {
+  "n_calls": 150,
+  "n_spans": 56,
+  "our full detector": {
+   "recall": {
+    "DIRECT_ID": 0.7692,
+    "FINANCIAL_ID": 0.68,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 1.0,
+    "SENSITIVE_ATTR": null
+   },
+   "class_accuracy": {
+    "DIRECT_ID": 0.95,
+    "FINANCIAL_ID": 1.0,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 1.0,
+    "SENSITIVE_ATTR": null
+   },
+   "support": {
+    "DIRECT_ID": 26,
+    "FINANCIAL_ID": 25,
+    "AUTH_SECRET": 0,
+    "QUASI_ID": 5,
+    "SENSITIVE_ATTR": 0
+   },
+   "harm_weighted_recall": 0.7308,
+   "strict_recall": 0.6429,
+   "entity_recall": 0.7333,
+   "precision": 0.4388,
+   "char_leakage": 0.3019,
+   "over_redaction": 0.0139,
+   "token_f1": 0.6229
+  },
+  "presidio only": {
+   "recall": {
+    "DIRECT_ID": 0.4615,
+    "FINANCIAL_ID": 0.0,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 0.6,
+    "SENSITIVE_ATTR": null
+   },
+   "class_accuracy": {
+    "DIRECT_ID": 1.0,
+    "FINANCIAL_ID": null,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 1.0,
+    "SENSITIVE_ATTR": null
+   },
+   "support": {
+    "DIRECT_ID": 26,
+    "FINANCIAL_ID": 25,
+    "AUTH_SECRET": 0,
+    "QUASI_ID": 5,
+    "SENSITIVE_ATTR": 0
+   },
+   "harm_weighted_recall": 0.2423,
+   "strict_recall": 0.2679,
+   "entity_recall": 0.2444,
+   "precision": 0.3846,
+   "char_leakage": 0.9126,
+   "over_redaction": 0.0039,
+   "token_f1": 0.1732
+  },
+  "ci": [
+   0.5732,
+   0.8649
+  ],
+  "entity_ci": [
+   0.6,
+   0.8611
+  ],
+  "exact_ci": {
+   "DIRECT_ID": [
+    0.5635,
+    0.9103
+   ],
+   "FINANCIAL_ID": [
+    0.465,
+    0.8505
+   ],
+   "AUTH_SECRET": [
+    null,
+    null
+   ],
+   "QUASI_ID": [
+    0.4782,
+    1.0
+   ],
+   "SENSITIVE_ATTR": [
+    null,
+    null
+   ]
+  },
+  "full vs presidio": {
+   "diff": 0.4885,
+   "ci": [
+    0.316,
+    0.6585
+   ],
+   "p": 0.0
+  },
+  "misses": [
+   {
+    "call": "NSC6Tr00080-0246",
+    "type": "PHONE",
+    "text": "Seven"
+   },
+   {
+    "call": "NSC6Tr00080-0325",
+    "type": "NRIC",
+    "text": "Three, six, eight, E"
+   },
+   {
+    "call": "NSC6Tr00080-0427",
+    "type": "AMOUNT",
+    "text": "two hundred thousand"
+   },
+   {
+    "call": "NSC6Tr00081-0041",
+    "type": "AMOUNT",
+    "text": "seven hundred dollar"
+   },
+   {
+    "call": "NSC6Tr00081-0041",
+    "type": "AMOUNT",
+    "text": "three dollars"
+   },
+   {
+    "call": "NSC6Tr00082-0000",
+    "type": "AMOUNT",
+    "text": "one K plus minus"
+   },
+   {
+    "call": "NSC6Tr00081-0047",
+    "type": "EMAIL",
+    "text": "A B, C"
+   },
+   {
+    "call": "NSC6Tr00081-0231",
+    "type": "CARD_NO",
+    "text": "six, four, eight two"
+   },
+   {
+    "call": "NSC6Tr00081-0231",
+    "type": "CARD_NO",
+    "text": "six, four, eight, two"
+   },
+   {
+    "call": "NSC6Tr00081-0355",
+    "type": "DOB",
+    "text": "Eighty eight"
+   },
+   {
+    "call": "NSC6Tr00081-0355",
+    "type": "DOB",
+    "text": "Nineteen eighty eight"
+   },
+   {
+    "call": "NSC6Tr00082-0282",
+    "type": "PERSON",
+    "text": "J, O A N"
+   }
+  ],
+  "review": {
+   "queued": 0.08,
+   "calls_with_harmful_miss": 9,
+   "harmful_miss_calls_caught": 0.3333,
+   "leakage_removed_by_review": 0.507,
+   "recall_after_review": 0.8269,
+   "recall_after_review_ci": [
+    0.6828,
+    0.9444
+   ]
+  },
+  "triage": {
+   "confusion": {
+    "low->low": 149,
+    "high->low": 1
+   },
+   "accuracy": 0.9933,
+   "high_risk_recall": 0.0,
+   "high_risk_recall_exact_ci": [
+    0.0,
+    0.975
+   ]
+  },
+  "GLiNER-PII alone": {
+   "recall": {
+    "DIRECT_ID": 0.5385,
+    "FINANCIAL_ID": 0.44,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 1.0,
+    "SENSITIVE_ATTR": null
+   },
+   "class_accuracy": {
+    "DIRECT_ID": 0.8571,
+    "FINANCIAL_ID": 1.0,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 1.0,
+    "SENSITIVE_ATTR": null
+   },
+   "support": {
+    "DIRECT_ID": 26,
+    "FINANCIAL_ID": 25,
+    "AUTH_SECRET": 0,
+    "QUASI_ID": 5,
+    "SENSITIVE_ATTR": 0
+   },
+   "harm_weighted_recall": 0.5,
+   "strict_recall": 0.4286,
+   "entity_recall": 0.5333,
+   "precision": 0.0528,
+   "char_leakage": 0.6893,
+   "over_redaction": 0.068,
+   "token_f1": 0.1121
+  },
+  "full + GLiNER": {
+   "recall": {
+    "DIRECT_ID": 0.8462,
+    "FINANCIAL_ID": 0.8,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 1.0,
+    "SENSITIVE_ATTR": null
+   },
+   "class_accuracy": {
+    "DIRECT_ID": 0.8636,
+    "FINANCIAL_ID": 1.0,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 1.0,
+    "SENSITIVE_ATTR": null
+   },
+   "support": {
+    "DIRECT_ID": 26,
+    "FINANCIAL_ID": 25,
+    "AUTH_SECRET": 0,
+    "QUASI_ID": 5,
+    "SENSITIVE_ATTR": 0
+   },
+   "harm_weighted_recall": 0.8269,
+   "strict_recall": 0.7143,
+   "entity_recall": 0.8444,
+   "precision": 0.0801,
+   "char_leakage": 0.2111,
+   "over_redaction": 0.0698,
+   "token_f1": 0.2688
+  },
+  "gliner_review": {
+   "n_calls": 150,
+   "rules": {
+    "queued": 0.08,
+    "calls_with_harmful_miss": 9,
+    "harmful_miss_calls_caught": 0.3333,
+    "leakage_removed_by_review": 0.507,
+    "recall_after_review": 0.8269,
+    "recall_after_review_ci": [
+     0.6828,
+     0.9444
+    ]
+   },
+   "with GLiNER": {
+    "queued": 0.48,
+    "calls_with_harmful_miss": 9,
+    "harmful_miss_calls_caught": 0.4444,
+    "leakage_removed_by_review": 0.6399,
+    "recall_after_review": 0.8462,
+    "recall_after_review_ci": [
+     0.7021,
+     0.9597
+    ]
+   },
+   "paired": {
+    "diff": 0.0192,
+    "ci": [
+     0.0,
+     0.0704
+    ],
+    "p": 0.347
+   }
+  },
+  "round-4 detector (first score)": {
+   "recall": {
+    "DIRECT_ID": 0.5,
+    "FINANCIAL_ID": 0.2,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 0.8,
+    "SENSITIVE_ATTR": null
+   },
+   "class_accuracy": {
+    "DIRECT_ID": 0.9231,
+    "FINANCIAL_ID": 1.0,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 1.0,
+    "SENSITIVE_ATTR": null
+   },
+   "support": {
+    "DIRECT_ID": 26,
+    "FINANCIAL_ID": 25,
+    "AUTH_SECRET": 0,
+    "QUASI_ID": 5,
+    "SENSITIVE_ATTR": 0
+   },
+   "harm_weighted_recall": 0.3615,
+   "strict_recall": 0.375,
+   "entity_recall": 0.4,
+   "precision": 0.3014,
+   "char_leakage": 0.7952,
+   "over_redaction": 0.0126,
+   "token_f1": 0.2444,
+   "ci": [
+    0.2176,
+    0.532
+   ]
+  }
+ },
+ "bank_test2": {
+  "n_calls": 150,
+  "n_spans": 41,
+  "our full detector": {
+   "recall": {
+    "DIRECT_ID": 1.0,
+    "FINANCIAL_ID": 0.3,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 0.5455,
+    "SENSITIVE_ATTR": 0.0
+   },
+   "class_accuracy": {
+    "DIRECT_ID": 1.0,
+    "FINANCIAL_ID": 1.0,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 1.0,
+    "SENSITIVE_ATTR": null
+   },
+   "support": {
+    "DIRECT_ID": 19,
+    "FINANCIAL_ID": 10,
+    "AUTH_SECRET": 0,
+    "QUASI_ID": 11,
+    "SENSITIVE_ATTR": 1
+   },
+   "harm_weighted_recall": 0.7296,
+   "strict_recall": 0.5854,
+   "entity_recall": 0.6471,
+   "precision": 0.2617,
+   "char_leakage": 0.5096,
+   "over_redaction": 0.0172,
+   "token_f1": 0.3154
+  },
+  "presidio only": {
+   "recall": {
+    "DIRECT_ID": 0.8421,
+    "FINANCIAL_ID": 0.0,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 0.5455,
+    "SENSITIVE_ATTR": 0.0
+   },
+   "class_accuracy": {
+    "DIRECT_ID": 1.0,
+    "FINANCIAL_ID": null,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 1.0,
+    "SENSITIVE_ATTR": null
+   },
+   "support": {
+    "DIRECT_ID": 19,
+    "FINANCIAL_ID": 10,
+    "AUTH_SECRET": 0,
+    "QUASI_ID": 11,
+    "SENSITIVE_ATTR": 1
+   },
+   "harm_weighted_recall": 0.5409,
+   "strict_recall": 0.4878,
+   "entity_recall": 0.4706,
+   "precision": 0.3607,
+   "char_leakage": 0.7518,
+   "over_redaction": 0.0051,
+   "token_f1": 0.3286
+  },
+  "ci": [
+   0.5036,
+   0.9018
+  ],
+  "entity_ci": [
+   0.4571,
+   0.8182
+  ],
+  "exact_ci": {
+   "DIRECT_ID": [
+    0.8235,
+    1.0
+   ],
+   "FINANCIAL_ID": [
+    0.0667,
+    0.6525
+   ],
+   "AUTH_SECRET": [
+    null,
+    null
+   ],
+   "QUASI_ID": [
+    0.2338,
+    0.8325
+   ],
+   "SENSITIVE_ATTR": [
+    0.0,
+    0.975
+   ]
+  },
+  "full vs presidio": {
+   "diff": 0.1887,
+   "ci": [
+    0.0833,
+    0.3012
+   ],
+   "p": 0.002
+  },
+  "misses": [
+   {
+    "call": "NSC6Tr00082-0456",
+    "type": "EMPLOYER",
+    "text": "Republic Poly"
+   },
+   {
+    "call": "NSC6Tr00082-0570",
+    "type": "LOCATION",
+    "text": "seoul"
+   },
+   {
+    "call": "NSC6Tr00083-0428",
+    "type": "LOCATION",
+    "text": "west side"
+   },
+   {
+    "call": "NSC6Tr00084-0113",
+    "type": "LOCATION",
+    "text": "genting"
+   },
+   {
+    "call": "NSC6Tr00083-0000",
+    "type": "HEALTH",
+    "text": "unexpected pregnancy"
+   },
+   {
+    "call": "NSC6Tr00083-0236",
+    "type": "AMOUNT",
+    "text": "hundred K"
+   },
+   {
+    "call": "NSC6Tr00083-0236",
+    "type": "AMOUNT",
+    "text": "hundred and thirty thousand"
+   },
+   {
+    "call": "NSC6Tr00083-0236",
+    "type": "AMOUNT",
+    "text": "hundred and thirty thousand"
+   },
+   {
+    "call": "NSC6Tr00083-0390",
+    "type": "AMOUNT",
+    "text": "five hundred and twenty five thousand"
+   },
+   {
+    "call": "NSC6Tr00084-0107",
+    "type": "OCCUPATION",
+    "text": "self employed"
+   }
+  ],
+  "review": {
+   "queued": 0.0333,
+   "calls_with_harmful_miss": 6,
+   "harmful_miss_calls_caught": 0.6667,
+   "leakage_removed_by_review": 0.7958,
+   "recall_after_review": 0.9245,
+   "recall_after_review_ci": [
+    0.811,
+    0.9877
+   ]
+  },
+  "triage": {
+   "confusion": {
+    "low->low": 150
+   },
+   "accuracy": 1.0,
+   "high_risk_recall": 0.0,
+   "high_risk_recall_exact_ci": [
+    null,
+    null
+   ]
+  },
+  "GLiNER-PII alone": {
+   "recall": {
+    "DIRECT_ID": 0.8421,
+    "FINANCIAL_ID": 0.8,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 0.9091,
+    "SENSITIVE_ATTR": 0.0
+   },
+   "class_accuracy": {
+    "DIRECT_ID": 1.0,
+    "FINANCIAL_ID": 1.0,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 1.0,
+    "SENSITIVE_ATTR": null
+   },
+   "support": {
+    "DIRECT_ID": 19,
+    "FINANCIAL_ID": 10,
+    "AUTH_SECRET": 0,
+    "QUASI_ID": 11,
+    "SENSITIVE_ATTR": 1
+   },
+   "harm_weighted_recall": 0.8176,
+   "strict_recall": 0.7561,
+   "entity_recall": 0.8529,
+   "precision": 0.0527,
+   "char_leakage": 0.1597,
+   "over_redaction": 0.0749,
+   "token_f1": 0.1295
+  },
+  "full + GLiNER": {
+   "recall": {
+    "DIRECT_ID": 1.0,
+    "FINANCIAL_ID": 0.8,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 0.9091,
+    "SENSITIVE_ATTR": 0.0
+   },
+   "class_accuracy": {
+    "DIRECT_ID": 1.0,
+    "FINANCIAL_ID": 1.0,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 1.0,
+    "SENSITIVE_ATTR": null
+   },
+   "support": {
+    "DIRECT_ID": 19,
+    "FINANCIAL_ID": 10,
+    "AUTH_SECRET": 0,
+    "QUASI_ID": 11,
+    "SENSITIVE_ATTR": 1
+   },
+   "harm_weighted_recall": 0.9119,
+   "strict_recall": 0.7561,
+   "entity_recall": 0.8824,
+   "precision": 0.0552,
+   "char_leakage": 0.1328,
+   "over_redaction": 0.0779,
+   "token_f1": 0.1341
+  },
+  "gliner_review": {
+   "n_calls": 150,
+   "rules": {
+    "queued": 0.0333,
+    "calls_with_harmful_miss": 6,
+    "harmful_miss_calls_caught": 0.6667,
+    "leakage_removed_by_review": 0.7958,
+    "recall_after_review": 0.9245,
+    "recall_after_review_ci": [
+     0.811,
+     0.9877
+    ]
+   },
+   "with GLiNER": {
+    "queued": 0.58,
+    "calls_with_harmful_miss": 6,
+    "harmful_miss_calls_caught": 0.8333,
+    "leakage_removed_by_review": 0.9061,
+    "recall_after_review": 0.9686,
+    "recall_after_review_ci": [
+     0.8857,
+     1.0
+    ]
+   },
+   "paired": {
+    "diff": 0.044,
+    "ci": [
+     0.0076,
+     0.1122
+    ],
+    "p": 0.007
+   }
+  },
+  "round-4 detector": {
+   "recall": {
+    "DIRECT_ID": 1.0,
+    "FINANCIAL_ID": 0.3,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 0.5455,
+    "SENSITIVE_ATTR": 0.0
+   },
+   "class_accuracy": {
+    "DIRECT_ID": 1.0,
+    "FINANCIAL_ID": 1.0,
+    "AUTH_SECRET": null,
+    "QUASI_ID": 1.0,
+    "SENSITIVE_ATTR": null
+   },
+   "support": {
+    "DIRECT_ID": 19,
+    "FINANCIAL_ID": 10,
+    "AUTH_SECRET": 0,
+    "QUASI_ID": 11,
+    "SENSITIVE_ATTR": 1
+   },
+   "harm_weighted_recall": 0.7296,
+   "strict_recall": 0.5854,
+   "entity_recall": 0.6471,
+   "precision": 0.28,
+   "char_leakage": 0.5096,
+   "over_redaction": 0.0151,
+   "token_f1": 0.3363,
+   "ci": [
+    0.5036,
+    0.9018
+   ]
+  },
+  "round 5 vs round 4": {
+   "diff": 0.0,
+   "ci": [
+    0.0,
+    0.0
+   ],
+   "p": 1.0
+  }
+ }
+}

@@ -11,7 +11,12 @@ export type CallSummary = {
   risk: 'high' | 'low'; review: 'none' | 'pending' | 'approved'
   risk_reason?: string; review_reasons?: string[] // RED only
 }
-export type Receipt = { seq: number; ts: string; username: string; call_id: string; view_tier: Tier; digest: string; signature: string }
+export type TreeHead = { log: string; size: number; root: string; ts: number; signature: string }
+/** Checkable offline: `python -m server.merkle receipt.json log-key.pem` (key from /api/log-key). */
+export type Receipt = {
+  entry: { seq: number; ts: string; username: string; user_tier: Tier; action: string; call_id: string; view_tier: Tier; digest: string; detail: string | null }
+  index: number; inclusion: string[]; tree_head: TreeHead; signature: string
+}
 export type CallView = {
   call: CallSummary
   tier: Tier
@@ -23,9 +28,9 @@ export type CallView = {
 export type AuditAction = 'view' | 'deny' | 'ingest' | 'breakglass' | 'review' | 'erase' | 'export'
 export type AuditEntry = {
   seq: number; ts: string; username: string; user_tier: Tier; action: AuditAction
-  call_id: string | null; view_tier: Tier | null; digest: string | null; detail: string | null; prev: string; hash: string
+  call_id: string | null; view_tier: Tier | null; digest: string | null; detail: string | null; hash: string
 }
-export type Chain = { ok: boolean; broken_at: number | null; checked: number; anchored?: number; reason: string | null }
+export type Chain = { ok: boolean; broken_at: number | null; checked: number; signed_heads?: number; tree_size?: number; reason: string | null }
 export type ExportResult = {
   manifest: {
     created: string; requested_by: string; policy_version: string; k: number; n_calls: number; n_gated: number
@@ -85,3 +90,29 @@ export const SCENARIO_LABEL: Record<string, string> = {
   fraud_report: 'Fraud report',
   live: 'Pasted transcript',
 }
+
+/** 'A: ...' / 'C: ...' lines (or bare lines, read as the client) -> utterances. */
+export function parsePasted(text: string): { speaker: 'agent' | 'client'; text: string }[] {
+  return text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => {
+      const m = l.match(/^(a|agent|c|client|customer)\s*:\s*(.+)$/i)
+      const who = m?.[1].toLowerCase() ?? 'c'
+      return { speaker: who.startsWith('a') ? 'agent' : 'client', text: m ? m[2] : l }
+    })
+}
+
+export type Anonymized = {
+  detected: Utterance[]
+  tiers: Record<Tier, Utterance[]>
+  risk: 'high' | 'low'; risk_reason: string; review_reasons: string[]; ms: number
+}
+
+export type Target = {
+  id: string; group: 'privacy' | 'utility'; requirement: string; target: string
+  value: string | null; met: boolean | null; evidence: string; kind: 'measured' | 'test'
+}
+export type Dataset = { name: string; size: string; use: string; source: string }
+export type Overview = { targets: Target[]; datasets: Dataset[] }

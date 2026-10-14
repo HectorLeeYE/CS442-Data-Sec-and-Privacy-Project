@@ -2,6 +2,7 @@
 
     python -m experiments.asr [n_calls]      # needs network for TTS the first time; hours on a laptop CPU,
                                              # resumable: Whisper output is cached in audio/whisper.json
+    python -m experiments.asr task           # E8, the analysis task on each release (after E4: reuses its audio)
 
 1. Speak:      each utterance of n generated calls (clean script) is synthesised by Microsoft's
                Singapore-English neural voices (edge-tts: en-SG-WayneNeural agent, en-SG-LunaNeural client).
@@ -114,6 +115,11 @@ def _write_wav(path: Path, x: np.ndarray) -> None:
 CACHE = AUDIO / "whisper.json"
 
 
+def _clip(tts: Path, c: dict, i: int) -> Path:
+    """Named by the text spoken: a regenerated corpus must not be scored against audio of the old script."""
+    return tts / f"{c['id']}_{i:02d}_{hashlib.md5(c['utterances'][i]['text'].encode()).hexdigest()[:8]}.mp3"
+
+
 def _cached(cache: dict, key: str, fn):
     """Whisper is deterministic and by far the slowest step, and its output does not depend on the
     detector. Cache it per utterance, written after every call, so a detector change re-scores E4
@@ -123,10 +129,10 @@ def _cached(cache: dict, key: str, fn):
     return cache[key]
 
 
-def _save(cache: dict) -> None:
-    tmp = CACHE.with_suffix(".tmp")
+def _save(cache: dict, path: Path = CACHE) -> None:
+    tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(cache))
-    tmp.replace(CACHE)
+    tmp.replace(path)
 
 
 def main(n: int = 40) -> dict:
@@ -135,8 +141,8 @@ def main(n: int = 40) -> dict:
     calls = run.load("clean")[:n]
     tts = AUDIO / "tts"
     tts.mkdir(parents=True, exist_ok=True)
-    jobs = [(u["text"], VOICES[u["speaker"]], tts / f"{c['id']}_{i:02d}.mp3")
-            for c in calls for i, u in enumerate(c["utterances"])]
+    clip = lambda c, i: _clip(tts, c, i)
+    jobs = [(u["text"], VOICES[u["speaker"]], clip(c, i)) for c in calls for i, u in enumerate(c["utterances"])]
     print(f"  TTS: {len(jobs)} utterances")
     asyncio.run(_speak(jobs))
 
@@ -156,8 +162,8 @@ def main(n: int = 40) -> dict:
         texts, spans, toks_all, off = [], [], [], 0
         ref_off = 0
         for i, u in enumerate(c["utterances"]):
-            x = _load(tts / f"{c['id']}_{i:02d}.mp3")
-            chunks = _cached(cache, f"{c['id']}_{i:02d}", lambda: transcribe(x))
+            x = _load(clip(c, i))
+            chunks = _cached(cache, clip(c, i).stem, lambda: transcribe(x))
             toks, hyp, pos = [], "", 0
             for ch in chunks:
                 w = ch["text"].strip()
@@ -237,5 +243,140 @@ def main(n: int = 40) -> dict:
     return res
 
 
+# ------------------------------------------------------------------ E8: the analysis task itself
+
+NBEST = AUDIO / "nbest.json"
+N_BEST, DEV_CALLS = 5, 10
+LAMBDAS = (0, 0.05, 0.1, 0.2, 0.3, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0)
+
+
+def _words(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9]+", text.lower())
+
+
+def _nbest(model, proc, feats, k: int = N_BEST, max_len: int = 120) -> list[list]:
+    """Beam search returning k distinct hypotheses with their length-normalised log-probability. (The library's
+    Whisper beam search in transformers 5.x returns the top beam k times.) Whisper's own suppression applies."""
+    import torch
+    tok = proc.tokenizer
+    prompt = tok.convert_tokens_to_ids(["<|startoftranscript|>", "<|en|>", "<|transcribe|>", "<|notimestamps|>"])
+    eos, cfg = tok.eos_token_id, model.generation_config
+    with torch.no_grad():
+        enc = model.model.encoder(feats).last_hidden_state
+        beams, done = [(prompt, 0.0)], []
+        for step in range(max_len):
+            ids = torch.tensor([b for b, _ in beams])
+            logp = model(encoder_outputs=(enc.expand(len(beams), -1, -1),), decoder_input_ids=ids).logits[:, -1].float()
+            logp[:, list(cfg.suppress_tokens or [])] = -1e9
+            logp[:, prompt[-1] + 1:] = -1e9                         # timestamp tokens
+            if step == 0:
+                logp[:, list(cfg.begin_suppress_tokens or [])] = -1e9
+            logp = logp.log_softmax(-1)
+            top = logp.topk(k)
+            cand = sorted(((b + [int(t)], sc + float(v)) for (b, sc), vs, ts in zip(beams, top.values, top.indices)
+                           for v, t in zip(vs, ts)), key=lambda x: -x[1])
+            beams = []
+            for b, sc in cand:
+                (done if b[-1] == eos else beams).append((b, sc))
+                if len(beams) == k:
+                    break
+            if len(done) >= k or not beams:
+                break
+    done = sorted(done or beams, key=lambda x: -x[1] / (len(x[0]) - len(prompt)))[:k]
+    return [[tok.decode(b[len(prompt):], skip_special_tokens=True).strip(), round(sc / (len(b) - len(prompt)), 4)]
+            for b, sc in done]
+
+
+def task(n: int = 40) -> dict:
+    """E8: does the GREEN release still serve the task it exists for?
+
+    The bank wants a speech recogniser that does better on its calls. The text-only way to adapt one is a
+    domain language model trained on transcripts, used to re-rank the recogniser's n-best list. So: Whisper
+    gives its 5 best guesses for each E4 utterance; a bigram LM trained on 460 *other* calls, in each released
+    form, re-ranks them; the result is scored against the script. The LM weight is chosen per release on the
+    first 10 calls and the word error rate reported on the other 30. Fine-tuning Whisper itself is the full
+    form of the task and is out of reach on a laptop CPU; this is its text-only form."""
+    import torch
+    from transformers import WhisperForConditionalGeneration, WhisperProcessor
+
+    calls = run.load("clean")
+    heard, train = calls[:n], calls[n:]
+    tts = AUDIO / "tts"
+    cache = json.loads(NBEST.read_text()) if NBEST.exists() else {}
+    todo = [(c, i) for c in heard for i in range(len(c["utterances"])) if _clip(tts, c, i).stem not in cache]
+    if todo:
+        proc = WhisperProcessor.from_pretrained(MODEL)
+        model = WhisperForConditionalGeneration.from_pretrained(MODEL).eval()
+        for k, (c, i) in enumerate(todo):
+            feats = proc(_load(_clip(tts, c, i)), sampling_rate=SR, return_tensors="pt").input_features
+            cache[_clip(tts, c, i).stem] = _nbest(model, proc, feats)
+            if k % 20 == 19 or k == len(todo) - 1:
+                _save(cache, NBEST)
+                print(f"  n-best {k + 1}/{len(todo)}")
+
+    norm = lambda t: " ".join(_words(t))
+    raw = run.raw_spans("clean", calls)[n:]
+    releases = {
+        "raw transcripts (upper bound, not releasable)": lambda c, r: run.text_of(c),
+        "PII suppressed": lambda c, r: run.released_text(c, run.gt_spans(c), lambda t: "suppress"),
+        "GREEN policy": lambda c, r: run.released_text(c, run.gt_spans(c)),
+        "GREEN policy, real detector": lambda c, r: run.released_text(c, detect.combine(run.text_of(c), r)),
+    }
+    vocab = {w for v in cache.values() for t, _ in v for w in _words(t)}
+    utts = [(ci, u["text"], cache[_clip(tts, c, i).stem]) for ci, c in enumerate(heard) for i, u in enumerate(c["utterances"])]
+
+    def parts(pick) -> list[tuple[int, int]]:
+        """(word errors, reference words) per call, for the test calls."""
+        out = {}
+        for ci, ref, nbest in utts:
+            if ci >= DEV_CALLS:
+                e, m = wer(ref, pick(nbest))
+                a, b = out.get(ci, (0, 0))
+                out[ci] = (a + e, b + m)
+        return list(out.values())
+
+    def rescorer(lm, lam):
+        def pick(nbest):
+            def score(h):
+                toks = ["<s>"] + _words(h[0])
+                return h[1] + lam * sum(lm.logp(a, b) for a, b in zip(toks, toks[1:])) / len(toks)
+            return max(nbest, key=score)[0]
+        return pick
+
+    def dev_wer(pick):
+        e = m = 0
+        for ci, ref, nbest in utts:
+            if ci < DEV_CALLS:
+                a, b = wer(ref, pick(nbest))
+                e, m = e + a, m + b
+        return e / max(m, 1)
+
+    total = lambda ps: round(sum(a for a, _ in ps) / sum(b for _, b in ps), 4)
+    acc = lambda ps: [(m - e, m) for e, m in ps]       # paired() takes higher-is-better: + means fewer errors
+    base = parts(lambda nb: nb[0][0])
+    res = {"n_calls": n, "dev_calls": DEV_CALLS, "test_calls": n - DEV_CALLS, "n_best": N_BEST, "asr_model": MODEL,
+           "n_train_calls": len(train), "lm": "interpolated word bigram", "rows": []}
+    best_parts = {}
+    o_e = o_m = 0
+    for ci, ref, nbest in utts:
+        if ci >= DEV_CALLS:
+            e, m = min(wer(ref, h[0]) for h in nbest)
+            o_e, o_m = o_e + e, o_m + m
+    res["rows"].append({"release": "Whisper alone (no adaptation)", "lambda": 0, "wer": total(base), "ci": run.bootstrap(base)})
+    for name, fn in releases.items():
+        lm = run.Bigram([norm(fn(c, r)) for c, r in zip(train, raw)], vocab)
+        lam = min(LAMBDAS, key=lambda l: dev_wer(rescorer(lm, l)))
+        ps = best_parts[name] = parts(rescorer(lm, lam))
+        res["rows"].append({"release": name, "lambda": lam, "wer": total(ps), "ci": run.bootstrap(ps),
+                            "wer_reduction_vs_whisper": run.paired(acc(base), acc(ps))})
+        print(f"  E8 {name}: lambda {lam}, test WER {total(ps)}")
+    res["oracle_wer"] = round(o_e / o_m, 4)
+    res["green_vs_raw"] = run.paired(acc(best_parts["raw transcripts (upper bound, not releasable)"]),
+                                     acc(best_parts["GREEN policy, real detector"]))
+    (run.OUT / "e8.json").write_text(json.dumps(res, indent=1))
+    run.main([])
+    return res
+
+
 if __name__ == "__main__":
-    main(int(sys.argv[1]) if len(sys.argv) > 1 else 40)
+    task() if sys.argv[1:2] == ["task"] else main(int(sys.argv[1]) if len(sys.argv) > 1 else 40)

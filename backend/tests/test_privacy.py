@@ -157,3 +157,46 @@ def test_spoken_amount_drives_triage():
     spans = detect.detect(t, layers=("format", "context", "spoken"))
     assert triage.classify(t, spans)[0] == "high"
     assert redact.generalize("AMOUNT", "forty thousand dollars") == "between 10,000 and 100,000 dollars"
+
+
+def test_cvv_never_released_at_any_tier():
+    """PCI DSS 3.3.1: a card verification code is not stored after authorisation, even encrypted."""
+    utts = [{"speaker": "agent", "text": "Can you read me the three digits at the back of the card?"},
+            {"speaker": "client", "text": "four one two"},
+            {"speaker": "client", "text": "Sorry, the CVV is 412 and it expires 08/27."}]
+    text = "\n".join(u["text"] for u in utts)
+    spans = detect.detect(text, layers=NO_NER)
+    assert {"CVV", "CARD_EXPIRY"} <= {s.type for s in spans}
+    for tier in ("RED", "AMBER", "GREEN"):
+        out = " ".join(u["text"] for u in redact.render(utts, spans, tier, "C1", KEY))
+        assert "412" not in out and "four one two" not in out
+    assert "08/27" not in redact.render(utts, spans, "AMBER", "C1", KEY)[2]["text"]
+
+
+def test_round3_rules():
+    from privacy import triage
+    # a GREEN band edge at the triage threshold
+    assert redact.generalize("AMOUNT", "$4,000") != redact.generalize("AMOUNT", "$8,000")
+    # the agent's question types the reply; an amount needs no currency word in a money context
+    t = "what was the security answer you set your favourite food\nchicken rice\nyes i lost sixty thousand"
+    f = found(t)
+    assert ("chicken rice", "SECURITY_ANSWER") in f and ("sixty thousand", "AMOUNT") in f
+    assert ("Changi General Hospital", "EMPLOYER") in found("I work at Changi General Hospital in Bukit Timah") \
+        and ("Bukit Timah", "LOCATION") in found("I live near Bukit Timah")
+    # triage: a client who gave a credential away; a transfer to a named foreign place
+    t = "did they ask for anything\nthey asked me for an OTP, and I gave them 551 902"
+    assert triage.classify(t, [], ["agent", "client"])[0] == "high"
+    assert triage.classify("please never share your PIN\nok", [], ["agent", "client"])[0] == "low"
+    t = "is this transfer of your own will\nyes it is $250,000 to my nephew in Hong Kong"
+    assert triage.classify(t, detect.detect(t, layers=NO_NER))[0] == "high"
+
+
+def test_typed_placeholders_are_filled_with_valid_values(tmp_path):
+    from data import heldout
+    p = tmp_path / "calls.txt"
+    p.write_text("### X01 low\nA: Your IC please?\nC: It's {{NRIC}}.\na: and the card\nc: {{CARD_NO}}\n")
+    call = heldout.load(p)[0]
+    text = "\n".join(u["text"] for u in call["utterances"])
+    nric, card = (text[s["start"]:s["end"]] for s in call["spans"])
+    assert nric_valid(nric) and spoken.normalize(card)[0].replace(" ", "").isdigit()
+    assert heldout.load(p) == [call]                                    # seeded by call id: reproducible

@@ -19,7 +19,9 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 from privacy import spoken, taxonomy
-from privacy.vocab import BANKS, DIGIT_WORDS, MONTHS, TOWNS
+from spacy.lang.en.stop_words import STOP_WORDS
+
+from privacy.vocab import BANKS, DIGIT_WORDS, FUNCTION_WORDS, MONTHS, SG_EMPLOYERS, SG_PLACES, TOWNS
 
 LAYERS = ("presidio", "format", "context", "spoken", "dialogue", "propagate")
 
@@ -129,24 +131,51 @@ there with nric number account card that this our needs need has had wants told 
 sia hor meh hao dui ya""".split())
 _STOP.discard("of")   # "Ministry of Education"
 _NAME = r"(?P<v>[a-z]+(?: [a-z]+){0,2})"
+# Never the start of a name: "this is a pretty good question", "my dad say", "my mum won't".
+_NOT_NAME = FUNCTION_WORDS | STOP_WORDS
+_NO_NAME = r"(?!(?:%s|say|says|said|born|got|went|won)\b)(?![a-z]+')" % "|".join(
+    map(re.escape, sorted(_NOT_NAME, key=len, reverse=True)))
 # One spoken character of an identifier: a letter, a digit, or a digit word ("g b two nine n w b k ...").
+_DW = r"(?:%s)" % "|".join(DIGIT_WORDS)
 _SPELLED = r"(?:(?:[a-z]|\d+|double|triple|%s)(?: |\b))" % "|".join(DIGIT_WORDS)
 CUES = [  # (type, regex with group v, trim free text at stopwords)
     # dialogue adjacency: the agent asks for the name, the next utterance opens with it
     ("PERSON", r"\byour (?:full )?name\b[^\n]*\n(?:my name is |it is |it's )?(?P<v>[a-z]+(?: [a-z]+){1,3})", True),
-    ("PERSON", rf"\b(?:my name is|this is|name is|speaking (?:to|with)|mr|mrs|ms|mdm|madam|"
+    ("PERSON", rf"\b(?:my name is|name is|speaking (?:to|with)|mr|mrs|ms|mdm|madam|"
                rf"business partner|transfer to|payee is)\.? {_NAME}", True),
+    # "this is NAME" introduces a speaker only at the start of a turn, or as "this is NAME speaking";
+    # mid-sentence it is ordinary speech ("I think this is totally another topic")
+    ("PERSON", rf"(?:^|\n|[.?!] )(?:(?:hi|hello|hey|okay|ok|so|yes|good (?:morning|afternoon|evening))[ ,]+)*this is "
+               rf"{_NO_NAME}{_NAME}", True),
+    ("PERSON", rf"\bthis is {_NO_NAME}(?P<v>[a-z]+(?: [a-z]+){{0,2}}) speaking\b", False),
+    # a name spelled out after it: "my name is Joan, J, O, A N"
+    ("PERSON", r"\b(?:my name is|name is|i am|i'm|this is|call me) [a-z]+,? (?P<v>[a-z](?:,? [a-z]\b){2,})", False),
     ("OTP", r"\b(?:otp|one[- ]time (?:password|pin|code)|verification code|sms code)\D{0,24}?(?P<v>\d{4,8})\b", False),
     ("PIN", r"\bpin\b\D{0,15}?(?P<v>\d{4,6})\b", False),
+    # an amount with no currency word, in a money context ("I lost sixty thousand" -> "lost 60000")
+    ("AMOUNT", r"\b(?P<v>\d[\d,]{2,}(?:\.\d{1,2})?)(?: dollars?)? (?:per|a|every) (?:month|year|annum)\b", False),
+    ("AMOUNT", r"\b(?:transfer(?:red|ring)?|send(?:ing)?|sent|remit(?:ted|ting)?|lost|owe|borrow|deposit of|put in|save|"
+               r"withdraw(?:al of)?|pay(?:ing)?|paid|loan of|worth)(?: (?:about|around|almost|over|roughly|only))?"
+               r" (?P<v>\d[\d,]{2,}(?:\.\d{1,2})?)\b(?! ?(?:digits|years|days|months|weeks|times|percent|%))", False),
+    ("CVV", r"\b(?:cvv2?|cvc|(?:card )?security code|(?:three |3 )?digits (?:at|on) the back(?: of (?:the|your|my) card)?)"
+            r"\D{0,15}?(?P<v>\d{3,4})\b", False),
+    ("CARD_EXPIRY", r"\b(?:expiry|expiration|expires|expiring|valid (?:thru|through|until))(?: date)?\D{0,12}?"
+                    r"(?P<v>\d{2} ?[/-]? ?\d{2}(?:\d{2})?)\b", False),
     ("SECURITY_ANSWER", rf"\b(?:maiden name|first pet|pet's name|security answer)\D{{0,20}}?\b(?:is|was) {_NAME}", True),
     ("DOB", r"\b(?:date of birth|birthday|born on|born|dob)\D{0,12}?(?P<v>(?:\d{1,2}(?:st|nd|rd|th)?|(?:twenty |thirty )?(?:first|second|third|[a-z]+th)) (?:of )?(?:%s)[a-z]* \d{4}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})" % "|".join(m[:3] for m in MONTHS), False),
     ("ACCOUNT_NO", r"\b(?:account(?: number| no)?|acct)\D{0,20}?(?P<v>\d[\d -]{5,16}\d)\b", False),
     ("PHONE", r"\b(?:phone(?: number)?|mobile|handphone|hp|call me at|call you at|reach me at)\D{0,15}?(?P<v>(?:\+65 ?)?\d[\d -]{6,10}\d)\b", False),
     ("TXN_REF", r"\b(?:reference(?: number| no)?|ref(?: no)?|transaction id|case)\W{0,12}(?:is )?(?P<v>[a-z]{0,4}[ -]?\d[\d ]{4,14}\d)\b", False),
     ("EMPLOYER", rf"\b(?:work(?:ing)?|employed) (?:at|for|with) {_NAME}", True),
-    ("PERSON", rf"\bmy (?:mother|father|mum|dad|wife|husband|son|daughter|brother|sister)(?: is| named| called)? {_NAME}", True),
+    ("PERSON", rf"\bmy (?:mother|father|mum|dad|wife|husband|son|daughter|brother|sister)(?: is| named| called)? "
+               rf"{_NO_NAME}{_NAME}", True),
     ("LOCATION", rf"\b(?:i|we) (?:stay|live) (?:in|at) {_NAME}", True),
     ("BRANCH", r"\b(?P<v>%s) branch\b" % "|".join(map(re.escape, TOWNS)), False),
+    ("NRIC", r"\b(?:nric|ic number)\b\D{0,40}?(?P<v>\d{3,7} ?[a-z])\b", False),     # "last four of my nric: 368 b"
+    ("EMAIL", r"\b(?P<v>at (?:gmail|yahoo|hotmail|outlook|icloud|live|singnet)(?: dot [a-z]{2,3})+)\b", False),
+    ("ADDRESS", rf"\b(?P<v>(?:blk|block)\W+(?:[a-z]\W+)?(?:\d{{1,4}}|{_DW}(?:\W+{_DW}){{0,3}})[a-z]?\b"
+                rf"(?:\W+unit(?: number)?\W+#?\d[\d -]*\d)?)", False),
+    ("OCCUPATION", r"\bi(?:'m| am)(?: actually| just| currently| still)? an? (?P<v>student|retiree|housewife|homemaker|freelancer)\b", False),
     ("PASSPORT", r"\bpassport(?: number| no)?\W{0,6}(?:is )?(?P<v>[a-z]{1,2} ?\d{6,9}(?: ?[a-z]\b)?)", False),
     ("IBAN", rf"\biban\W{{0,6}}(?:(?:number|no|is) )*(?P<v>{_SPELLED}{{10,40}})", False),
     ("SWIFT", rf"\b(?:swift|bic)(?: code)?\W{{0,6}}(?:is )?(?P<v>[a-z]{{6}}[a-z0-9]{{2}}(?:[a-z0-9]{{3}})?\b|{_SPELLED}{{8}})", False),
@@ -163,7 +192,8 @@ LEXICONS = {
     "LEGAL": ["divorce", "custody", "bankruptcy", "lawsuit", "court case", "police case", "sued"],
     "NATIONALITY": ["singaporean", "malaysian", "indonesian", "indian", "chinese", "filipino", "vietnamese",
                     "thai", "australian", "british", "american"],
-    "LOCATION": list(TOWNS),
+    "LOCATION": list(TOWNS) + list(SG_PLACES),
+    "EMPLOYER": SG_EMPLOYERS,
     # PEP and religion lexicons also leave generator values out ("grassroots leader", "Sikh").
     "PEP": ["member of parliament", "minister", "ambassador", "senior civil servant", "judge", "mayor", "senator"],
     "RELIGION": ["buddhist", "christian", "muslim", "hindu", "taoist", "catholic", "methodist"],
@@ -225,28 +255,50 @@ def spoken_layer(text: str) -> list[Span]:
 
 # ---------------------------------------------------------------- dialogue (slot tracking)
 
-_ASKS = re.compile(r"\b(?:can|could|may) (?:i|you)\b|\bwhat(?:'s| is| was)\b|\bwhich\b|\bplease (?:read|tell|give|"
+_ASKS = re.compile(r"\b(?:can|could|may) (?:i|you)\b|\bwhat(?:'s|s| is| was)\b|\bwhich\b|\bplease (?:read|tell|give|"
                    r"confirm)\b|\bread it\b|\btell me\b|\?", re.I)
 # slot type, what the agent asks about, and how many digits a valid answer has (None = words)
 SLOTS = [
     ("OTP", re.compile(r"\b(?:otp|one[- ]time (?:password|pin|code)|verification code|sms code|the code)\b", re.I), (4, 8)),
     ("PIN", re.compile(r"\b(?:your|the) pin\b", re.I), (4, 6)),
     # "which account" / "your account number", not "I am freezing the account now"
-    ("ACCOUNT_NO", re.compile(r"\b(?:account (?:number|no)|which account|your account)\b", re.I), (6, 14)),
-    ("PHONE", re.compile(r"\b(?:mobile|phone|contact) number\b", re.I), (8, 11)),
-    ("CARD_NO", re.compile(r"\bcard number\b", re.I), (13, 19)),
-    ("SECURITY_ANSWER", re.compile(r"\b(?:maiden name|first pet|pet's name|security question)\b", re.I), None),
+    # a fragment of an identifier is still identifying: "the last four digits", a card read four digits at a time
+    ("ACCOUNT_NO", re.compile(r"\b(?:account (?:number|no)|which account|your account)\b", re.I), (4, 14)),
+    ("PHONE", re.compile(r"\b(?:mobile|phone|contact) number\b", re.I), (4, 11)),
+    ("CARD_NO", re.compile(r"\bcard number\b", re.I), (4, 19)),
+    ("NRIC", re.compile(r"\b(?:nric|ic number)\b", re.I), (3, 7)),
+    ("DOB", re.compile(r"\b(?:year|date) of birth\b|\bwhen were you born\b", re.I), (4, 8)),
+    ("CVV", re.compile(r"\b(?:cvv2?|cvc|(?:card )?security code|digits (?:at|on) the back|back of (?:the|your) card)\b", re.I), (3, 4)),
+    ("CARD_EXPIRY", re.compile(r"\b(?:expiry|expiration) date\b|\bwhen does (?:it|the card) expire\b", re.I), (4, 6)),
+    # The agent's question decides the type of the reply: "your favourite food" -> "chicken rice".
+    ("SECURITY_ANSWER", re.compile(r"\b(?:maiden name|first pet|pet's name|security (?:question|answer)|for security|"
+                                   r"favourite|primary school|first school|first car|memorable (?:word|answer|date|place))\b", re.I), None),
 ]
 _QWORDS = {"first", "pet", "pet's", "maiden", "name", "mother", "mother's", "security", "question", "answer",
            "called", "named", "my", "is", "was"}
 
 
+def _readout(line: str) -> bool:
+    """A turn that is mostly a number being read out ("Eight, one, three, zero."), echoes included."""
+    norm = spoken.normalize(line)[0]
+    words = [w for w in re.findall(r"[a-z]+", re.sub(r"\d", " ", norm.lower())) if w not in _STOP | _NOT_NAME]
+    return len(re.sub(r"\D", "", norm)) >= 3 and len(words) <= 3
+
+
 def slots(text: str) -> list[tuple[str, int, int]]:
-    """(type, start, end) of each client reply to an agent's request for a slot."""
-    out, pos, prev = [], 0, None
+    """(type, start, end) of each reply to an agent's request for a slot. A number slot stays open while
+    the next turns are read-outs: people read a card or phone number in pieces, and the agent echoes them."""
+    out, pos, prev, open_ = [], 0, None, []
+    width = {t: w for t, _, w in SLOTS}
     for line in text.split("\n"):
-        if prev is not None and _ASKS.search(prev):
-            out += [(t, pos, pos + len(line)) for t, rx, _ in SLOTS if rx.search(prev)]
+        asked = [t for t, rx, _ in SLOTS if rx.search(prev)] if prev is not None and _ASKS.search(prev) else []
+        if asked:
+            out += [(t, pos, pos + len(line)) for t in asked]
+            open_ = [t for t in asked if width[t]]
+        elif open_ and _readout(line):
+            out += [(t, pos, pos + len(line)) for t in open_]
+        else:
+            open_ = []
         prev = line
         pos += len(line) + 1
     return out
@@ -277,6 +329,38 @@ def dialogue_layer(text: str) -> list[Span]:
     return out
 
 
+# ---------------------------------------------------------------- learned NER (review signal only)
+
+GLINER_LABELS = {
+    "person": "PERSON", "national id": "NRIC", "passport number": "PASSPORT", "phone number": "PHONE",
+    "email": "EMAIL", "address": "ADDRESS", "date of birth": "DOB", "bank account number": "ACCOUNT_NO",
+    "iban": "IBAN", "credit card number": "CARD_NO", "transaction reference": "TXN_REF", "money amount": "AMOUNT",
+    "one-time password": "OTP", "pin": "PIN", "security answer": "SECURITY_ANSWER", "location": "LOCATION",
+    "organization": "EMPLOYER", "occupation": "OCCUPATION", "nationality": "NATIONALITY", "date": "DATE",
+    "medical condition": "HEALTH", "legal proceeding": "LEGAL", "religion": "RELIGION",
+    "political position": "PEP", "swift code": "SWIFT",
+}
+
+
+@lru_cache
+def gliner_model():
+    """Local zero-shot PII model (knowledgator/gliner-pii-base-v1.0). Needs requirements-experiments.txt.
+    Local on purpose: sending transcripts to a cloud model to find PII would itself be a disclosure."""
+    from gliner import GLiNER
+    return GLiNER.from_pretrained("knowledgator/gliner-pii-base-v1.0")
+
+
+def gliner(text: str) -> list[Span]:
+    """GLiNER-PII spans, per utterance. Its precision (about 50%) is too low to redact with, so the
+    service uses it only to hold a call for review (privacy/review.py)."""
+    lines, out, off = text.split("\n"), [], 0
+    for line, ents in zip(lines, gliner_model().batch_predict_entities(lines, list(GLINER_LABELS), threshold=0.5)):
+        out += [Span(off + e["start"], off + e["end"], GLINER_LABELS[e["label"]], "gliner", round(e["score"], 2))
+                for e in ents]
+        off += len(line) + 1
+    return out
+
+
 # ---------------------------------------------------------------- merge / propagate
 
 # Tie-break by precision: validated formats beat free-text cues beat statistical NER.
@@ -304,7 +388,7 @@ def propagate(text: str, spans: list[Span]) -> list[Span]:
             continue
         surface = text[sp.start:sp.end]
         for tok in ([surface] + surface.split() if sp.type == "PERSON" else [surface]):
-            if len(tok) >= 3 and tok.lower() not in _STOP:
+            if len(tok) >= 3 and tok.lower() not in _STOP | _NOT_NAME:
                 seen.setdefault(tok.lower(), sp.type)
     covered = [(s.start, s.end) for s in spans]
     out = []
@@ -349,8 +433,26 @@ ALLOW = {b.lower() for b in BANKS} | {"otp", "nric", "pin", "sms", "fin", "atm",
                                      "dui", "hao", "boleh", "wo zhi dao", "saya faham", "okay lah"}
 
 
+_NAME_LIKE = {"PERSON", "LOCATION", "NATIONALITY", "EMPLOYER", "OCCUPATION"}
+
+
+def _plausible(text: str, sp: Span) -> bool:
+    """False for a name-like span that real speech produces by itself: only fillers, particles, Malay or
+    pinyin function words, or stop words ("ya ya", "dia punya"); English NER on Chinese or Tamil script."""
+    surface = text[sp.start:sp.end]
+    if sp.type not in _NAME_LIKE:
+        return True
+    if sp.layer in ("presidio", "propagate") and not re.search(r"[a-z]", surface, re.I):
+        return False
+    words = re.findall(r"[a-z']+", surface.lower())
+    if all(w in _NOT_NAME for w in words):
+        return False
+    return not (sp.layer == "presidio" and 2 * sum(w in FUNCTION_WORDS for w in words) >= len(words))
+
+
 def combine(text: str, raw: list[Span], layers=LAYERS) -> list[Span]:
-    spans = merge([s for s in raw if s.layer in layers and text[s.start:s.end].lower().strip(" .,") not in ALLOW])
+    spans = merge([s for s in raw if s.layer in layers and text[s.start:s.end].lower().strip(" .,") not in ALLOW
+                   and _plausible(text, s)])
     if "propagate" in layers:
         spans = merge(spans + propagate(text, spans))
     return _tidy(text, spans)

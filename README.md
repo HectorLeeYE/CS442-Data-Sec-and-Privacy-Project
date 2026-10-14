@@ -7,7 +7,7 @@ hold the lowest security clearance, while the same transcripts are banking-secre
 compliance may read in full, and only for high-risk calls. Quietline detects sensitive data in
 each transcript once, stores one encrypted copy per clearance tier under attribute-based
 encryption, releases a de-identified training set to data science, and logs every release in a
-tamper-evident chain.
+Merkle-tree log whose heads a separate key authority signs.
 
 > **Project requirements**
 > 1. Identify a realistic data analysis task
@@ -26,6 +26,7 @@ tamper-evident chain.
 | [`docs/requirements.md`](docs/requirements.md) | The six requirements, the privacy and utility targets, and the evidence for each |
 | [`docs/design.md`](docs/design.md) | Domain, data flows, risk register, taxonomy, detection, redaction, the prototype, experiment design and findings |
 | [`docs/dpia.md`](docs/dpia.md) | Data protection impact assessment |
+| [`docs/improvement-plan.md`](docs/improvement-plan.md) | What rounds 3–5 changed and what is still open |
 | [`backend/experiments/out/RESULTS.md`](backend/experiments/out/RESULTS.md) | Full experiment tables (generated) |
 
 All transcripts, clients and names are synthetic sample data.
@@ -46,8 +47,14 @@ Open **http://localhost:8000**. The first start takes about a minute: it loads t
 generates 30 demo calls, runs detection on them and encrypts every copy under CP-ABE. The image
 is about 2.4 GB, mostly the spaCy `en_core_web_lg` model.
 
-The database (`/data`) and the key authority (`/keys`: ABE master key, receipt-signing key, audit
-anchor) are separate volumes on purpose. Stealing `/data` alone decrypts nothing.
+The database (`/data`), the server's receipt key (`/keys`) and the key authority (`/ka`: ABE
+master key, audit tree-head key) are separate volumes on purpose. Stealing `/data` alone decrypts
+nothing. Run like this, the authority shares the server's process, which is fine for a demo.
+To run it as its own container, so that root on the server reaches no master key:
+
+```bash
+KA_SECRET="$(openssl rand -hex 32)" APP_SECRET="$(openssl rand -hex 32)" docker compose up --build
+```
 
 ### Option B: local development (two processes, hot reload)
 
@@ -82,13 +89,17 @@ When `frontend/dist` exists, FastAPI serves the dashboard at `/` alongside the A
 |---|---|---|
 | `APP_SECRET` | `dev-only-change-me` | Root secret for the JWT signing key and the surrogate HMAC key. **Set it for anything beyond a laptop demo.** |
 | `DB_PATH` | `backend/demo.sqlite3` | SQLite file: users, encrypted copies, audit log. |
-| `KEYS_DIR` | `backend/keys/` | The key authority: ABE master key, Ed25519 signing key, audit anchor. Keep it apart from the database. |
+| `KEYS_DIR` | `backend/keys/` | The server's Ed25519 key for receipts and export manifests. |
+| `KA_DIR` | `backend/keyauthority/` | The key authority's folder: ABE master key, tree-head signing key, signed heads, issued-key log. Keep it apart from both. |
+| `KA_URL` | unset | URL of a separate key authority (`uvicorn server.keyauthority:app`). Unset: the authority runs in the server's process. |
+| `KA_SECRET` | `dev-only-change-me` | Shared by the server and the authority to MAC clearance assertions. |
+| `GLINER_REVIEW` | unset | `1` holds a call for review when GLiNER-PII finds a quasi-identifier or sensitive attribute the rules missed. Needs `requirements-experiments.txt`. |
 | `SEED_CALLS` | `30` | Calls generated on first start. The first half are written as by a human transcriber, the second half as raw ASR output. |
 
-**Resetting the demo.** Stop the server and delete **both** `backend/demo.sqlite3*` and
-`backend/keys/` (Docker: remove both volumes). Deleting only one leaves copies that no key can open,
-or keys for copies that no longer exist. A database from round 1 (before CP-ABE) is refused at
-start-up with a clear error telling you to delete it.
+**Resetting the demo.** Stop the server and delete `backend/demo.sqlite3*`, `backend/keys/` and
+`backend/keyauthority/` (Docker: remove the volumes). Deleting only some leaves copies that no key
+can open. A database from an earlier round (before CP-ABE, or with the old hash-chain audit log)
+is refused at start-up with a clear error telling you to delete it.
 
 ### Demo accounts (password `demo` for all)
 
@@ -100,17 +111,26 @@ start-up with a clear error telling you to delete it.
 | `datasci` | Alex Chua, data science | GREEN | The de-identified rendering and the training-set export |
 | `model` | ASR training pipeline, service account | GREEN | The same as `datasci`: the model is treated as a GREEN principal |
 
-Credentials (OTPs, PINs, security answers) are suppressed in **every** tier,
+Credentials (OTPs, PINs, CVVs, security answers) are suppressed in **every** tier,
 RED included, and never stored.
 
 ### Five-minute demo script
 
+0. **Sign in (any account): the app opens on the Project overview**, which walks the six requirements in
+   order, with every privacy and utility target checked live against the latest results (met / not met).
+   Then **open Live anonymiser** and press **Play a call**. A fresh synthetic call arrives one
+   utterance at a time, as speech recognition would produce it. After each one, the "Detected" panel
+   and the RED, AMBER and GREEN renderings update (server time shown, about 10–30 ms), with the
+   risk and review badges. Edit the text to show any case live. Nothing on this page is stored or logged.
 1. **Sign in as `compliance`.** The Calls page shows the selected call three times: RED, AMBER and
    GREEN, with each utterance aligned across the columns. Each call carries a **risk** badge
    (triage at ingest) and, if detection was unsure, a **review** badge.
 2. **Read across one row of a high-risk call.** RED shows the account number, AMBER a masked form
    such as `***-***894-8`, and GREEN a realistic, checksum-valid fake. The OTP is `[REDACTED]` in
    all three columns.
+   **The PCI moment:** paste a call where the agent asks "Can you read me the three digits at the
+   back of the card?" and the client answers. The CVV appears in no tier, RED included (PCI DSS
+   3.3.1 forbids storing it even encrypted).
 3. **Hover any tag** (or tab to it). The card names the class, the detection layer that found it
    (for example, *spoken layer*) and the action applied. It never shows the original value.
 4. **Open a low-risk call.** RED and AMBER are not shown: the call was never referred to
@@ -127,55 +147,64 @@ RED included, and never stored.
    call, passed through the k-anonymity gate (k = 5), with an Ed25519-signed manifest.
 8. **Back as `compliance`, open Disclosure log.** Every release appears with the SHA-256 of the
    exact text released, plus the break-glass opening, the denial, the export and any release or
-   erasure, with their reasons. *Hash chain: Intact.*
+   erasure, with their reasons. *Merkle log: Intact*, checked against the heads the key authority
+   signed.
+   **Offline receipt check:** on the Calls page, download a column's *receipt*, then with the
+   server stopped:
+   ```bash
+   curl -s localhost:8000/api/log-key > log-key.pem          # once, while the server is up
+   .venv/bin/python -m server.merkle receipt-42.json log-key.pem
+   ```
 9. **Steal the database.** In a terminal:
    ```bash
    cd backend
    .venv/bin/python -m server.attack           # the DB file + a GREEN user's key
    .venv/bin/python -m server.attack --none    # the DB file alone
    ```
-   Bypassing the server, the GREEN key opens only GREEN copies (30 of 30) and nothing else; with no
-   key, nothing opens. See [design §5.9](docs/design.md#59-attack-demonstration).
-10. **Show tamper evidence.** Rewrite history behind the app's back, then click *Re-verify chain*:
+   Bypassing the server, the GREEN key opens only GREEN copies (29 of 30: the one held for review is refused too) and nothing else; with no
+   key, nothing opens. `python -m server.attack --server` plays root on the server: the ABE master
+   key is in none of the files it can read. See [design §5.9](docs/design.md#59-attack-demonstration).
+10. **Show tamper evidence.** Rewrite history behind the app's back, then click *Re-verify log*:
     ```bash
     cd backend
-    .venv/bin/python -c "from server import store; store.connect().execute(\"UPDATE audit SET username='nobody' WHERE seq=1\")"
+    .venv/bin/python -c "from server import store; store.connect().execute(\"UPDATE audit SET username='nobody' WHERE seq=2\")"
     ```
-    It reports **Broken** at entry #1. A stronger attacker who also recomputes every hash after the
-    edit is caught too, because the chain head is anchored in `KEYS_DIR`, outside the database:
+    It reports **Broken** at entry #2. A stronger attacker who also recomputes the entry's hash is
+    caught too, because the tree no longer matches the heads the key authority signed:
     ```bash
-    .venv/bin/python - <<'EOF'
-    from server import store
-    db, prev = store.connect(), "0" * 64
-    for r in db.execute("SELECT * FROM audit ORDER BY seq").fetchall():
-        h = store._chain(prev, dict(r))
-        db.execute("UPDATE audit SET prev = ?, hash = ? WHERE seq = ?", (prev, h, r["seq"]))
-        prev = h
-    EOF
+    .venv/bin/python -c "from server import store; db = store.connect(); r = db.execute('SELECT * FROM audit WHERE seq=2').fetchone(); db.execute('UPDATE audit SET hash=? WHERE seq=2', (store._leaf(dict(r)).hex(),))"
     ```
-    *Re-verify chain* still reports **Broken**: the entry differs from the anchored copy.
-    (Docker: run the same commands with `docker exec <container> python …` in `/app/backend`.)
+    *Re-verify log* still reports **Broken** at #2: history differs from the signed tree head. The
+    log is now stuck on purpose: the authority will not sign a head for the rewritten tree, so every
+    further action fails until the demo is reset. (Docker: run the same commands with
+    `docker exec <container> python …` in `/app/backend`.)
 11. **Redaction policy page.** The class × tier matrix, harm rationales and legal basis, read live
     from `backend/taxonomy.yaml`.
-12. **Experiment results page.** E1–E5 (section 3).
+12. **Experiment tables page.** E1–E8 (section 3); the Results dashboard charts the same data. Two panels to show:
+    **the Annex D calculator** (pick the bank's controls and an insider's motivation; it reads off
+    P(attempt), the k the export gate needs, and the measured insider risk) and **the canary
+    result** (E6: a planted NRIC the detector misses is memorised by a model trained on GREEN as
+    much as by one trained on raw text, unless the review queue holds its calls back).
 
 ### Regenerate the data, rerun the experiments, run the tests
 
 ```bash
 cd backend
 .venv/bin/python -m data.gen              # 500 calls × {clean, noisy} + 300 clients -> data/corpus/
-.venv/bin/pip install pytest httpx && .venv/bin/python -m pytest -q          # 31 tests: detection, redaction, CP-ABE, access control, audit, export
+.venv/bin/pip install pytest httpx && .venv/bin/python -m pytest -q          # 39 tests: detection, redaction, CP-ABE, access control, audit, export, live view, overview
 
 # experiments need the extra dependencies (GLiNER, Whisper, TTS)
 .venv/bin/pip install -r requirements-experiments.txt
-.venv/bin/python -m experiments.run       # E1, E2, E3, E5 -> experiments/out/*.json + RESULTS.md
+.venv/bin/python -m data.nsc               # real Singapore speech: NSC Parts 3-6 transcripts (text only, ~2 MB)
+.venv/bin/python -m experiments.run       # E1, E2, E3, E5, E6 -> experiments/out/*.json + RESULTS.md
+.venv/bin/python -m experiments.run e7    # E7 real speech, incl. the held-out before/after (data/nsc/heldout*.json*)
 .venv/bin/python -m experiments.asr 40    # E4: TTS -> Whisper, 3–6 h on a laptop CPU; resumable, and Whisper output is cached for re-scoring
 
 cd ../frontend && npm run build           # type-check + production build
 ```
 
 Everything is seeded, so reruns reproduce the published numbers. Detection results are cached
-under `experiments/out/`, keyed by a hash of the detector code. CI (GitHub Actions) runs the tests,
+under `experiments/out/`, keyed by a hash of the detector code and of the calls. CI (GitHub Actions) runs the tests,
 the frontend build and the linter on every push.
 
 ---
@@ -187,10 +216,10 @@ the frontend build and the linter on every push.
 | **1. A realistic data analysis task** | Fine-tuning a bank's in-house ASR model on transcripts of recorded client calls (Singapore-accented English, Singlish, code-switching), by data scientists with the lowest clearance. Secondary flow: compliance review of high-risk calls, as in the brief's BPMN. Data-flow diagram, data lifecycle, 15-entry risk register, LINDDUN and STRIDE threat models. | [design §1](docs/design.md#1-domain-data-flows-and-disclosure-risks), [`docs/dpia.md`](docs/dpia.md) |
 | **2. Privacy and utility requirements** | Privacy: a five-class taxonomy (DIRECT_ID, FINANCIAL_ID, AUTH_SECRET, QUASI_ID, SENSITIVE_ATTR) with harm weights, legal basis and a class × tier action matrix, **a YAML file the code loads**, so the documented policy is the enforced policy. Utility: per tier, what each reader must still be able to do, with measurable targets. | [requirements.md](docs/requirements.md#privacy-and-utility-requirements), [design §2](docs/design.md#2-sensitive-data-taxonomy), [`taxonomy.yaml`](backend/taxonomy.yaml) |
 | **3. A privacy-preserving solution** | Detection: Presidio + spaCy NER; Singapore formats with checksum validation; filler-tolerant cues and lexicons; a **spoken-form normaliser** (English, Mandarin and Malay digits, homophones, number words, ASR digit groups); dialogue-slot tracking; propagation. Redaction per tier: keep, **shape-preserving surrogate**, mask-last-4, pseudonym, generalise, suppress. k-anonymity gate on export; triage; review queue. **CP-ABE** so the stored copies enforce the policy without the server. | [design §3–5](docs/design.md#3-detection), [`privacy/`](backend/privacy) |
-| **4. Prototype** | FastAPI + React/daisyUI. CP-ABE (BSW07 on BLS12-381) over one copy per tier, key authority apart from the database; clearance rules backed by the crypto; break-glass; review hold and release; signed GREEN export; retention and crypto-shredding; Ed25519 receipts; anchored hash-chained audit log. 31 tests. | [design §5](docs/design.md#5-the-prototype-access-control-encryption-integrity), [`server/`](backend/server), [`frontend/src/`](frontend/src) |
-| **5. Experimental data** | A generator for 500 calls about 300 synthetic Singapore clients, rendered **clean** and **ASR-noisy**, with exact ground-truth spans and risk labels. A **hand-written held-out set** of 24 calls. Synthetic speech for E4. | [design §6](docs/design.md#6-experimental-data), [`data/`](backend/data) |
-| **6. Demo** | The 12-step script above, the attack demo and the tamper demo. | §1 above, [design §5.9](docs/design.md#59-attack-demonstration) |
-| **Evaluation** | E1 leakage, E2 utility (perplexity and a downstream triage classifier), E3 re-identification, E4 real ASR and audio bleeping, E5 cost. | [design §7–8](docs/design.md#8-what-the-experiments-showed) |
+| **4. Prototype** | FastAPI + React/daisyUI. CP-ABE (BSW07 on BLS12-381) over one copy per tier, a **separate key authority** holding the master key; clearance rules backed by the crypto; break-glass; review hold and release; signed GREEN export; retention and crypto-shredding; an **RFC 6962 Merkle audit log** with authority-signed heads and receipts that verify offline; a **live anonymiser** view and a **project overview** that checks every target against the latest results. 39 tests. | [design §5](docs/design.md#5-the-prototype-access-control-encryption-integrity), [`server/`](backend/server), [`frontend/src/`](frontend/src) |
+| **5. Experimental data** | A generator for 500 calls about 300 synthetic Singapore clients, rendered **clean** and **ASR-noisy**, with exact ground-truth spans and risk labels. A **hand-written development set** of 24 calls, and the tooling for an **independent held-out set** written outside the team (typed placeholders, frozen by hash before scoring). Synthetic speech for E4. | [design §6](docs/design.md#6-experimental-data), [`data/`](backend/data) |
+| **6. Demo** | A project overview page that follows these six requirements and checks every target live; a live anonymiser; the 12-step script above, with the PCI moment, the offline receipt check, the Annex D panel and the canary result; the attack demo and the tamper demo. | §1 above, [design §5.9](docs/design.md#59-attack-demonstration) |
+| **Evaluation** | E1 leakage (with entity-level recall, exact intervals and paired tests), E2 utility (perplexity, a downstream triage classifier, a differentially private bigram), E3 re-identification against the PDPC Annex D threshold, E4 real ASR and audio bleeping, E5 cost, E6 canary exposure. | [design §7–8](docs/design.md#8-what-the-experiments-showed) |
 
 ---
 
@@ -199,59 +228,87 @@ the frontend build and the linter on every push.
 Full tables are in [`RESULTS.md`](backend/experiments/out/RESULTS.md); the discussion is in
 [design §8](docs/design.md#8-what-the-experiments-showed).
 
-| E1 harm-weighted recall | Clean (500 calls) | ASR-style (500 calls) | Hand-written held-out (24 calls) |
+| E1 harm-weighted recall | Clean (500 calls) | ASR-style (500 calls) | Hand-written dev set (24 calls, tuned against) |
 |---|---|---|---|
-| Presidio alone | 58.6% | 43.8% | 33.3% |
-| Our full detector | **99.3%** | **97.7%** | **85.1%** (first round 72.7%) |
-| Our detector + GLiNER-PII | 100.0% | 98.6% | 95.7% (precision 52%) |
+| Presidio alone | 56.6% | 43.4% | 33.3% |
+| Our full detector | **99.4%** | **98.0%** | 94.2% (round 1 72.7%, round 2 85.1%) |
+| Our detector + GLiNER-PII | 99.9% | 99.0% | 97.7% (precision 52%) |
 
-**The held-out gap is the main finding.** The synthetic numbers overstate real performance. The
-first detector reached 72.7% on the hand-written calls; reading those misses for their causes and
-fixing the classes they belong to (credentials written with spaces, amounts and dates spoken as
-number words, Whisper's punctuated digit groups, "read me the code") lifted it to 85.1% without
-moving a synthetic number. The remaining misses are lexicon gaps (occupations, employers, health
-and legal terms) and security answers that are ordinary words, listed in full in design §8.1.
-Triage still misses a third of the held-out high-risk calls (first round: 44%).
+**The synthetic numbers overstate real performance.** On 150 real role-played bank calls (IMDA
+NSC), labelled by hand and frozen before scoring, held-out recall is **73.0%** [50.4, 90.2], and
+92.5% after the review queue (E7 below).
+Round 3 fixed gaps found on the 24 hand-written calls (credentials typed by the agent's question,
+amounts with no currency word, Singapore employer and place gazetteers, broader triage), so they
+are now a development set: credentials 6 of 6 and triage 9 of 9 there show the rules work, not
+that they generalise. The real bank calls above are the held-out number for now; the independent written set
+is still to come (§5). GLiNER as a review
+signal raises recall of unreviewed GREEN text to 99.8% but holds 83% of calls, so it is off by
+default.
 
 | E2: bigram LM trained on… tested on real calls | Perplexity |
 |---|---|
-| raw transcripts (upper bound, not releasable) | 15.2 |
-| PII suppressed | 82.6 |
-| PII surrogated | 24.1 |
-| the GREEN policy | 29.4 |
+| raw transcripts (upper bound, not releasable) | 15.5 |
+| PII suppressed | 83.3 |
+| PII surrogated | 23.9 |
+| the GREEN policy | 28.2 (26.8 with the real detector) |
+| raw, user-level DP at ε = 8 / 4 / 1 | 519 / 831 / 3,480 |
 
-A second utility check trains a high-risk triage classifier on each release and tests it on real
-calls: on synthetic test calls every release scores 97.0%; on the held-out calls GREEN scores
-70.8% against 75.0% for raw, one high-risk call fewer, because GREEN's amount band straddles the
-S$5,000 threshold (design §8.2).
+At about 220 training clients, differential privacy's noise destroys the model; capping each
+client's contribution alone costs little (21.0). A triage classifier trained on GREEN does as well
+as one trained on raw (78.0% synthetic; 66.7% vs 62.5% on the dev set), but both are weak (design §8.2).
 
 | E3: clients re-identified (clean) | External adversary | Insider with transaction log |
 |---|---|---|
-| raw transcript | 83.8% | — |
-| GREEN policy | 10.0% | 21.4% |
-| GREEN + k-gate | **0.2%** | **2.6%** |
+| raw transcript | 85.0% | — |
+| GREEN policy | 9.8% | 21.8% |
+| GREEN + k-gate | **0.0%** | **2.2%** → 0.11% risk under PDPC Annex D (high controls) |
 
-**E4:** on 40 calls read by SG-English TTS and transcribed by Whisper (WER 27.7%), the first
-detector's harm-weighted recall falls to **82.5%** (Presidio alone: 45.7%). Whisper writes numbers
-as digits broken up by punctuation, which that detector did not join, so the spoken-form layer
-added nothing on real ASR. The current normaliser joins those digit groups, but the E4 rerun with
-it was interrupted before writing results, so its effect on real ASR is not yet measured
-(design §8.4). Bleeping the detected words in the audio leaves 17.9% of values recoverable by
-re-transcription, so audio stays at RED.
+**E6, canaries:** a fake NRIC planted 20 times is memorised by a model trained on raw text (11.6
+bits of exposure out of 12.3) and not by one trained on GREEN (1.4 bits). One the detector misses
+(an M-series FIN) is memorised from GREEN as much as from raw (12.0 bits), unless the review queue
+holds its calls, which it does (0.3 bits). A phone number read out in pairs escapes the queue too.
 
-**E5:** detection about 40 ms per call; a cached read 0.1 ms; the first read under a new ABE policy
-about 214 ms (pure-Python pairings).
+**E4:** on 40 fresh calls read by SG-English TTS and transcribed by Whisper (WER 28.4%), the current
+detector's harm-weighted recall is **85.3%** (Presidio alone: 46.5%; the first detector scored 82.5% on
+an earlier set). The normaliser now joins Whisper's digit groups, so the spoken layer adds 4.2 points on
+real ASR where it added nothing before; Whisper's punctuated number shapes and mis-heard names are most
+of what is left (design §8.4). Bleeping the detected words in the audio leaves 14.2% of values
+recoverable by re-transcription, so audio stays at RED.
+
+**E7, real Singapore speech:** on IMDA National Speech Corpus transcripts (no PII labels) the round-3
+detector's precision was about half, mostly fillers, particles and Malay words taken for names. Round 4
+fixed these from the corpus's test sets and then scored once on 1,000 held-out training-split clips frozen
+beforehand, 100 detections per detector judged blind by Claude: precision **11% → 32%** (exact 95%
+intervals [5.6, 18.8] and [23.0, 42.1]), words rewritten at GREEN 4.5% → 2.7%, synthetic recall
+unchanged. Real-speech precision is still low: capitalised Malay words are read as names (design §8.7).
+Recall on real calls: 300 role-played bank calls from the NSC training split were labelled by hand and
+frozen before any detector ran. The first batch scored **36.1%** while unseen (numbers read out a few
+digits per turn defeat every format check); round 5 fixed that (73.1% on that batch, now tuned against).
+The second batch, labelled after the fixes and scored once: **73.0%** [50.4, 90.2], the same as before the
+fixes since it holds no piecewise numbers; names 100%, amounts without a money word and travel places
+missed; 92.5% after the review queue (design §8.7).
+
+**E8, the task itself:** a language model trained on each release re-ranks Whisper's five best guesses
+on the E4 calls. Word error rate: Whisper alone 20.7%, adapted on raw transcripts 18.9%, on **GREEN 19.2%**,
+on suppressed text 19.7%. The GREEN release keeps 82% of the gain raw data gives (suppression 54%); the
+target, set before the run, was within 1 point of raw (design §8.8).
+
+**E5:** detection about 31 ms per call; a cached read 0.1 ms; the first read under a new ABE policy
+about 250 ms (pure-Python pairings).
 
 ---
 
 ## 4. Architecture
 
 ```
-frontend/  React 19 + Vite + Tailwind 4 + daisyUI 5 (Blueprint MCP), ApexCharts
+frontend/  React 19 + Vite + Tailwind 4 + daisyUI 5 (Blueprint MCP); charts are plain HTML/SVG
+  src/pages/Overview.tsx    landing page: the six requirements, every target checked live, datasets, demo steps
+  src/pages/Live.tsx        live anonymiser: type or play a call, all tiers re-render per utterance (stores nothing)
   src/pages/Calls.tsx       three-tier aligned view, break-glass, release, erase, ingest, export
-  src/pages/Audit.tsx       disclosure log, chain and anchor verification (RED only)
+  src/pages/Audit.tsx       disclosure log, Merkle log verification against signed heads (RED only)
   src/pages/Policy.tsx      taxonomy matrix, harm rationale, legal basis
-  src/pages/Results.tsx     E1–E5 charts and tables
+  src/pages/Dashboard.tsx   results dashboard: charts for E1–E3, E6, E7, E8
+  src/pages/Results.tsx     experiment tables E1–E8, Annex D calculator
   src/components/           Transcript (tier column, hover cards), TierBadge
 
 backend/   Python 3.12
@@ -263,58 +320,59 @@ backend/   Python 3.12
   privacy/redact.py         redaction actions, per-tier rendering
   privacy/release.py        k-anonymity gate for GREEN exports
   privacy/vocab.py          SG vocabularies (generator + disjoint surrogate pool)
-  server/main.py            FastAPI: auth, clearance rules, ingest, break-glass, review, erase, export, audit
-  server/store.py           SQLite, per-tier copies under CP-ABE, key authority, anchored audit chain
+  server/main.py            FastAPI: auth, clearance rules, ingest, break-glass, review, erase, export, audit, live anonymiser
+  server/overview.py        the requirement targets checked against experiments/out/*.json (GET /api/overview)
+  server/store.py           SQLite, per-tier copies under CP-ABE, key-authority client, Merkle audit log
+  server/keyauthority.py    the key authority: ABE master key, user keys, signed tree heads (own process)
+  server/merkle.py          RFC 6962 tree, inclusion/consistency proofs, offline receipt check
   server/abe.py             CP-ABE (BSW07) on BLS12-381
-  server/attack.py          stolen-database demo
+  server/attack.py          stolen-database and server-compromise demos
   data/gen.py               synthetic corpus generator (clean + ASR-noisy, labelled)
-  data/heldout.py, ood/     hand-written held-out set
-  experiments/run.py        E1, E2, E3, E5 + RESULTS.md
-  experiments/asr.py        E4: TTS -> Whisper, audio bleeping
-  tests/                    pytest (31)
+  data/heldout.py, ood/     hand-written development set; typed-placeholder loader, freeze-by-hash
+  data/independent/         brief for the independent held-out set (calls.txt arrives later)
+  data/nsc.py               IMDA National Speech Corpus transcripts: test sets, frozen held-out sets, bank calls to label
+  experiments/run.py        E1, E2, E3, E5, E6, E7 + RESULTS.md
+  experiments/asr.py        E4: TTS -> Whisper, audio bleeping; E8: the task (n-best re-ranking per release)
+  tests/                    pytest (39)
 ```
 
 Request path for `GET /api/calls/{id}?tier=AMBER`: verify JWT → re-read the user's clearance from
 the DB → check the tier, ownership and risk rules (deny and log if they fail) → derive the user's
-ABE key from their attributes → decrypt the copy's data key (ABE, then cached) → AES-GCM decrypt
-→ hash the released text into the audit chain → respond with a signed receipt.
+ABE key from their attributes (issued once by the key authority, then cached) → decrypt the copy's
+data key (ABE, then cached) → AES-GCM decrypt → append the released text's hash to the Merkle log
+and have the authority sign the new head → respond with a receipt carrying an inclusion proof.
 
 ---
 
 ## 5. Improvements still open
 
-In priority order.
+[`docs/improvement-plan.md`](docs/improvement-plan.md) is the plan; round 3 implemented Phases
+0–3 of it. Still open, in order:
 
-1. **A held-out set written outside the team.** The 85.1% held-out recall is the honest figure,
-   and it was measured on a set the team wrote. The round-2 fixes were made by cause, not by
-   string, and left the synthetic numbers untouched, but only an independent set can confirm
-   that. Two or three people outside the team each writing ten calls from a one-paragraph brief,
-   labelled with the markup `data/heldout.py` already reads, is enough.
-2. **Use GLiNER-PII as a fourth review signal.** It lifts held-out recall to 95.7% but drops
-   precision to 52%. Holding a call for review when GLiNER finds a span no layer covers costs no
-   precision on released text and reuses the existing queue.
-3. **Broaden triage.** A third of the held-out high-risk calls (scams via PayNow, Carousell, an
-   identity-theft card) are triaged low because the fraud cue list is short. Take the cues from
-   the Singapore Police Force's scam categories rather than from the held-out set, and treat a
-   client who gave an OTP to someone as high risk. Also align a GREEN amount band edge with the
-   S$5,000 threshold (E2's downstream task).
-4. **Fine-tune Whisper on raw vs GREEN** and compare word error rate, the metric the bank cares
-   about. E2's bigram model and E4 stand in for it; it was too heavy for CPU.
-5. **A separate key authority (KMS/HSM).** The server holds the ABE master key and mints users'
-   keys. Per-user keys should be issued once and held client-side.
-6. **Per-recipient fingerprinting of GREEN surrogates**, done at export time (it conflicts with
-   copies materialised at ingest).
-7. **A human utility study**: can annotators still do their task on the GREEN release?
-8. **Production hardening.** SSO with MFA; WORM storage or an external timestamp service for the
-   audit anchor; Postgres; Playwright and axe checks in CI.
-
-Not planned: differential privacy for aggregates (the dashboard publishes none), and a `subject`
-field for third parties (it could only relax redaction; design §2.1).
+1. **Real-call recall below target.** 73.0% held out on real bank calls (E7). The misses point to the
+   next fixes: amounts said without a money word, places people travel to, and a language-ID gate that
+   keeps English NER off Malay and Chinese stretches. Each needs a fresh labelled set to test it, since
+   both real-speech test sets are spent. A second, independent human labeller would also strengthen the
+   current figure.
+2. **The independent held-out set** (plan item 1.1). The brief and the tooling are in
+   [`backend/data/independent/`](backend/data/independent/README.md); the calls need people outside the
+   team. Real calls with credentials and high-risk content are needed to measure P5 and P9 on real data.
+3. **Remaining stretch items:** a phone-line (8 kHz µ-law) pass for E4; an LLM re-identification
+   attacker; fine-tuning Whisper's weights on raw vs GREEN (E8 does the language-model form);
+   per-recipient fingerprinting at export. Done since round 3: the E4 rerun on fresh calls, IMDA NSC
+   real speech (E7), the task itself (E8).
+4. **A per-client key layer**, so that one subject request is one key deletion (DPIA §2).
+5. **Publishing tree heads** somewhere public (a git repository or a timestamping service), and
+   a KMS/HSM for the key authority.
+6. **Production hardening.** SSO with MFA; Postgres; Playwright and axe checks in CI; disable the live
+   anonymiser (DPIA condition 6).
 
 ### Known limitations
 
-* The main corpus is synthetic and template-based; the held-out set is small (24 calls) and was
-  written by the same team.
+* The main corpus is synthetic and template-based. The 24 hand-written calls were written by the
+  team and have been tuned against, so they are a development set. The only held-out recall figure is on
+  150 real role-played bank calls (41 spans, wide interval), labelled by the model that tuned the detector.
+* The live anonymiser is unlogged by design, so it can be used to probe the detector.
 * E4's speech is synthetic: clean audio, no phone-line noise, no real accent variation.
 * k is counted over calls, not people.
 * Agent ownership is matched on the agent's display name; a deployment would use a staff ID.

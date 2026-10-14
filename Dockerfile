@@ -12,9 +12,10 @@ COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && python -m spacy download en_core_web_lg
 COPY backend/ .
 COPY --from=web /web/dist /app/frontend/dist
-# The database and the key authority (ABE master key, signing key, audit anchor) live on
-# separate volumes: stealing /data alone decrypts nothing.
-ENV DB_PATH=/data/demo.sqlite3 KEYS_DIR=/keys
-VOLUME /data /keys
+# The database, the server's receipt key and the key authority (ABE master key, audit tree-head key)
+# live on separate volumes. Run alone, this container hosts the authority in-process (a demo); with
+# compose.yaml the authority is its own container and this one never holds the master key.
+ENV DB_PATH=/data/demo.sqlite3 KEYS_DIR=/keys KA_DIR=/ka
+VOLUME /data /keys /ka
 EXPOSE 8000
 CMD ["uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "8000"]

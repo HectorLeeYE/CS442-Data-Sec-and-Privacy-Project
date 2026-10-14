@@ -10,6 +10,7 @@ from pathlib import Path
 _tmp = tempfile.mkdtemp()
 os.environ["DB_PATH"] = os.path.join(_tmp, "test.sqlite3")
 os.environ["KEYS_DIR"] = os.path.join(_tmp, "keys")
+os.environ["KA_DIR"] = os.path.join(_tmp, "keyauthority")
 os.environ["SEED_CALLS"] = "4"
 
 import jwt  # noqa: E402
@@ -17,7 +18,7 @@ import pytest  # noqa: E402
 from cryptography.hazmat.primitives.serialization import load_pem_public_key  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from server import attack, main, store  # noqa: E402
+from server import attack, keyauthority, main, merkle, store  # noqa: E402
 
 FRAUD = [  # high risk by triage: a fraud report
     {"speaker": "agent", "text": "Fraud line, may I have your full name?"},
@@ -144,7 +145,14 @@ def test_signed_receipts_and_export(c):
     sig = bytes.fromhex(receipt.pop("signature"))
     pub.verify(sig, canon(receipt))                                  # raises if forged
     with pytest.raises(Exception):
-        pub.verify(sig, canon(receipt | {"view_tier": "RED"}))
+        pub.verify(sig, canon(receipt | {"index": 0}))
+    # offline, against the key authority's signed tree head: no server, no database
+    log_key = c.get("/api/log-key").text
+    assert merkle.verify_receipt(receipt, log_key)
+    forged = receipt | {"entry": receipt["entry"] | {"view_tier": "RED"}}
+    assert not merkle.verify_receipt(forged, log_key)
+    c.get("/api/me", headers=green)                                  # the log grows; the old receipt still proves inclusion
+    assert c.get("/api/tree-head").json()["size"] >= receipt["tree_head"]["size"]
 
     ex = c.get("/api/export", headers=green).json()
     pub.verify(bytes.fromhex(ex["signature"]), canon(ex["manifest"]))
@@ -207,6 +215,21 @@ def test_stolen_database_and_key(c):
     assert priya[("RED", "opened")] == 0 and priya[("AMBER", "opened")] == mine
 
 
+def test_server_compromise_yields_no_master_key(c):
+    """Root on the main server reads its database and its key folder: the ABE master key is in neither."""
+    ingest(c, "priya", FRAUD)
+    assert not attack.server_compromise()
+    assert keyauthority.KA_DIR not in (store.KEYS_DIR, *store.KEYS_DIR.parents)
+    # the authority refuses unsigned assertions and break-glass keys without a reason, and logs what it issues
+    a = {"username": "datasci", "attrs": ["tier:RED"], "ts": __import__("time").time(), "reason": None}
+    with pytest.raises(PermissionError):
+        store.ka("keygen", assertion=a, signature="00" * 32)
+    with pytest.raises(PermissionError):
+        store.authority().keygen({"tier:RED", "breakglass"}, "compliance", reason="x")
+    issued = (keyauthority.KA_DIR / "issued.jsonl").read_text()
+    assert '"username": "compliance"' in issued
+
+
 def test_encrypted_at_rest(c):
     db = store.connect()
     for (blob,) in db.execute("SELECT blob FROM copies"):
@@ -215,19 +238,33 @@ def test_encrypted_at_rest(c):
 
 def test_audit_tampering_and_rewrite_detected(c):
     red = login(c, "compliance")
-    c.get("/api/me", headers=red)
+    c.get("/api/audit", headers=red)
     db = store.connect()
-    assert store.verify_chain(db)["ok"]
-    db.execute("UPDATE audit SET username = 'nobody' WHERE seq = 1")
-    assert store.verify_chain(db)["broken_at"] == 1
-    # a stronger attacker recomputes the whole chain after the edit: the anchor still notices
-    prev = "0" * 64
-    for row in db.execute("SELECT * FROM audit ORDER BY seq").fetchall():
-        h = store._chain(prev, dict(row))
-        db.execute("UPDATE audit SET prev = ?, hash = ? WHERE seq = ?", (prev, h, row["seq"]))
-        prev = h
-    v = store.verify_chain(db)
-    assert not v["ok"] and v["broken_at"] == 1 and "anchored" in v["reason"]
+    assert store.verify_log(db)["ok"]
+    saved = [tuple(r) for r in db.execute("SELECT * FROM audit WHERE seq = 2 OR seq = (SELECT MAX(seq) FROM audit)")]
+    try:
+        _tamper(db)
+    finally:                                                         # later tests need an intact log to append to
+        db.executemany("INSERT OR REPLACE INTO audit VALUES (?,?,?,?,?,?,?,?,?,?)", saved)
+    assert store.verify_log(db)["ok"]
+
+
+def _tamper(db):
+    db.execute("UPDATE audit SET username = 'nobody' WHERE seq = 2")
+    assert store.verify_log(db)["broken_at"] == 2
+    # a stronger attacker also recomputes the entry's hash: the authority's signed heads still notice
+    row = db.execute("SELECT * FROM audit WHERE seq = 2").fetchone()
+    db.execute("UPDATE audit SET hash = ? WHERE seq = 2", (store._leaf(dict(row)).hex(),))
+    v = store.verify_log(db)
+    assert not v["ok"] and v["broken_at"] == 2 and "signed tree head" in v["reason"]
+    # and the authority will not sign a head for the rewritten history
+    leaves = store._leaves(db)
+    with pytest.raises(PermissionError):
+        store.ka("publish_head", log=store.log_id(db), size=len(leaves) + 1,
+                 root=merkle.root(leaves + leaves[-1:]).hex(), proof=[])
+    # deleting the tail is caught too
+    db.execute("DELETE FROM audit WHERE seq = (SELECT MAX(seq) FROM audit)")
+    assert "truncated" in store.verify_log(db)["reason"]
 
 
 def test_parallel_tier_requests(c):
@@ -240,3 +277,25 @@ def test_parallel_tier_requests(c):
         codes = list(pool.map(lambda t: c.get(f"/api/calls/{fraud}?tier={t}", headers=red).status_code,
                               ["RED", "AMBER", "GREEN"] * 4))
     assert codes == [200] * 12
+
+
+def test_live_anonymize_stores_nothing(c):
+    utts = [{"speaker": "agent", "text": "Can you read me the OTP please?"},
+            {"speaker": "client", "text": "my name is Tan Wei Ming, the otp is 482913"}]
+    assert c.post("/api/anonymize", json={"utterances": utts}).status_code == 401
+    db = store.connect()
+    calls, log = (db.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] for t in ("calls", "audit"))
+    r = c.post("/api/anonymize", json={"utterances": utts}, headers=login(c, "datasci")).json()
+    green = " ".join(u["text"] for u in r["tiers"]["GREEN"])
+    assert "482913" not in green and "Tan Wei Ming" not in green
+    assert any(p.get("entity", {}).get("type") == "OTP" for u in r["detected"] for p in u["pieces"])
+    assert (db.execute("SELECT COUNT(*) FROM calls").fetchone()[0], db.execute("SELECT COUNT(*) FROM audit").fetchone()[0]) == (calls, log)
+    assert c.get("/api/sample-call", headers=login(c, "datasci")).json()["utterances"]
+
+
+def test_overview_targets(c):
+    assert c.get("/api/overview").status_code == 401
+    r = c.get("/api/overview", headers=login(c, "datasci")).json()
+    ids = {t["id"] for t in r["targets"]}
+    assert {"P1", "P2", "P7", "P8", "P10", "U4"} <= ids                  # the code-guaranteed rows never depend on results
+    assert all(t["met"] in (True, False, None) and t["target"] for t in r["targets"])

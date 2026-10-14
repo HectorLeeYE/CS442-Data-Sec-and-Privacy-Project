@@ -1,0 +1,19 @@
+# The key authority in its own container and volume: root on `app` reaches neither the ABE master
+# key nor the key that signs audit tree heads.   docker compose up --build   ->  http://localhost:8000
+services:
+  ka:
+    build: .
+    command: ["uvicorn", "server.keyauthority:app", "--host", "0.0.0.0", "--port", "8100"]
+    environment: { KA_DIR: /ka, KA_SECRET: "${KA_SECRET:-change-me-ka}" }
+    volumes: [ka:/ka]
+  app:
+    build: .
+    depends_on: [ka]
+    restart: on-failure        # until the authority answers
+    ports: ["8000:8000"]
+    environment:
+      KA_URL: http://ka:8100
+      KA_SECRET: "${KA_SECRET:-change-me-ka}"
+      APP_SECRET: "${APP_SECRET:-change-me-app}"
+    volumes: [data:/data, keys:/keys]
+volumes: { ka: {}, data: {}, keys: {} }

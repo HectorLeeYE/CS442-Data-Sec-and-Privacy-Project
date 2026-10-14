@@ -7,32 +7,33 @@
      "presidio"
     ],
     "recall": {
-     "DIRECT_ID": 0.7997,
-     "FINANCIAL_ID": 0.2348,
-     "AUTH_SECRET": 0.5667,
-     "QUASI_ID": 0.5682,
-     "SENSITIVE_ATTR": 0.2292
+     "DIRECT_ID": 0.792,
+     "FINANCIAL_ID": 0.2411,
+     "AUTH_SECRET": 0.4787,
+     "QUASI_ID": 0.5447,
+     "SENSITIVE_ATTR": 0.1959
     },
     "class_accuracy": {
-     "DIRECT_ID": 0.7911,
-     "FINANCIAL_ID": 0.3908,
+     "DIRECT_ID": 0.7962,
+     "FINANCIAL_ID": 0.3382,
      "AUTH_SECRET": 0.0,
-     "QUASI_ID": 0.87,
+     "QUASI_ID": 0.8816,
      "SENSITIVE_ATTR": 0.0
     },
     "support": {
-     "DIRECT_ID": 2766,
-     "FINANCIAL_ID": 1384,
-     "AUTH_SECRET": 570,
-     "QUASI_ID": 1056,
-     "SENSITIVE_ATTR": 384
+     "DIRECT_ID": 2788,
+     "FINANCIAL_ID": 1435,
+     "AUTH_SECRET": 633,
+     "QUASI_ID": 1085,
+     "SENSITIVE_ATTR": 393
     },
-    "harm_weighted_recall": 0.5855,
-    "strict_recall": 0.4859,
-    "precision": 0.9939,
-    "char_leakage": 0.4909,
-    "over_redaction": 0.0034,
-    "token_f1": 0.6969
+    "harm_weighted_recall": 0.5595,
+    "strict_recall": 0.4779,
+    "entity_recall": 0.5428,
+    "precision": 0.9947,
+    "char_leakage": 0.5048,
+    "over_redaction": 0.0027,
+    "token_f1": 0.6863
    },
    {
     "config": "+ format",
@@ -41,32 +42,33 @@
      "format"
     ],
     "recall": {
-     "DIRECT_ID": 0.9696,
-     "FINANCIAL_ID": 1.0,
-     "AUTH_SECRET": 0.5667,
-     "QUASI_ID": 0.6941,
-     "SENSITIVE_ATTR": 0.2292
+     "DIRECT_ID": 0.9656,
+     "FINANCIAL_ID": 0.9986,
+     "AUTH_SECRET": 0.4787,
+     "QUASI_ID": 0.6654,
+     "SENSITIVE_ATTR": 0.1959
     },
     "class_accuracy": {
-     "DIRECT_ID": 0.95,
-     "FINANCIAL_ID": 1.0,
+     "DIRECT_ID": 0.9517,
+     "FINANCIAL_ID": 0.9581,
      "AUTH_SECRET": 0.0,
-     "QUASI_ID": 0.895,
+     "QUASI_ID": 0.903,
      "SENSITIVE_ATTR": 0.0
     },
     "support": {
-     "DIRECT_ID": 2766,
-     "FINANCIAL_ID": 1384,
-     "AUTH_SECRET": 570,
-     "QUASI_ID": 1056,
-     "SENSITIVE_ATTR": 384
+     "DIRECT_ID": 2788,
+     "FINANCIAL_ID": 1435,
+     "AUTH_SECRET": 633,
+     "QUASI_ID": 1085,
+     "SENSITIVE_ATTR": 393
     },
-    "harm_weighted_recall": 0.8569,
-    "strict_recall": 0.7817,
-    "precision": 0.9954,
-    "char_leakage": 0.0988,
-    "over_redaction": 0.0034,
-    "token_f1": 0.9189
+    "harm_weighted_recall": 0.8283,
+    "strict_recall": 0.7719,
+    "entity_recall": 0.8229,
+    "precision": 0.996,
+    "char_leakage": 0.1103,
+    "over_redaction": 0.0027,
+    "token_f1": 0.9129
    },
    {
     "config": "+ context",
@@ -76,32 +78,33 @@
      "context"
     ],
     "recall": {
-     "DIRECT_ID": 0.9993,
+     "DIRECT_ID": 0.9989,
      "FINANCIAL_ID": 1.0,
      "AUTH_SECRET": 1.0,
-     "QUASI_ID": 0.9688,
-     "SENSITIVE_ATTR": 0.862
+     "QUASI_ID": 0.976,
+     "SENSITIVE_ATTR": 0.8855
     },
     "class_accuracy": {
      "DIRECT_ID": 1.0,
      "FINANCIAL_ID": 1.0,
      "AUTH_SECRET": 1.0,
-     "QUASI_ID": 0.9247,
-     "SENSITIVE_ATTR": 0.9789
+     "QUASI_ID": 0.9339,
+     "SENSITIVE_ATTR": 0.9713
     },
     "support": {
-     "DIRECT_ID": 2766,
-     "FINANCIAL_ID": 1384,
-     "AUTH_SECRET": 570,
-     "QUASI_ID": 1056,
-     "SENSITIVE_ATTR": 384
+     "DIRECT_ID": 2788,
+     "FINANCIAL_ID": 1435,
+     "AUTH_SECRET": 633,
+     "QUASI_ID": 1085,
+     "SENSITIVE_ATTR": 393
     },
-    "harm_weighted_recall": 0.993,
-    "strict_recall": 0.9404,
-    "precision": 0.9435,
-    "char_leakage": 0.0188,
-    "over_redaction": 0.0047,
-    "token_f1": 0.9681
+    "harm_weighted_recall": 0.9941,
+    "strict_recall": 0.946,
+    "entity_recall": 0.9878,
+    "precision": 0.9649,
+    "char_leakage": 0.0166,
+    "over_redaction": 0.0023,
+    "token_f1": 0.9756
    },
    {
     "config": "+ spoken",
@@ -112,32 +115,33 @@
      "spoken"
     ],
     "recall": {
-     "DIRECT_ID": 0.9993,
+     "DIRECT_ID": 0.9989,
      "FINANCIAL_ID": 1.0,
      "AUTH_SECRET": 1.0,
-     "QUASI_ID": 0.9688,
-     "SENSITIVE_ATTR": 0.862
+     "QUASI_ID": 0.976,
+     "SENSITIVE_ATTR": 0.8855
     },
     "class_accuracy": {
      "DIRECT_ID": 1.0,
      "FINANCIAL_ID": 1.0,
      "AUTH_SECRET": 1.0,
-     "QUASI_ID": 0.9247,
-     "SENSITIVE_ATTR": 0.9789
+     "QUASI_ID": 0.9339,
+     "SENSITIVE_ATTR": 0.9713
     },
     "support": {
-     "DIRECT_ID": 2766,
-     "FINANCIAL_ID": 1384,
-     "AUTH_SECRET": 570,
-     "QUASI_ID": 1056,
-     "SENSITIVE_ATTR": 384
+     "DIRECT_ID": 2788,
+     "FINANCIAL_ID": 1435,
+     "AUTH_SECRET": 633,
+     "QUASI_ID": 1085,
+     "SENSITIVE_ATTR": 393
     },
-    "harm_weighted_recall": 0.993,
-    "strict_recall": 0.9404,
-    "precision": 0.9435,
-    "char_leakage": 0.0188,
-    "over_redaction": 0.0047,
-    "token_f1": 0.9681
+    "harm_weighted_recall": 0.9941,
+    "strict_recall": 0.946,
+    "entity_recall": 0.9878,
+    "precision": 0.9649,
+    "char_leakage": 0.0166,
+    "over_redaction": 0.0023,
+    "token_f1": 0.9756
    },
    {
     "config": "+ dialogue",
@@ -149,32 +153,33 @@
      "dialogue"
     ],
     "recall": {
-     "DIRECT_ID": 0.9993,
+     "DIRECT_ID": 0.9989,
      "FINANCIAL_ID": 1.0,
      "AUTH_SECRET": 1.0,
-     "QUASI_ID": 0.9688,
-     "SENSITIVE_ATTR": 0.862
+     "QUASI_ID": 0.976,
+     "SENSITIVE_ATTR": 0.8855
     },
     "class_accuracy": {
      "DIRECT_ID": 1.0,
      "FINANCIAL_ID": 1.0,
      "AUTH_SECRET": 1.0,
-     "QUASI_ID": 0.9247,
-     "SENSITIVE_ATTR": 0.9789
+     "QUASI_ID": 0.9339,
+     "SENSITIVE_ATTR": 0.9713
     },
     "support": {
-     "DIRECT_ID": 2766,
-     "FINANCIAL_ID": 1384,
-     "AUTH_SECRET": 570,
-     "QUASI_ID": 1056,
-     "SENSITIVE_ATTR": 384
+     "DIRECT_ID": 2788,
+     "FINANCIAL_ID": 1435,
+     "AUTH_SECRET": 633,
+     "QUASI_ID": 1085,
+     "SENSITIVE_ATTR": 393
     },
-    "harm_weighted_recall": 0.993,
-    "strict_recall": 0.9404,
-    "precision": 0.9435,
-    "char_leakage": 0.0188,
-    "over_redaction": 0.0047,
-    "token_f1": 0.9681
+    "harm_weighted_recall": 0.9941,
+    "strict_recall": 0.946,
+    "entity_recall": 0.9878,
+    "precision": 0.9649,
+    "char_leakage": 0.0166,
+    "over_redaction": 0.0023,
+    "token_f1": 0.9756
    },
    {
     "config": "+ propagate (full)",
@@ -187,32 +192,33 @@
      "propagate"
     ],
     "recall": {
-     "DIRECT_ID": 0.9993,
+     "DIRECT_ID": 0.9989,
      "FINANCIAL_ID": 1.0,
      "AUTH_SECRET": 1.0,
-     "QUASI_ID": 0.9688,
-     "SENSITIVE_ATTR": 0.862
+     "QUASI_ID": 0.976,
+     "SENSITIVE_ATTR": 0.8855
     },
     "class_accuracy": {
      "DIRECT_ID": 1.0,
      "FINANCIAL_ID": 1.0,
      "AUTH_SECRET": 1.0,
-     "QUASI_ID": 0.9247,
-     "SENSITIVE_ATTR": 0.9789
+     "QUASI_ID": 0.9339,
+     "SENSITIVE_ATTR": 0.9713
     },
     "support": {
-     "DIRECT_ID": 2766,
-     "FINANCIAL_ID": 1384,
-     "AUTH_SECRET": 570,
-     "QUASI_ID": 1056,
-     "SENSITIVE_ATTR": 384
+     "DIRECT_ID": 2788,
+     "FINANCIAL_ID": 1435,
+     "AUTH_SECRET": 633,
+     "QUASI_ID": 1085,
+     "SENSITIVE_ATTR": 393
     },
-    "harm_weighted_recall": 0.993,
-    "strict_recall": 0.9404,
-    "precision": 0.9435,
-    "char_leakage": 0.0188,
-    "over_redaction": 0.0047,
-    "token_f1": 0.9681
+    "harm_weighted_recall": 0.9941,
+    "strict_recall": 0.946,
+    "entity_recall": 0.9878,
+    "precision": 0.9649,
+    "char_leakage": 0.0166,
+    "over_redaction": 0.0023,
+    "token_f1": 0.9756
    },
    {
     "config": "full minus presidio",
@@ -224,32 +230,33 @@
      "propagate"
     ],
     "recall": {
-     "DIRECT_ID": 0.9722,
+     "DIRECT_ID": 0.929,
      "FINANCIAL_ID": 1.0,
      "AUTH_SECRET": 1.0,
-     "QUASI_ID": 0.9688,
-     "SENSITIVE_ATTR": 0.8438
+     "QUASI_ID": 0.976,
+     "SENSITIVE_ATTR": 0.8601
     },
     "class_accuracy": {
-     "DIRECT_ID": 0.9996,
+     "DIRECT_ID": 0.9992,
      "FINANCIAL_ID": 1.0,
      "AUTH_SECRET": 1.0,
      "QUASI_ID": 1.0,
      "SENSITIVE_ATTR": 1.0
     },
     "support": {
-     "DIRECT_ID": 2766,
-     "FINANCIAL_ID": 1384,
-     "AUTH_SECRET": 570,
-     "QUASI_ID": 1056,
-     "SENSITIVE_ATTR": 384
+     "DIRECT_ID": 2788,
+     "FINANCIAL_ID": 1435,
+     "AUTH_SECRET": 633,
+     "QUASI_ID": 1085,
+     "SENSITIVE_ATTR": 393
     },
-    "harm_weighted_recall": 0.9791,
-    "strict_recall": 0.9273,
-    "precision": 0.9784,
-    "char_leakage": 0.0323,
-    "over_redaction": 0.0024,
-    "token_f1": 0.9707
+    "harm_weighted_recall": 0.9602,
+    "strict_recall": 0.9125,
+    "entity_recall": 0.9541,
+    "precision": 0.9998,
+    "char_leakage": 0.049,
+    "over_redaction": 0.0003,
+    "token_f1": 0.9669
    }
   ],
   "noisy": [
@@ -259,32 +266,33 @@
      "presidio"
     ],
     "recall": {
-     "DIRECT_ID": 0.6967,
-     "FINANCIAL_ID": 0.1149,
-     "AUTH_SECRET": 0.2544,
-     "QUASI_ID": 0.4754,
-     "SENSITIVE_ATTR": 0.1458
+     "DIRECT_ID": 0.6973,
+     "FINANCIAL_ID": 0.1352,
+     "AUTH_SECRET": 0.2164,
+     "QUASI_ID": 0.4599,
+     "SENSITIVE_ATTR": 0.0916
     },
     "class_accuracy": {
-     "DIRECT_ID": 0.8386,
-     "FINANCIAL_ID": 0.2516,
+     "DIRECT_ID": 0.8477,
+     "FINANCIAL_ID": 0.1753,
      "AUTH_SECRET": 0.0,
-     "QUASI_ID": 0.8327,
+     "QUASI_ID": 0.8697,
      "SENSITIVE_ATTR": 0.0
     },
     "support": {
-     "DIRECT_ID": 2766,
-     "FINANCIAL_ID": 1384,
-     "AUTH_SECRET": 570,
-     "QUASI_ID": 1056,
-     "SENSITIVE_ATTR": 384
+     "DIRECT_ID": 2788,
+     "FINANCIAL_ID": 1435,
+     "AUTH_SECRET": 633,
+     "QUASI_ID": 1085,
+     "SENSITIVE_ATTR": 393
     },
-    "harm_weighted_recall": 0.4379,
-    "strict_recall": 0.3195,
-    "precision": 0.9602,
-    "char_leakage": 0.7628,
-    "over_redaction": 0.0064,
-    "token_f1": 0.3876
+    "harm_weighted_recall": 0.4264,
+    "strict_recall": 0.3159,
+    "entity_recall": 0.4324,
+    "precision": 0.9541,
+    "char_leakage": 0.7647,
+    "over_redaction": 0.0063,
+    "token_f1": 0.3841
    },
    {
     "config": "+ format",
@@ -293,32 +301,33 @@
      "format"
     ],
     "recall": {
-     "DIRECT_ID": 0.7646,
-     "FINANCIAL_ID": 0.6698,
-     "AUTH_SECRET": 0.2544,
-     "QUASI_ID": 0.5189,
-     "SENSITIVE_ATTR": 0.1458
+     "DIRECT_ID": 0.7593,
+     "FINANCIAL_ID": 0.6571,
+     "AUTH_SECRET": 0.2164,
+     "QUASI_ID": 0.5032,
+     "SENSITIVE_ATTR": 0.0916
     },
     "class_accuracy": {
-     "DIRECT_ID": 0.9357,
-     "FINANCIAL_ID": 0.932,
+     "DIRECT_ID": 0.9348,
+     "FINANCIAL_ID": 0.894,
      "AUTH_SECRET": 0.0,
-     "QUASI_ID": 0.8504,
+     "QUASI_ID": 0.881,
      "SENSITIVE_ATTR": 0.0
     },
     "support": {
-     "DIRECT_ID": 2766,
-     "FINANCIAL_ID": 1384,
-     "AUTH_SECRET": 570,
-     "QUASI_ID": 1056,
-     "SENSITIVE_ATTR": 384
+     "DIRECT_ID": 2788,
+     "FINANCIAL_ID": 1435,
+     "AUTH_SECRET": 633,
+     "QUASI_ID": 1085,
+     "SENSITIVE_ATTR": 393
     },
-    "harm_weighted_recall": 0.6063,
-    "strict_recall": 0.5198,
-    "precision": 0.9663,
-    "char_leakage": 0.6112,
-    "over_redaction": 0.0063,
-    "token_f1": 0.5256
+    "harm_weighted_recall": 0.5831,
+    "strict_recall": 0.5071,
+    "entity_recall": 0.5918,
+    "precision": 0.9581,
+    "char_leakage": 0.6199,
+    "over_redaction": 0.0059,
+    "token_f1": 0.5173
    },
    {
     "config": "+ context",
@@ -328,32 +337,33 @@
      "context"
     ],
     "recall": {
-     "DIRECT_ID": 0.8453,
-     "FINANCIAL_ID": 0.7168,
-     "AUTH_SECRET": 0.6281,
-     "QUASI_ID": 0.9574,
-     "SENSITIVE_ATTR": 0.8438
+     "DIRECT_ID": 0.8648,
+     "FINANCIAL_ID": 0.7038,
+     "AUTH_SECRET": 0.6035,
+     "QUASI_ID": 0.9677,
+     "SENSITIVE_ATTR": 0.8601
     },
     "class_accuracy": {
-     "DIRECT_ID": 0.9932,
-     "FINANCIAL_ID": 0.9405,
-     "AUTH_SECRET": 0.933,
-     "QUASI_ID": 0.9189,
-     "SENSITIVE_ATTR": 1.0
+     "DIRECT_ID": 0.995,
+     "FINANCIAL_ID": 0.9228,
+     "AUTH_SECRET": 0.9162,
+     "QUASI_ID": 0.9381,
+     "SENSITIVE_ATTR": 0.997
     },
     "support": {
-     "DIRECT_ID": 2766,
-     "FINANCIAL_ID": 1384,
-     "AUTH_SECRET": 570,
-     "QUASI_ID": 1056,
-     "SENSITIVE_ATTR": 384
+     "DIRECT_ID": 2788,
+     "FINANCIAL_ID": 1435,
+     "AUTH_SECRET": 633,
+     "QUASI_ID": 1085,
+     "SENSITIVE_ATTR": 393
     },
-    "harm_weighted_recall": 0.7751,
-    "strict_recall": 0.7097,
-    "precision": 0.9316,
-    "char_leakage": 0.5092,
-    "over_redaction": 0.0083,
-    "token_f1": 0.6642
+    "harm_weighted_recall": 0.7738,
+    "strict_recall": 0.6991,
+    "entity_recall": 0.8119,
+    "precision": 0.9515,
+    "char_leakage": 0.4964,
+    "over_redaction": 0.006,
+    "token_f1": 0.6836
    },
    {
     "config": "+ spoken",
@@ -364,32 +374,33 @@
      "spoken"
     ],
     "recall": {
-     "DIRECT_ID": 0.9826,
-     "FINANCIAL_ID": 0.9762,
-     "AUTH_SECRET": 0.9702,
-     "QUASI_ID": 0.9574,
-     "SENSITIVE_ATTR": 0.8438
+     "DIRECT_ID": 0.9864,
+     "FINANCIAL_ID": 0.9742,
+     "AUTH_SECRET": 0.9731,
+     "QUASI_ID": 0.9677,
+     "SENSITIVE_ATTR": 0.8601
     },
     "class_accuracy": {
-     "DIRECT_ID": 0.9948,
-     "FINANCIAL_ID": 0.9941,
-     "AUTH_SECRET": 0.9964,
-     "QUASI_ID": 0.9189,
-     "SENSITIVE_ATTR": 1.0
+     "DIRECT_ID": 0.9971,
+     "FINANCIAL_ID": 0.9893,
+     "AUTH_SECRET": 0.9886,
+     "QUASI_ID": 0.9381,
+     "SENSITIVE_ATTR": 0.997
     },
     "support": {
-     "DIRECT_ID": 2766,
-     "FINANCIAL_ID": 1384,
-     "AUTH_SECRET": 570,
-     "QUASI_ID": 1056,
-     "SENSITIVE_ATTR": 384
+     "DIRECT_ID": 2788,
+     "FINANCIAL_ID": 1435,
+     "AUTH_SECRET": 633,
+     "QUASI_ID": 1085,
+     "SENSITIVE_ATTR": 393
     },
-    "harm_weighted_recall": 0.9721,
-    "strict_recall": 0.9054,
-    "precision": 0.9409,
-    "char_leakage": 0.0624,
-    "over_redaction": 0.0082,
-    "token_f1": 0.951
+    "harm_weighted_recall": 0.9749,
+    "strict_recall": 0.911,
+    "entity_recall": 0.97,
+    "precision": 0.9582,
+    "char_leakage": 0.0582,
+    "over_redaction": 0.0059,
+    "token_f1": 0.9559
    },
    {
     "config": "+ dialogue",
@@ -401,32 +412,33 @@
      "dialogue"
     ],
     "recall": {
-     "DIRECT_ID": 0.9826,
-     "FINANCIAL_ID": 0.9848,
-     "AUTH_SECRET": 0.9825,
-     "QUASI_ID": 0.9574,
-     "SENSITIVE_ATTR": 0.8438
+     "DIRECT_ID": 0.9864,
+     "FINANCIAL_ID": 0.9833,
+     "AUTH_SECRET": 0.9826,
+     "QUASI_ID": 0.9677,
+     "SENSITIVE_ATTR": 0.8601
     },
     "class_accuracy": {
-     "DIRECT_ID": 0.9948,
-     "FINANCIAL_ID": 0.9941,
-     "AUTH_SECRET": 0.9982,
-     "QUASI_ID": 0.9189,
-     "SENSITIVE_ATTR": 1.0
+     "DIRECT_ID": 0.9989,
+     "FINANCIAL_ID": 0.9901,
+     "AUTH_SECRET": 0.9968,
+     "QUASI_ID": 0.9381,
+     "SENSITIVE_ATTR": 0.997
     },
     "support": {
-     "DIRECT_ID": 2766,
-     "FINANCIAL_ID": 1384,
-     "AUTH_SECRET": 570,
-     "QUASI_ID": 1056,
-     "SENSITIVE_ATTR": 384
+     "DIRECT_ID": 2788,
+     "FINANCIAL_ID": 1435,
+     "AUTH_SECRET": 633,
+     "QUASI_ID": 1085,
+     "SENSITIVE_ATTR": 393
     },
-    "harm_weighted_recall": 0.9766,
-    "strict_recall": 0.9067,
-    "precision": 0.941,
-    "char_leakage": 0.0536,
-    "over_redaction": 0.0082,
-    "token_f1": 0.9554
+    "harm_weighted_recall": 0.9791,
+    "strict_recall": 0.9111,
+    "entity_recall": 0.9732,
+    "precision": 0.9583,
+    "char_leakage": 0.0486,
+    "over_redaction": 0.0059,
+    "token_f1": 0.9606
    },
    {
     "config": "+ propagate (full)",
@@ -439,32 +451,33 @@
      "propagate"
     ],
     "recall": {
-     "DIRECT_ID": 0.9837,
-     "FINANCIAL_ID": 0.9848,
-     "AUTH_SECRET": 0.9825,
-     "QUASI_ID": 0.9574,
-     "SENSITIVE_ATTR": 0.8438
+     "DIRECT_ID": 0.9882,
+     "FINANCIAL_ID": 0.9833,
+     "AUTH_SECRET": 0.9826,
+     "QUASI_ID": 0.9677,
+     "SENSITIVE_ATTR": 0.8601
     },
     "class_accuracy": {
-     "DIRECT_ID": 0.9949,
-     "FINANCIAL_ID": 0.9941,
-     "AUTH_SECRET": 0.9982,
-     "QUASI_ID": 0.9189,
-     "SENSITIVE_ATTR": 1.0
+     "DIRECT_ID": 0.9989,
+     "FINANCIAL_ID": 0.9901,
+     "AUTH_SECRET": 0.9968,
+     "QUASI_ID": 0.9381,
+     "SENSITIVE_ATTR": 0.997
     },
     "support": {
-     "DIRECT_ID": 2766,
-     "FINANCIAL_ID": 1384,
-     "AUTH_SECRET": 570,
-     "QUASI_ID": 1056,
-     "SENSITIVE_ATTR": 384
+     "DIRECT_ID": 2788,
+     "FINANCIAL_ID": 1435,
+     "AUTH_SECRET": 633,
+     "QUASI_ID": 1085,
+     "SENSITIVE_ATTR": 393
     },
-    "harm_weighted_recall": 0.9771,
-    "strict_recall": 0.9071,
-    "precision": 0.9378,
-    "char_leakage": 0.0531,
-    "over_redaction": 0.0085,
-    "token_f1": 0.9551
+    "harm_weighted_recall": 0.98,
+    "strict_recall": 0.9114,
+    "entity_recall": 0.974,
+    "precision": 0.9571,
+    "char_leakage": 0.0481,
+    "over_redaction": 0.006,
+    "token_f1": 0.9608
    },
    {
     "config": "full minus presidio",
@@ -476,32 +489,33 @@
      "propagate"
     ],
     "recall": {
-     "DIRECT_ID": 0.9653,
-     "FINANCIAL_ID": 0.9798,
-     "AUTH_SECRET": 0.9825,
-     "QUASI_ID": 0.9555,
-     "SENSITIVE_ATTR": 0.8438
+     "DIRECT_ID": 0.9275,
+     "FINANCIAL_ID": 0.9756,
+     "AUTH_SECRET": 0.9826,
+     "QUASI_ID": 0.9668,
+     "SENSITIVE_ATTR": 0.8601
     },
     "class_accuracy": {
-     "DIRECT_ID": 0.9944,
-     "FINANCIAL_ID": 0.9993,
-     "AUTH_SECRET": 0.9982,
+     "DIRECT_ID": 0.9985,
+     "FINANCIAL_ID": 0.9979,
+     "AUTH_SECRET": 0.9968,
      "QUASI_ID": 1.0,
-     "SENSITIVE_ATTR": 1.0
+     "SENSITIVE_ATTR": 0.997
     },
     "support": {
-     "DIRECT_ID": 2766,
-     "FINANCIAL_ID": 1384,
-     "AUTH_SECRET": 570,
-     "QUASI_ID": 1056,
-     "SENSITIVE_ATTR": 384
+     "DIRECT_ID": 2788,
+     "FINANCIAL_ID": 1435,
+     "AUTH_SECRET": 633,
+     "QUASI_ID": 1085,
+     "SENSITIVE_ATTR": 393
     },
-    "harm_weighted_recall": 0.967,
-    "strict_recall": 0.9018,
-    "precision": 0.9748,
-    "char_leakage": 0.0605,
-    "over_redaction": 0.0038,
-    "token_f1": 0.9587
+    "harm_weighted_recall": 0.9496,
+    "strict_recall": 0.886,
+    "entity_recall": 0.9442,
+    "precision": 0.9998,
+    "char_leakage": 0.0683,
+    "over_redaction": 0.0012,
+    "token_f1": 0.9575
    }
   ]
  },
@@ -509,439 +523,464 @@
   "clean": [
    {
     "call": "C0003",
-    "type": "OCCUPATION",
-    "text": "contractor"
+    "type": "PEP",
+    "text": "a grassroots leader"
    },
    {
-    "call": "C0004",
-    "type": "OCCUPATION",
-    "text": "contractor"
+    "call": "C0074",
+    "type": "PEP",
+    "text": "a grassroots leader"
    },
    {
-    "call": "C0025",
+    "call": "C0091",
+    "type": "PEP",
+    "text": "a grassroots leader"
+   },
+   {
+    "call": "C0110",
+    "type": "PEP",
+    "text": "a grassroots leader"
+   },
+   {
+    "call": "C0006",
     "type": "OCCUPATION",
     "text": "hawker"
    },
    {
-    "call": "C0037",
+    "call": "C0013",
     "type": "OCCUPATION",
     "text": "financial advisor"
    },
    {
-    "call": "C0018",
+    "call": "C0015",
+    "type": "OCCUPATION",
+    "text": "contractor"
+   },
+   {
+    "call": "C0063",
+    "type": "OCCUPATION",
+    "text": "hawker"
+   },
+   {
+    "call": "C0051",
     "type": "LEGAL",
     "text": "probate dispute"
    },
    {
-    "call": "C0030",
+    "call": "C0055",
     "type": "LEGAL",
     "text": "probate dispute"
-   },
-   {
-    "call": "C0052",
-    "type": "LEGAL",
-    "text": "probate dispute"
-   },
-   {
-    "call": "C0125",
-    "type": "LEGAL",
-    "text": "probate dispute"
-   },
-   {
-    "call": "C0018",
-    "type": "PEP",
-    "text": "a grassroots leader"
-   },
-   {
-    "call": "C0052",
-    "type": "PEP",
-    "text": "a grassroots leader"
    },
    {
     "call": "C0058",
-    "type": "PEP",
-    "text": "a grassroots leader"
+    "type": "LEGAL",
+    "text": "probate dispute"
    },
    {
-    "call": "C0092",
-    "type": "PEP",
-    "text": "a grassroots leader"
+    "call": "C0084",
+    "type": "LEGAL",
+    "text": "probate dispute"
    },
    {
-    "call": "C0158",
-    "type": "HEALTH",
-    "text": "IVF treatment"
-   },
-   {
-    "call": "C0322",
-    "type": "HEALTH",
-    "text": "IVF treatment"
-   },
-   {
-    "call": "C0336",
-    "type": "HEALTH",
-    "text": "IVF treatment"
-   },
-   {
-    "call": "C0405",
-    "type": "HEALTH",
-    "text": "IVF treatment"
-   },
-   {
-    "call": "C0204",
+    "call": "C0068",
     "type": "PERSON",
-    "text": "Low Hui Min"
+    "text": "Ang Nurul"
    },
    {
-    "call": "C0402",
+    "call": "C0279",
     "type": "PERSON",
-    "text": "Sim Nurul"
+    "text": "Ang Nurul"
+   },
+   {
+    "call": "C0374",
+    "type": "PERSON",
+    "text": "Ong Anand"
+   },
+   {
+    "call": "C0068",
+    "type": "HEALTH",
+    "text": "IVF treatment"
+   },
+   {
+    "call": "C0084",
+    "type": "HEALTH",
+    "text": "IVF treatment"
+   },
+   {
+    "call": "C0112",
+    "type": "HEALTH",
+    "text": "IVF treatment"
+   },
+   {
+    "call": "C0128",
+    "type": "HEALTH",
+    "text": "IVF treatment"
    }
   ],
   "noisy": [
    {
     "call": "C0003",
-    "type": "OCCUPATION",
-    "text": "contractor"
+    "type": "PEP",
+    "text": "a grassroots leader"
    },
    {
-    "call": "C0004",
-    "type": "OCCUPATION",
-    "text": "contractor"
+    "call": "C0074",
+    "type": "PEP",
+    "text": "a grassroots leader"
    },
    {
-    "call": "C0025",
+    "call": "C0091",
+    "type": "PEP",
+    "text": "a grassroots leader"
+   },
+   {
+    "call": "C0110",
+    "type": "PEP",
+    "text": "a grassroots leader"
+   },
+   {
+    "call": "C0006",
     "type": "OCCUPATION",
     "text": "hawker"
    },
    {
-    "call": "C0037",
+    "call": "C0013",
     "type": "OCCUPATION",
     "text": "financial advisor"
    },
    {
-    "call": "C0006",
-    "type": "EMPLOYER",
-    "text": "psa international"
+    "call": "C0015",
+    "type": "OCCUPATION",
+    "text": "contractor"
    },
    {
-    "call": "C0036",
-    "type": "EMPLOYER",
-    "text": "raffles medical"
-   },
-   {
-    "call": "C0199",
-    "type": "EMPLOYER",
-    "text": "mediacorp"
-   },
-   {
-    "call": "C0357",
-    "type": "EMPLOYER",
-    "text": "psa international"
+    "call": "C0063",
+    "type": "OCCUPATION",
+    "text": "hawker"
    },
    {
     "call": "C0008",
-    "type": "PHONE",
-    "text": "ate one two three nine zero five eight"
+    "type": "IBAN",
+    "text": "g b six five n w b k for seven nine nine two four ate three one two two seven three one"
    },
    {
-    "call": "C0038",
-    "type": "PHONE",
-    "text": "ate four seven uh one five three two five"
+    "call": "C0026",
+    "type": "IBAN",
+    "text": "g b nine six n w b k for six zero zero nine ate zero nine two one six seven eight zero"
    },
    {
-    "call": "C0103",
-    "type": "PHONE",
-    "text": "eight two six eight one two seven to"
+    "call": "C0065",
+    "type": "IBAN",
+    "text": "g b five one m i d l won double one seven double five three seven two five seven one double nine"
    },
    {
-    "call": "C0152",
-    "type": "PHONE",
-    "text": "eight zero seven eight one five nine won"
+    "call": "C0174",
+    "type": "IBAN",
+    "text": "g b double four b a r c won double seven zero two three five seven six double nine four three nine"
    },
    {
-    "call": "C0018",
-    "type": "LEGAL",
-    "text": "probate dispute"
-   },
-   {
-    "call": "C0030",
-    "type": "LEGAL",
-    "text": "probate dispute"
-   },
-   {
-    "call": "C0052",
-    "type": "LEGAL",
-    "text": "probate dispute"
-   },
-   {
-    "call": "C0125",
-    "type": "LEGAL",
-    "text": "probate dispute"
-   },
-   {
-    "call": "C0018",
-    "type": "PEP",
-    "text": "a grassroots leader"
-   },
-   {
-    "call": "C0052",
-    "type": "PEP",
-    "text": "a grassroots leader"
-   },
-   {
-    "call": "C0058",
-    "type": "PEP",
-    "text": "a grassroots leader"
-   },
-   {
-    "call": "C0092",
-    "type": "PEP",
-    "text": "a grassroots leader"
-   },
-   {
-    "call": "C0024",
+    "call": "C0012",
     "type": "SWIFT",
-    "text": "bnpafrpp"
+    "text": "ocbcsgsg"
    },
    {
-    "call": "C0094",
-    "type": "SWIFT",
-    "text": "c i t i u s double three"
-   },
-   {
-    "call": "C0274",
-    "type": "SWIFT",
-    "text": "dbsssgsg"
-   },
-   {
-    "call": "C0367",
+    "call": "C0098",
     "type": "SWIFT",
     "text": "h s b c g b er l"
    },
    {
+    "call": "C0171",
+    "type": "SWIFT",
+    "text": "bnpafrpp"
+   },
+   {
+    "call": "C0247",
+    "type": "SWIFT",
+    "text": "h s b c g b to l"
+   },
+   {
+    "call": "C0015",
+    "type": "PHONE",
+    "text": "ate seven seven zero five two eight ate"
+   },
+   {
     "call": "C0041",
-    "type": "RELIGION",
-    "text": "sikh"
-   },
-   {
-    "call": "C0067",
-    "type": "RELIGION",
-    "text": "sikh"
-   },
-   {
-    "call": "C0189",
-    "type": "RELIGION",
-    "text": "sikh"
-   },
-   {
-    "call": "C0343",
-    "type": "RELIGION",
-    "text": "sikh"
+    "type": "PHONE",
+    "text": "ate nine zero eight three five three six"
    },
    {
     "call": "C0051",
+    "type": "PHONE",
+    "text": "ate six seven five zero three five zero"
+   },
+   {
+    "call": "C0075",
+    "type": "PHONE",
+    "text": "ate double one three zero five three eight"
+   },
+   {
+    "call": "C0034",
+    "type": "CARD_EXPIRY",
+    "text": "won two two nine"
+   },
+   {
+    "call": "C0236",
+    "type": "CARD_EXPIRY",
+    "text": "won to three one"
+   },
+   {
+    "call": "C0378",
+    "type": "CARD_EXPIRY",
+    "text": "zero three two six"
+   },
+   {
+    "call": "C0051",
+    "type": "LEGAL",
+    "text": "probate dispute"
+   },
+   {
+    "call": "C0055",
+    "type": "LEGAL",
+    "text": "probate dispute"
+   },
+   {
+    "call": "C0058",
+    "type": "LEGAL",
+    "text": "probate dispute"
+   },
+   {
+    "call": "C0084",
+    "type": "LEGAL",
+    "text": "probate dispute"
+   },
+   {
+    "call": "C0056",
+    "type": "RELIGION",
+    "text": "sikh"
+   },
+   {
+    "call": "C0137",
+    "type": "RELIGION",
+    "text": "sikh"
+   },
+   {
+    "call": "C0274",
+    "type": "RELIGION",
+    "text": "sikh"
+   },
+   {
+    "call": "C0275",
+    "type": "RELIGION",
+    "text": "sikh"
+   },
+   {
+    "call": "C0060",
     "type": "PERSON",
-    "text": "ang priya"
+    "text": "ho siti"
    },
    {
-    "call": "C0106",
+    "call": "C0066",
     "type": "PERSON",
-    "text": "sim aisyah"
+    "text": "ng aisyah"
    },
    {
-    "call": "C0154",
+    "call": "C0121",
     "type": "PERSON",
-    "text": "tan suresh"
+    "text": "nair amirul"
    },
    {
-    "call": "C0156",
+    "call": "C0185",
     "type": "PERSON",
-    "text": "low rajesh"
+    "text": "lim hafiz"
    },
    {
-    "call": "C0053",
-    "type": "IBAN",
-    "text": "g b four five b a r c for three five five nine seven three two nine four three eight nine four"
+    "call": "C0062",
+    "type": "PASSPORT",
+    "text": "a for six five uh four nine eight four h"
    },
    {
-    "call": "C0064",
-    "type": "IBAN",
-    "text": "g b nine for m i d l two five nine zero three eight two uh zero four eight six three nine six"
+    "call": "C0397",
+    "type": "PASSPORT",
+    "text": "m won five zero seven to six zero a"
    },
    {
-    "call": "C0157",
-    "type": "IBAN",
-    "text": "g b dua enam m i d l lima satu enam lima sembilan sembilan lima dua lima empat lima lima enam enam"
+    "call": "C0412",
+    "type": "PASSPORT",
+    "text": "p four three two three three seven six d"
    },
    {
-    "call": "C0186",
-    "type": "IBAN",
-    "text": "g b won zero b a r c nine eight five five double eight six eight zero uh six zero nine six five"
+    "call": "C0068",
+    "type": "HEALTH",
+    "text": "ivf treatment"
    },
    {
-    "call": "C0057",
-    "type": "PIN",
-    "text": "ate for nine ate"
-   },
-   {
-    "call": "C0253",
-    "type": "PIN",
-    "text": "two seven three five"
-   },
-   {
-    "call": "C0325",
-    "type": "PIN",
-    "text": "three eight zero for"
-   },
-   {
-    "call": "C0345",
-    "type": "PIN",
-    "text": "one zero seven to"
+    "call": "C0084",
+    "type": "HEALTH",
+    "text": "ivf treatment"
    }
   ]
  },
  "ci": {
   "clean": {
    "presidio only": [
-    0.5747,
-    0.5963
+    0.5477,
+    0.5705
    ],
    "+ propagate (full)": [
-    0.9913,
-    0.9946
+    0.9925,
+    0.9955
    ]
   },
   "noisy": {
    "presidio only": [
-    0.4264,
-    0.4493
+    0.4149,
+    0.4376
    ],
    "+ propagate (full)": [
-    0.9734,
-    0.9811
+    0.9766,
+    0.9835
    ]
   }
  },
  "review": {
   "clean": {
    "queued": 0.0,
-   "calls_with_harmful_miss": 48,
+   "calls_with_harmful_miss": 45,
    "harmful_miss_calls_caught": 0.0,
-   "leakage_removed_by_review": 0.0
+   "leakage_removed_by_review": 0.0,
+   "recall_after_review": 0.9941,
+   "recall_after_review_ci": [
+    0.9925,
+    0.9955
+   ]
   },
   "noisy": {
-   "queued": 0.132,
-   "calls_with_harmful_miss": 116,
-   "harmful_miss_calls_caught": 0.5517,
-   "leakage_removed_by_review": 0.5579
+   "queued": 0.1,
+   "calls_with_harmful_miss": 107,
+   "harmful_miss_calls_caught": 0.4393,
+   "leakage_removed_by_review": 0.4945,
+   "recall_after_review": 0.9903,
+   "recall_after_review_ci": [
+    0.9879,
+    0.9926
+   ]
   }
  },
  "triage": {
   "clean": {
    "confusion": {
-    "low->low": 301,
-    "high->high": 199
+    "low->low": 224,
+    "high->high": 273,
+    "high->low": 3
    },
-   "accuracy": 1.0,
-   "high_risk_recall": 1.0
+   "accuracy": 0.994,
+   "high_risk_recall": 0.9891,
+   "high_risk_recall_exact_ci": [
+    0.9686,
+    0.9978
+   ]
   },
   "noisy": {
    "confusion": {
-    "low->low": 301,
-    "high->high": 199
+    "low->low": 224,
+    "high->high": 272,
+    "high->low": 4
    },
-   "accuracy": 1.0,
-   "high_risk_recall": 1.0
+   "accuracy": 0.992,
+   "high_risk_recall": 0.9855,
+   "high_risk_recall_exact_ci": [
+    0.9633,
+    0.996
+   ]
   }
  },
  "sensitivity": {
   "clean": {
    "presidio only": {
-    "taxonomy (10/5/5/3/1)": 0.5855,
-    "uniform": 0.576,
-    "credentials x50": 0.5772,
-    "identity-first": 0.6021
+    "taxonomy (10/5/5/3/1)": 0.5595,
+    "uniform": 0.5565,
+    "credentials x50": 0.5223,
+    "identity-first": 0.5843
    },
    "+ format": {
-    "taxonomy (10/5/5/3/1)": 0.8569,
-    "uniform": 0.8458,
-    "credentials x50": 0.7283,
-    "identity-first": 0.9192
+    "taxonomy (10/5/5/3/1)": 0.8283,
+    "uniform": 0.8252,
+    "credentials x50": 0.6674,
+    "identity-first": 0.9009
    },
    "+ context": {
-    "taxonomy (10/5/5/3/1)": 0.993,
-    "uniform": 0.9857,
-    "credentials x50": 0.9961,
-    "identity-first": 0.9978
+    "taxonomy (10/5/5/3/1)": 0.9941,
+    "uniform": 0.9883,
+    "credentials x50": 0.9968,
+    "identity-first": 0.998
    },
    "+ spoken": {
-    "taxonomy (10/5/5/3/1)": 0.993,
-    "uniform": 0.9857,
-    "credentials x50": 0.9961,
-    "identity-first": 0.9978
+    "taxonomy (10/5/5/3/1)": 0.9941,
+    "uniform": 0.9883,
+    "credentials x50": 0.9968,
+    "identity-first": 0.998
    },
    "+ dialogue": {
-    "taxonomy (10/5/5/3/1)": 0.993,
-    "uniform": 0.9857,
-    "credentials x50": 0.9961,
-    "identity-first": 0.9978
+    "taxonomy (10/5/5/3/1)": 0.9941,
+    "uniform": 0.9883,
+    "credentials x50": 0.9968,
+    "identity-first": 0.998
    },
    "+ propagate (full)": {
-    "taxonomy (10/5/5/3/1)": 0.993,
-    "uniform": 0.9857,
-    "credentials x50": 0.9961,
-    "identity-first": 0.9978
+    "taxonomy (10/5/5/3/1)": 0.9941,
+    "uniform": 0.9883,
+    "credentials x50": 0.9968,
+    "identity-first": 0.998
    },
    "full minus presidio": {
-    "taxonomy (10/5/5/3/1)": 0.9791,
-    "uniform": 0.9724,
-    "credentials x50": 0.9884,
-    "identity-first": 0.9823
+    "taxonomy (10/5/5/3/1)": 0.9602,
+    "uniform": 0.956,
+    "credentials x50": 0.9785,
+    "identity-first": 0.9588
    }
   },
   "noisy": {
    "presidio only": {
-    "taxonomy (10/5/5/3/1)": 0.4379,
-    "uniform": 0.4528,
-    "credentials x50": 0.3566,
-    "identity-first": 0.4701
+    "taxonomy (10/5/5/3/1)": 0.4264,
+    "uniform": 0.4436,
+    "credentials x50": 0.3298,
+    "identity-first": 0.4653
    },
    "+ format": {
-    "taxonomy (10/5/5/3/1)": 0.6063,
-    "uniform": 0.6154,
-    "credentials x50": 0.4504,
-    "identity-first": 0.6676
+    "taxonomy (10/5/5/3/1)": 0.5831,
+    "uniform": 0.5966,
+    "credentials x50": 0.4144,
+    "identity-first": 0.6505
    },
    "+ context": {
-    "taxonomy (10/5/5/3/1)": 0.7751,
-    "uniform": 0.8154,
-    "credentials x50": 0.71,
-    "identity-first": 0.7857
+    "taxonomy (10/5/5/3/1)": 0.7738,
+    "uniform": 0.8195,
+    "credentials x50": 0.6954,
+    "identity-first": 0.7878
    },
    "+ spoken": {
-    "taxonomy (10/5/5/3/1)": 0.9721,
-    "uniform": 0.967,
-    "credentials x50": 0.9712,
-    "identity-first": 0.9777
+    "taxonomy (10/5/5/3/1)": 0.9749,
+    "uniform": 0.9713,
+    "credentials x50": 0.9741,
+    "identity-first": 0.9798
    },
    "+ dialogue": {
-    "taxonomy (10/5/5/3/1)": 0.9766,
-    "uniform": 0.9701,
-    "credentials x50": 0.9792,
-    "identity-first": 0.9816
+    "taxonomy (10/5/5/3/1)": 0.9791,
+    "uniform": 0.9743,
+    "credentials x50": 0.9807,
+    "identity-first": 0.9836
    },
    "+ propagate (full)": {
-    "taxonomy (10/5/5/3/1)": 0.9771,
-    "uniform": 0.9706,
-    "credentials x50": 0.9795,
-    "identity-first": 0.9822
+    "taxonomy (10/5/5/3/1)": 0.98,
+    "uniform": 0.9751,
+    "credentials x50": 0.9812,
+    "identity-first": 0.9846
    },
    "full minus presidio": {
-    "taxonomy (10/5/5/3/1)": 0.967,
-    "uniform": 0.9609,
-    "credentials x50": 0.9738,
-    "identity-first": 0.9703
+    "taxonomy (10/5/5/3/1)": 0.9496,
+    "uniform": 0.9465,
+    "credentials x50": 0.9648,
+    "identity-first": 0.9486
    }
   }
  },
@@ -950,205 +989,315 @@
    "n_calls": 200,
    "GLiNER-PII alone": {
     "recall": {
-     "DIRECT_ID": 0.7457,
-     "FINANCIAL_ID": 0.8725,
-     "AUTH_SECRET": 0.2679,
-     "QUASI_ID": 0.9881,
-     "SENSITIVE_ATTR": 1.0
+     "DIRECT_ID": 0.7414,
+     "FINANCIAL_ID": 0.8624,
+     "AUTH_SECRET": 0.278,
+     "QUASI_ID": 0.9732,
+     "SENSITIVE_ATTR": 0.9947
     },
     "class_accuracy": {
      "DIRECT_ID": 1.0,
-     "FINANCIAL_ID": 0.963,
-     "AUTH_SECRET": 0.4,
-     "QUASI_ID": 0.9976,
-     "SENSITIVE_ATTR": 0.8278
+     "FINANCIAL_ID": 0.9071,
+     "AUTH_SECRET": 0.3582,
+     "QUASI_ID": 1.0,
+     "SENSITIVE_ATTR": 0.8065
     },
     "support": {
-     "DIRECT_ID": 1105,
-     "FINANCIAL_ID": 557,
-     "AUTH_SECRET": 224,
-     "QUASI_ID": 420,
-     "SENSITIVE_ATTR": 151
+     "DIRECT_ID": 1160,
+     "FINANCIAL_ID": 574,
+     "AUTH_SECRET": 241,
+     "QUASI_ID": 448,
+     "SENSITIVE_ATTR": 187
     },
-    "harm_weighted_recall": 0.7019,
-    "strict_recall": 0.7249,
-    "precision": 0.5448,
-    "char_leakage": 0.2437,
-    "over_redaction": 0.0882,
-    "token_f1": 0.6776
+    "harm_weighted_recall": 0.6981,
+    "strict_recall": 0.7092,
+    "entity_recall": 0.7892,
+    "precision": 0.5356,
+    "char_leakage": 0.257,
+    "over_redaction": 0.0906,
+    "token_f1": 0.6613
    },
    "our full detector": {
     "recall": {
-     "DIRECT_ID": 1.0,
+     "DIRECT_ID": 0.9991,
      "FINANCIAL_ID": 1.0,
      "AUTH_SECRET": 1.0,
-     "QUASI_ID": 0.9714,
-     "SENSITIVE_ATTR": 0.8808
+     "QUASI_ID": 0.9777,
+     "SENSITIVE_ATTR": 0.8717
     },
     "class_accuracy": {
      "DIRECT_ID": 1.0,
      "FINANCIAL_ID": 1.0,
      "AUTH_SECRET": 1.0,
-     "QUASI_ID": 0.9387,
-     "SENSITIVE_ATTR": 0.9774
+     "QUASI_ID": 0.9224,
+     "SENSITIVE_ATTR": 0.9877
     },
     "support": {
-     "DIRECT_ID": 1105,
-     "FINANCIAL_ID": 557,
-     "AUTH_SECRET": 224,
-     "QUASI_ID": 420,
-     "SENSITIVE_ATTR": 151
+     "DIRECT_ID": 1160,
+     "FINANCIAL_ID": 574,
+     "AUTH_SECRET": 241,
+     "QUASI_ID": 448,
+     "SENSITIVE_ATTR": 187
     },
-    "harm_weighted_recall": 0.9942,
-    "strict_recall": 0.9381,
-    "precision": 0.9415,
-    "char_leakage": 0.0198,
-    "over_redaction": 0.0049,
-    "token_f1": 0.9677
+    "harm_weighted_recall": 0.9928,
+    "strict_recall": 0.9379,
+    "entity_recall": 0.986,
+    "precision": 0.9608,
+    "char_leakage": 0.0199,
+    "over_redaction": 0.0026,
+    "token_f1": 0.972
    },
    "full + GLiNER": {
     "recall": {
-     "DIRECT_ID": 1.0,
+     "DIRECT_ID": 0.9991,
      "FINANCIAL_ID": 1.0,
      "AUTH_SECRET": 1.0,
      "QUASI_ID": 1.0,
-     "SENSITIVE_ATTR": 1.0
+     "SENSITIVE_ATTR": 0.9947
     },
     "class_accuracy": {
      "DIRECT_ID": 1.0,
      "FINANCIAL_ID": 1.0,
      "AUTH_SECRET": 1.0,
-     "QUASI_ID": 0.9405,
-     "SENSITIVE_ATTR": 0.9205
+     "QUASI_ID": 0.9241,
+     "SENSITIVE_ATTR": 0.9516
     },
     "support": {
-     "DIRECT_ID": 1105,
-     "FINANCIAL_ID": 557,
-     "AUTH_SECRET": 224,
-     "QUASI_ID": 420,
-     "SENSITIVE_ATTR": 151
+     "DIRECT_ID": 1160,
+     "FINANCIAL_ID": 574,
+     "AUTH_SECRET": 241,
+     "QUASI_ID": 448,
+     "SENSITIVE_ATTR": 187
     },
-    "harm_weighted_recall": 1.0,
-    "strict_recall": 0.9463,
-    "precision": 0.5803,
-    "char_leakage": 0.0033,
-    "over_redaction": 0.0925,
-    "token_f1": 0.791
+    "harm_weighted_recall": 0.9993,
+    "strict_recall": 0.946,
+    "entity_recall": 0.9992,
+    "precision": 0.5775,
+    "char_leakage": 0.0054,
+    "over_redaction": 0.0926,
+    "token_f1": 0.7866
    }
   },
   "noisy": {
    "n_calls": 200,
    "GLiNER-PII alone": {
     "recall": {
-     "DIRECT_ID": 0.3584,
-     "FINANCIAL_ID": 0.5404,
-     "AUTH_SECRET": 0.3929,
-     "QUASI_ID": 0.6952,
-     "SENSITIVE_ATTR": 0.9536
+     "DIRECT_ID": 0.3466,
+     "FINANCIAL_ID": 0.5453,
+     "AUTH_SECRET": 0.3361,
+     "QUASI_ID": 0.6875,
+     "SENSITIVE_ATTR": 0.9786
     },
     "class_accuracy": {
-     "DIRECT_ID": 0.9924,
-     "FINANCIAL_ID": 1.0,
-     "AUTH_SECRET": 0.2614,
-     "QUASI_ID": 1.0,
-     "SENSITIVE_ATTR": 0.8403
+     "DIRECT_ID": 0.995,
+     "FINANCIAL_ID": 0.9681,
+     "AUTH_SECRET": 0.2963,
+     "QUASI_ID": 0.9968,
+     "SENSITIVE_ATTR": 0.8087
     },
     "support": {
-     "DIRECT_ID": 1105,
-     "FINANCIAL_ID": 557,
-     "AUTH_SECRET": 224,
-     "QUASI_ID": 420,
-     "SENSITIVE_ATTR": 151
+     "DIRECT_ID": 1160,
+     "FINANCIAL_ID": 574,
+     "AUTH_SECRET": 241,
+     "QUASI_ID": 448,
+     "SENSITIVE_ATTR": 187
     },
-    "harm_weighted_recall": 0.4455,
-    "strict_recall": 0.3504,
-    "precision": 0.4678,
-    "char_leakage": 0.787,
-    "over_redaction": 0.0683,
-    "token_f1": 0.2968
+    "harm_weighted_recall": 0.4336,
+    "strict_recall": 0.3448,
+    "entity_recall": 0.5078,
+    "precision": 0.469,
+    "char_leakage": 0.7897,
+    "over_redaction": 0.0699,
+    "token_f1": 0.2919
    },
    "our full detector": {
     "recall": {
-     "DIRECT_ID": 0.9846,
-     "FINANCIAL_ID": 0.9803,
-     "AUTH_SECRET": 0.9866,
-     "QUASI_ID": 0.9595,
-     "SENSITIVE_ATTR": 0.8609
+     "DIRECT_ID": 0.9879,
+     "FINANCIAL_ID": 0.9843,
+     "AUTH_SECRET": 0.9834,
+     "QUASI_ID": 0.971,
+     "SENSITIVE_ATTR": 0.861
     },
     "class_accuracy": {
-     "DIRECT_ID": 0.9963,
-     "FINANCIAL_ID": 0.9982,
-     "AUTH_SECRET": 1.0,
-     "QUASI_ID": 0.928,
-     "SENSITIVE_ATTR": 1.0
+     "DIRECT_ID": 0.9991,
+     "FINANCIAL_ID": 0.9894,
+     "AUTH_SECRET": 0.9916,
+     "QUASI_ID": 0.9264,
+     "SENSITIVE_ATTR": 0.9938
     },
     "support": {
-     "DIRECT_ID": 1105,
-     "FINANCIAL_ID": 557,
-     "AUTH_SECRET": 224,
-     "QUASI_ID": 420,
-     "SENSITIVE_ATTR": 151
+     "DIRECT_ID": 1160,
+     "FINANCIAL_ID": 574,
+     "AUTH_SECRET": 241,
+     "QUASI_ID": 448,
+     "SENSITIVE_ATTR": 187
     },
-    "harm_weighted_recall": 0.9781,
-    "strict_recall": 0.9052,
-    "precision": 0.9449,
-    "char_leakage": 0.0533,
-    "over_redaction": 0.0074,
-    "token_f1": 0.9574
+    "harm_weighted_recall": 0.9797,
+    "strict_recall": 0.9069,
+    "entity_recall": 0.9735,
+    "precision": 0.9546,
+    "char_leakage": 0.0473,
+    "over_redaction": 0.006,
+    "token_f1": 0.9613
    },
    "full + GLiNER": {
     "recall": {
-     "DIRECT_ID": 0.9873,
-     "FINANCIAL_ID": 0.9803,
-     "AUTH_SECRET": 0.9911,
-     "QUASI_ID": 0.9952,
-     "SENSITIVE_ATTR": 0.9801
+     "DIRECT_ID": 0.9888,
+     "FINANCIAL_ID": 0.9843,
+     "AUTH_SECRET": 1.0,
+     "QUASI_ID": 0.9978,
+     "SENSITIVE_ATTR": 0.9947
     },
     "class_accuracy": {
-     "DIRECT_ID": 0.9963,
-     "FINANCIAL_ID": 0.9982,
-     "AUTH_SECRET": 0.9955,
-     "QUASI_ID": 0.9306,
-     "SENSITIVE_ATTR": 0.9459
+     "DIRECT_ID": 0.9991,
+     "FINANCIAL_ID": 0.9894,
+     "AUTH_SECRET": 0.9876,
+     "QUASI_ID": 0.9262,
+     "SENSITIVE_ATTR": 0.957
     },
     "support": {
-     "DIRECT_ID": 1105,
-     "FINANCIAL_ID": 557,
-     "AUTH_SECRET": 224,
-     "QUASI_ID": 420,
-     "SENSITIVE_ATTR": 151
+     "DIRECT_ID": 1160,
+     "FINANCIAL_ID": 574,
+     "AUTH_SECRET": 241,
+     "QUASI_ID": 448,
+     "SENSITIVE_ATTR": 187
     },
-    "harm_weighted_recall": 0.9863,
-    "strict_recall": 0.9153,
-    "precision": 0.6174,
-    "char_leakage": 0.0433,
-    "over_redaction": 0.0744,
-    "token_f1": 0.8831
+    "harm_weighted_recall": 0.9906,
+    "strict_recall": 0.9188,
+    "entity_recall": 0.9904,
+    "precision": 0.625,
+    "char_leakage": 0.0367,
+    "over_redaction": 0.0746,
+    "token_f1": 0.886
+   }
+  }
+ },
+ "gliner_review": {
+  "clean": {
+   "n_calls": 200,
+   "rules": {
+    "queued": 0.0,
+    "calls_with_harmful_miss": 23,
+    "harmful_miss_calls_caught": 0.0,
+    "leakage_removed_by_review": 0.0,
+    "recall_after_review": 0.9928,
+    "recall_after_review_ci": [
+     0.9901,
+     0.9952
+    ]
+   },
+   "with GLiNER": {
+    "queued": 1.0,
+    "calls_with_harmful_miss": 23,
+    "harmful_miss_calls_caught": 1.0,
+    "leakage_removed_by_review": 1.0,
+    "recall_after_review": 1.0,
+    "recall_after_review_ci": [
+     1.0,
+     1.0
+    ]
+   },
+   "paired": {
+    "diff": 0.0072,
+    "ci": [
+     0.0048,
+     0.0099
+    ],
+    "p": 0.0
+   }
+  },
+  "noisy": {
+   "n_calls": 200,
+   "rules": {
+    "queued": 0.095,
+    "calls_with_harmful_miss": 49,
+    "harmful_miss_calls_caught": 0.3673,
+    "leakage_removed_by_review": 0.4725,
+    "recall_after_review": 0.9886,
+    "recall_after_review_ci": [
+     0.9845,
+     0.9924
+    ]
+   },
+   "with GLiNER": {
+    "queued": 0.825,
+    "calls_with_harmful_miss": 49,
+    "harmful_miss_calls_caught": 0.9184,
+    "leakage_removed_by_review": 0.9411,
+    "recall_after_review": 0.9971,
+    "recall_after_review_ci": [
+     0.9938,
+     0.9996
+    ]
+   },
+   "paired": {
+    "diff": 0.0085,
+    "ci": [
+     0.0058,
+     0.0114
+    ],
+    "p": 0.0
+   }
+  }
+ },
+ "tier_actions": {
+  "clean": {
+   "GREEN": {
+    "surrogate": 4026,
+    "suppress": 971,
+    "generalize": 1491
+   },
+   "AMBER": {
+    "pseudonym": 3153,
+    "mask_last4": 873,
+    "suppress": 633,
+    "keep": 1829
+   },
+   "RED": {
+    "keep": 5855,
+    "suppress": 633
+   }
+  },
+  "noisy": {
+   "GREEN": {
+    "surrogate": 3949,
+    "suppress": 958,
+    "generalize": 1597
+   },
+   "AMBER": {
+    "pseudonym": 3168,
+    "mask_last4": 781,
+    "suppress": 621,
+    "keep": 1934
+   },
+   "RED": {
+    "keep": 5883,
+    "suppress": 621
    }
   }
  },
  "seeds": {
   "clean": {
    "values": [
-    0.993,
-    0.9937,
-    0.9934,
-    0.9931,
-    0.9927
+    0.9941,
+    0.9957,
+    0.9932,
+    0.9925,
+    0.9914
    ],
-   "mean": 0.9932,
-   "sd": 0.0004
+   "mean": 0.9934,
+   "sd": 0.0016
   },
   "noisy": {
    "values": [
-    0.9771,
-    0.9798,
-    0.974,
-    0.9745,
-    0.9807
+    0.98,
+    0.9782,
+    0.9779,
+    0.9799,
+    0.9732
    ],
-   "mean": 0.9772,
-   "sd": 0.003
+   "mean": 0.9778,
+   "sd": 0.0028
   }
  },
  "ood": {
@@ -1156,17 +1305,17 @@
   "n_spans": 114,
   "our full detector": {
    "recall": {
-    "DIRECT_ID": 0.9565,
-    "FINANCIAL_ID": 0.8966,
-    "AUTH_SECRET": 0.6667,
-    "QUASI_ID": 0.4,
+    "DIRECT_ID": 0.9783,
+    "FINANCIAL_ID": 1.0,
+    "AUTH_SECRET": 1.0,
+    "QUASI_ID": 0.56,
     "SENSITIVE_ATTR": 0.5
    },
    "class_accuracy": {
-    "DIRECT_ID": 0.9318,
+    "DIRECT_ID": 0.9333,
     "FINANCIAL_ID": 1.0,
     "AUTH_SECRET": 1.0,
-    "QUASI_ID": 0.9,
+    "QUASI_ID": 0.9286,
     "SENSITIVE_ATTR": 1.0
    },
    "support": {
@@ -1176,12 +1325,13 @@
     "QUASI_ID": 25,
     "SENSITIVE_ATTR": 8
    },
-   "harm_weighted_recall": 0.8512,
-   "strict_recall": 0.6491,
-   "precision": 0.8017,
-   "char_leakage": 0.1401,
-   "over_redaction": 0.0303,
-   "token_f1": 0.8473
+   "harm_weighted_recall": 0.9421,
+   "strict_recall": 0.7193,
+   "entity_recall": 0.8596,
+   "precision": 0.8525,
+   "char_leakage": 0.0779,
+   "over_redaction": 0.0248,
+   "token_f1": 0.8939
   },
   "presidio only": {
    "recall": {
@@ -1207,21 +1357,51 @@
    },
    "harm_weighted_recall": 0.3326,
    "strict_recall": 0.2544,
-   "precision": 0.7222,
+   "entity_recall": 0.3246,
+   "precision": 0.7358,
    "char_leakage": 0.7773,
-   "over_redaction": 0.0203,
-   "token_f1": 0.324
+   "over_redaction": 0.0186,
+   "token_f1": 0.3268
   },
   "ci": [
-   0.7852,
-   0.9115
+   0.9097,
+   0.9694
   ],
+  "entity_ci": [
+   0.8018,
+   0.9189
+  ],
+  "exact_ci": {
+   "DIRECT_ID": [
+    0.8847,
+    0.9994
+   ],
+   "FINANCIAL_ID": [
+    0.8806,
+    1.0
+   ],
+   "AUTH_SECRET": [
+    0.5407,
+    1.0
+   ],
+   "QUASI_ID": [
+    0.3493,
+    0.756
+   ],
+   "SENSITIVE_ATTR": [
+    0.157,
+    0.843
+   ]
+  },
+  "full vs presidio": {
+   "diff": 0.6095,
+   "ci": [
+    0.5178,
+    0.6977
+   ],
+   "p": 0.0
+  },
   "misses": [
-   {
-    "call": "O01",
-    "type": "ADDRESS",
-    "text": "28 Jalan Bukit Merah, #12-344"
-   },
    {
     "call": "O03",
     "type": "OCCUPATION",
@@ -1243,54 +1423,9 @@
     "text": "domestic helper"
    },
    {
-    "call": "O03",
-    "type": "EMPLOYER",
-    "text": "SBS Transit"
-   },
-   {
-    "call": "O07",
-    "type": "EMPLOYER",
-    "text": "Changi General Hospital"
-   },
-   {
-    "call": "O10",
-    "type": "EMPLOYER",
-    "text": "imperial college"
-   },
-   {
-    "call": "O15",
-    "type": "EMPLOYER",
-    "text": "grab"
-   },
-   {
     "call": "O04",
     "type": "PASSPORT",
     "text": "Z4471902"
-   },
-   {
-    "call": "O07",
-    "type": "AMOUNT",
-    "text": "sixty thousand"
-   },
-   {
-    "call": "O21",
-    "type": "AMOUNT",
-    "text": "two hundred thousand"
-   },
-   {
-    "call": "O23",
-    "type": "AMOUNT",
-    "text": "ninety five thousand"
-   },
-   {
-    "call": "O08",
-    "type": "SECURITY_ANSWER",
-    "text": "chicken rice"
-   },
-   {
-    "call": "O16",
-    "type": "SECURITY_ANSWER",
-    "text": "Rosyth"
    },
    {
     "call": "O09",
@@ -1303,9 +1438,19 @@
     "text": "lasting power of attorney"
    },
    {
-    "call": "O11",
-    "type": "LOCATION",
-    "text": "Bukit Timah"
+    "call": "O10",
+    "type": "EMPLOYER",
+    "text": "imperial college"
+   },
+   {
+    "call": "O15",
+    "type": "EMPLOYER",
+    "text": "grab"
+   },
+   {
+    "call": "O23",
+    "type": "EMPLOYER",
+    "text": "lim and sons trading"
    },
    {
     "call": "O17",
@@ -1329,20 +1474,28 @@
    }
   ],
   "review": {
-   "queued": 0.2917,
-   "calls_with_harmful_miss": 11,
-   "harmful_miss_calls_caught": 0.5455,
-   "leakage_removed_by_review": 0.5948
+   "queued": 0.2083,
+   "calls_with_harmful_miss": 5,
+   "harmful_miss_calls_caught": 0.2,
+   "leakage_removed_by_review": 0.4017,
+   "recall_after_review": 0.9545,
+   "recall_after_review_ci": [
+    0.9254,
+    0.9782
+   ]
   },
   "triage": {
    "confusion": {
     "low->low": 14,
-    "high->high": 6,
-    "low->high": 1,
-    "high->low": 3
+    "high->high": 9,
+    "low->high": 1
    },
-   "accuracy": 0.8333,
-   "high_risk_recall": 0.6667
+   "accuracy": 0.9583,
+   "high_risk_recall": 1.0,
+   "high_risk_recall_exact_ci": [
+    0.6637,
+    1.0
+   ]
   },
   "GLiNER-PII alone": {
    "recall": {
@@ -1368,6 +1521,7 @@
    },
    "harm_weighted_recall": 0.595,
    "strict_recall": 0.5789,
+   "entity_recall": 0.6754,
    "precision": 0.4425,
    "char_leakage": 0.5619,
    "over_redaction": 0.1079,
@@ -1377,14 +1531,14 @@
    "recall": {
     "DIRECT_ID": 0.9783,
     "FINANCIAL_ID": 1.0,
-    "AUTH_SECRET": 0.8333,
+    "AUTH_SECRET": 1.0,
     "QUASI_ID": 0.88,
     "SENSITIVE_ATTR": 0.875
    },
    "class_accuracy": {
-    "DIRECT_ID": 0.9556,
+    "DIRECT_ID": 0.9778,
     "FINANCIAL_ID": 1.0,
-    "AUTH_SECRET": 0.8,
+    "AUTH_SECRET": 1.0,
     "QUASI_ID": 0.9545,
     "SENSITIVE_ATTR": 0.8571
    },
@@ -1395,12 +1549,46 @@
     "QUASI_ID": 25,
     "SENSITIVE_ATTR": 8
    },
-   "harm_weighted_recall": 0.9566,
+   "harm_weighted_recall": 0.9773,
    "strict_recall": 0.807,
-   "precision": 0.5227,
-   "char_leakage": 0.0423,
-   "over_redaction": 0.1167,
-   "token_f1": 0.8133
+   "entity_recall": 0.9561,
+   "precision": 0.5318,
+   "char_leakage": 0.0291,
+   "over_redaction": 0.1144,
+   "token_f1": 0.821
+  },
+  "gliner_review": {
+   "n_calls": 24,
+   "rules": {
+    "queued": 0.2083,
+    "calls_with_harmful_miss": 5,
+    "harmful_miss_calls_caught": 0.2,
+    "leakage_removed_by_review": 0.4017,
+    "recall_after_review": 0.9545,
+    "recall_after_review_ci": [
+     0.9254,
+     0.9782
+    ]
+   },
+   "with GLiNER": {
+    "queued": 0.875,
+    "calls_with_harmful_miss": 5,
+    "harmful_miss_calls_caught": 1.0,
+    "leakage_removed_by_review": 0.9929,
+    "recall_after_review": 1.0,
+    "recall_after_review_ci": [
+     1.0,
+     1.0
+    ]
+   },
+   "paired": {
+    "diff": 0.0455,
+    "ci": [
+     0.0218,
+     0.0746
+    ],
+    "p": 0.0
+   }
   }
  },
  "n_calls": 500

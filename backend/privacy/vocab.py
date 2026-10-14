@@ -78,3 +78,56 @@ PINYIN_DIGITS = ["ling", "yi", "er", "san", "si", "wu", "liu", "qi", "ba", "jiu"
 MALAY_DIGITS = ["kosong", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "lapan", "sembilan"]
 # What ASR writes for a digit it mishears as a common word.
 HOMOPHONES = {"four": "for", "two": "to", "eight": "ate", "one": "won"}
+
+# Detector-only gazetteers (round 3, item 2.4): written from public knowledge of Singapore, not from
+# the generator or the held-out calls. Common English words ("Grab", "Pioneer") are left out because
+# they would redact ordinary speech.
+SG_EMPLOYERS = [
+    "Singapore Airlines", "Scoot", "SATS", "Changi Airport Group", "SBS Transit", "SMRT", "ComfortDelGro", "Gojek",
+    "Singtel", "StarHub", "Shopee", "Lazada", "Razer", "Keppel", "Sembcorp", "ST Engineering", "Seatrium",
+    "PSA International", "Jurong Port", "CapitaLand", "City Developments", "Mediacorp", "SPH Media", "Wilmar", "Olam",
+    "Temasek", "GIC", "NTUC FairPrice", "FairPrice", "Sheng Siong", "Cold Storage", "Raffles Medical", "Parkway",
+    "Changi General Hospital", "Singapore General Hospital", "Tan Tock Seng Hospital", "National University Hospital",
+    "Khoo Teck Puat Hospital", "Ng Teng Fong General Hospital", "Sengkang General Hospital", "KK Hospital",
+    "KK Women's and Children's Hospital", "Mount Elizabeth Hospital", "Gleneagles Hospital", "Mount Alvernia Hospital",
+    "Institute of Mental Health", "National University of Singapore", "Nanyang Technological University",
+    "Singapore Management University", "Ministry of Education", "Ministry of Health", "Ministry of Manpower",
+    "Housing and Development Board", "CPF Board", "IRAS", "Singapore Police Force", "SCDF",
+]
+# Planning areas and neighbourhoods missing from TOWNS -> region (the GREEN generalization).
+SG_PLACES = {
+    "Bukit Timah": "Central", "Bukit Merah": "Central", "Tanjong Pagar": "Central", "Outram": "Central",
+    "Chinatown": "Central", "Orchard": "Central", "River Valley": "Central", "Tiong Bahru": "Central",
+    "Redhill": "Central", "Telok Blangah": "Central", "Buona Vista": "Central", "Thomson": "Central",
+    "Potong Pasir": "Central", "MacPherson": "Central", "Little India": "Central", "Bugis": "Central",
+    "Marine Parade": "the East", "Geylang": "the East", "Paya Lebar": "the East", "Katong": "the East",
+    "Joo Chiat": "the East", "Siglap": "the East", "Kembangan": "the East", "Eunos": "the East", "Simei": "the East",
+    "Changi": "the East", "Aljunied": "the East",
+    "Bukit Panjang": "the West", "Choa Chu Kang": "the West", "Tuas": "the West", "Boon Lay": "the West",
+    "Jurong East": "the West", "Jurong West": "the West", "Tengah": "the West", "Pasir Panjang": "the West",
+    "Kent Ridge": "the West", "West Coast": "the West",
+    "Admiralty": "the North", "Kranji": "the North", "Yew Tee": "the North", "Marsiling": "the North",
+    "Canberra": "the North", "Mandai": "the North",
+    "Sengkang": "the North-East", "Seletar": "the North-East", "Lorong Chuan": "the North-East",
+}
+# Destinations that make a transfer an overseas one (triage). Countries and cities, not nationalities.
+FOREIGN_PLACES = [
+    "Malaysia", "Johor", "Kuala Lumpur", "Indonesia", "Jakarta", "Batam", "Thailand", "Bangkok", "Vietnam",
+    "Philippines", "Manila", "India", "Chennai", "Mumbai", "Delhi", "China", "Shanghai", "Beijing", "Shenzhen",
+    "Hong Kong", "Taiwan", "Japan", "Tokyo", "Korea", "Seoul", "Australia", "Sydney", "Melbourne", "New Zealand",
+    "United Kingdom", "UK", "London", "Germany", "France", "Switzerland", "Dubai", "United States", "USA", "America",
+    "New York", "Canada", "Cambodia", "Myanmar", "Bangladesh", "Sri Lanka", "Pakistan", "Nepal",
+]
+
+# Round 4: words of real conversation that NER takes for names. Written from language knowledge, not from the
+# NSC transcripts: English fillers and discourse words, Singlish particles, common Malay function words, common
+# Mandarin pinyin function syllables, and kinship / generic person nouns. A name-like span made only of these
+# (or of English stop words) is dropped, and none of them is ever propagated.
+FUNCTION_WORDS = set("""
+mm mmm hmm hm err erm uh um ah eh oh ooh aiya okay ok ya yah yeah yup yep nope like right so well
+lah leh lor orh hor sia meh hais wah alamak aiyo aiyah ma
+tak ada dia aku kau nak yang punya macam bila kan lagi sudah dah pun jer kat dengan untuk ini itu tu ni apa
+saya kita lepas
+wo ni ta de le ma ne shi bu you zai
+mum mom mummy mother dad daddy father daughter son wife husband friend friends boss law sister brother
+""".split())

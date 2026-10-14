@@ -33,3 +33,10 @@ def test_keys_from_another_authority_fail():
     assert abe.decrypt(abe.keygen(pk2, msk2, {"tier:GREEN"}), ct) != key
     pk, msk = abe.load_keys(abe.dump_keys(PK, MSK))
     assert abe.decrypt(abe.keygen(pk, msk, {"tier:GREEN"}), ct) == key
+
+
+def test_user_key_survives_the_wire():
+    key, ct = abe.encrypt(PK, AND(attr("tier:AMBER"), attr("agent:Priya Nair")))
+    sk = abe.load_sk(abe.dump_sk(abe.keygen(PK, MSK, {"tier:AMBER", "agent:Priya Nair"})))
+    assert abe.decrypt(sk, abe.load_ct(abe.dump_ct(ct))) == key
+    assert abe.decrypt(abe.keygen(abe.load_pk(abe.dump_pk(PK)), MSK, {"tier:AMBER", "agent:Priya Nair"}), ct) == key

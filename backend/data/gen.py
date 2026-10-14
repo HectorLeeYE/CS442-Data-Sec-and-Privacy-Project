@@ -33,7 +33,7 @@ HIGH_RISK_TRANSFER = taxonomy.load()["triage"]["overseas_transfer_threshold"]   
 TYPES = {"agent": "PERSON", "name": "PERSON", "surname": "PERSON", "payee": "PERSON", "relative": "PERSON",
          "nric": "NRIC", "passport": "PASSPORT", "phone": "PHONE", "email": "EMAIL", "address": "ADDRESS",
          "dob": "DOB", "account": "ACCOUNT_NO", "payee_account": "ACCOUNT_NO", "iban": "IBAN", "card": "CARD_NO",
-         "txn": "TXN_REF", "amount": "AMOUNT", "otp": "OTP", "pin": "PIN", "maiden": "SECURITY_ANSWER",
+         "txn": "TXN_REF", "amount": "AMOUNT", "otp": "OTP", "pin": "PIN", "cvv": "CVV", "expiry": "CARD_EXPIRY", "maiden": "SECURITY_ANSWER",
          "pet": "SECURITY_ANSWER", "branch": "BRANCH", "town": "LOCATION", "swift": "SWIFT",
          "employer": "EMPLOYER", "occupation": "OCCUPATION", "nationality": "NATIONALITY", "date": "DATE",
          "health": "HEALTH", "legal": "LEGAL", "religion": "RELIGION", "pep": "PEP",
@@ -73,6 +73,10 @@ SCENARIOS = {
         ("C", "Hi, there is a charge on my card I don't recognise."),
         ("A", "I'm sorry to hear that. Can I have your card number?"),
         ("C", "Card number {card}."),
+        ("?A", "And the expiry date on the card?"),
+        ("?C", "It expires {expiry}."),
+        ("?A", "Can you read me the three digits at the back of the card?"),
+        ("?C", "The CVV is {cvv}."),
         ("A", "And your full name as printed on the card?"),
         ("C", "{name}."),
         ("A", "For security, what is your mother's maiden name?"),
@@ -135,11 +139,15 @@ CODESWITCH = [(r"\bI want to\b", ["wo yao", "saya mahu"]), (r"^Yes\b", ["Dui", "
 FILLERS = ["uh", "um", "er"]
 
 
+def nric_letter(p: str, d: str) -> str:
+    total = sum(int(x) * w for x, w in zip(d, (2, 7, 6, 5, 4, 3, 2))) + (4 if p in "TG" else 0)
+    return ("JZIHGFEDCBA" if p in "ST" else "XWUTRQPNMLK")[total % 11]
+
+
 def nric(rng: random.Random) -> str:
     p = rng.choice("STFG")
     d = "".join(str(rng.randrange(10)) for _ in range(7))
-    total = sum(int(x) * w for x, w in zip(d, (2, 7, 6, 5, 4, 3, 2))) + (4 if p in "TG" else 0)
-    return p + d + ("JZIHGFEDCBA" if p in "ST" else "XWUTRQPNMLK")[total % 11]
+    return p + d + nric_letter(p, d)
 
 
 def luhn_card(rng: random.Random) -> str:
@@ -186,7 +194,7 @@ def amount(rng: random.Random) -> tuple[str, int]:
 # ------------------------------------------------------------------ ASR noise
 
 SPELLED = {"NRIC": 0.7, "PASSPORT": 0.7, "PHONE": 0.7, "ACCOUNT_NO": 0.7, "CARD_NO": 0.7, "OTP": 0.7,
-           "PIN": 0.7, "IBAN": 0.7, "SWIFT": 0.6, "TXN_REF": 0.5}
+           "PIN": 0.7, "CVV": 0.7, "CARD_EXPIRY": 0.6, "IBAN": 0.7, "SWIFT": 0.6, "TXN_REF": 0.5}
 
 
 def spell_digits(s: str, rng: random.Random) -> str:
@@ -254,17 +262,24 @@ def make_call(n: int, client: dict, rng: random.Random) -> dict:
     amt, value = amount(rng)
     values = client | {
         "agent": rng.choice(AGENTS), "bank": rng.choice(BANKS), "amount": amt,
-        "otp": f"{rng.randrange(10**6):06d}", "pin": f"{rng.randrange(10**4):04d}",
+        "otp": f"{rng.randrange(10**6):06d}", "pin": f"{rng.randrange(10**4):04d}", "cvv": f"{rng.randrange(1000):03d}",
+        "expiry": f"{rng.randint(1, 12):02d}/{rng.randint(26, 31)}",
         "txn": f"{rng.choice(['TXN', 'REF', 'CASE'])}{rng.randrange(10**8):08d}",
         "date": f"{rng.randint(1, 28)} {rng.choice(MONTHS)}",
         "payee": payee["name"], "payee_account": payee["account"], "iban": iban(rng), "swift": rng.choice(SWIFT_CODES),
     }
-    speakers, segments = [], []
+    speakers, segments, disclosed, prev = [], [], False, (None, False)
     for spk, tpl in SCENARIOS[scenario]:
         if spk.startswith("?"):
-            if rng.random() > 0.6:
+            # an optional client answer goes with the optional agent question just before it
+            keep = prev[1] if spk == "?C" and prev[0] == "?A" else rng.random() <= 0.6
+            prev = (spk, keep)
+            if not keep:
                 continue
             spk = spk[1:]
+        else:
+            prev = (None, False)
+        disclosed |= "told the caller my PIN" in tpl      # a client who gave a credential away: high risk
         if spk == "C":
             for rx, alts in CODESWITCH:
                 if re.search(rx, tpl) and rng.random() < 0.3:
@@ -277,8 +292,8 @@ def make_call(n: int, client: dict, rng: random.Random) -> dict:
         segments.append([(p, None) if i % 2 == 0 else (str(values[p]), TYPES[p])
                          for i, p in enumerate(parts) if p])
         speakers.append("agent" if spk == "A" else "client")
-    risk = "high" if scenario == "fraud_report" or (scenario == "overseas_transfer" and value >= HIGH_RISK_TRANSFER) \
-        else "low"
+    risk = "high" if scenario == "fraud_report" or disclosed or \
+        (scenario == "overseas_transfer" and value >= HIGH_RISK_TRANSFER) else "low"
     seed = rng.random()
     out = {"id": f"C{n:04d}", "scenario": scenario, "client_id": client["id"], "agent": values["agent"], "risk": risk}
     for mode in ("clean", "noisy"):

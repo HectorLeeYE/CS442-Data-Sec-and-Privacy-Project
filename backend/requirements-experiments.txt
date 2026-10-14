@@ -4,6 +4,7 @@
 gliner
 transformers
 torch
-edge-tts
+edge-tts>=7.3            # older releases get HTTP 403 from the speech service
 av
 numpy
+pyarrow

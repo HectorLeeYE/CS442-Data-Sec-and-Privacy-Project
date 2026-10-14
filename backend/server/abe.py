@@ -192,13 +192,27 @@ def load_ct(s: str) -> dict:
     return {"policy": _policy_in(d["policy"]), "C": FQ12(d["C"]), "Ct": _g1(d["Ct"]), "tree": _tree_in(d["tree"])}
 
 
+def dump_pk(pk: dict) -> dict:
+    return {"h": _pt(pk["h"]), "Y": list(pk["Y"].coeffs), "egg": list(pk["egg"].coeffs)}
+
+
+def load_pk(d: dict) -> dict:
+    return {"h": _g1(d["h"]), "Y": FQ12(d["Y"]), "egg": FQ12(d["egg"])}
+
+
 def dump_keys(pk: dict, msk: dict) -> str:
-    return json.dumps({"pk": {"h": _pt(pk["h"]), "Y": list(pk["Y"].coeffs), "egg": list(pk["egg"].coeffs)},
-                       "msk": {"beta": msk["beta"], "g2a": _pt(msk["g2a"])}})
+    return json.dumps({"pk": dump_pk(pk), "msk": {"beta": msk["beta"], "g2a": _pt(msk["g2a"])}})
 
 
 def load_keys(s: str) -> tuple[dict, dict]:
     d = json.loads(s)
-    pk = {"h": _g1(d["pk"]["h"]), "Y": FQ12(d["pk"]["Y"]), "egg": FQ12(d["pk"]["egg"])}
-    return pk, {"beta": d["msk"]["beta"], "g2a": _g2(d["msk"]["g2a"])}
+    return load_pk(d["pk"]), {"beta": d["msk"]["beta"], "g2a": _g2(d["msk"]["g2a"])}
+
+
+def dump_sk(sk: dict) -> dict:
+    return {"D": _pt(sk["D"]), "attrs": {a: [_pt(dj), _pt(dpj)] for a, (dj, dpj) in sk["attrs"].items()}}
+
+
+def load_sk(d: dict) -> dict:
+    return {"D": _g2(d["D"]), "attrs": {a: (_g2(dj), _g1(dpj)) for a, (dj, dpj) in d["attrs"].items()}}
 

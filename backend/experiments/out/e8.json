@@ -1,0 +1,97 @@
+{
+ "n_calls": 40,
+ "dev_calls": 10,
+ "test_calls": 30,
+ "n_best": 5,
+ "asr_model": "openai/whisper-base",
+ "n_train_calls": 460,
+ "lm": "interpolated word bigram",
+ "rows": [
+  {
+   "release": "Whisper alone (no adaptation)",
+   "lambda": 0,
+   "wer": 0.2069,
+   "ci": [
+    0.1952,
+    0.2174
+   ]
+  },
+  {
+   "release": "raw transcripts (upper bound, not releasable)",
+   "lambda": 0.1,
+   "wer": 0.1885,
+   "ci": [
+    0.1759,
+    0.2006
+   ],
+   "wer_reduction_vs_whisper": {
+    "diff": 0.0184,
+    "ci": [
+     0.0151,
+     0.0219
+    ],
+    "p": 0.0
+   }
+  },
+  {
+   "release": "PII suppressed",
+   "lambda": 0.05,
+   "wer": 0.197,
+   "ci": [
+    0.1847,
+    0.2085
+   ],
+   "wer_reduction_vs_whisper": {
+    "diff": 0.0099,
+    "ci": [
+     0.0063,
+     0.0132
+    ],
+    "p": 0.0
+   }
+  },
+  {
+   "release": "GREEN policy",
+   "lambda": 0.1,
+   "wer": 0.1917,
+   "ci": [
+    0.1796,
+    0.2036
+   ],
+   "wer_reduction_vs_whisper": {
+    "diff": 0.0151,
+    "ci": [
+     0.0118,
+     0.0188
+    ],
+    "p": 0.0
+   }
+  },
+  {
+   "release": "GREEN policy, real detector",
+   "lambda": 0.1,
+   "wer": 0.1919,
+   "ci": [
+    0.1798,
+    0.2036
+   ],
+   "wer_reduction_vs_whisper": {
+    "diff": 0.0149,
+    "ci": [
+     0.0115,
+     0.0187
+    ],
+    "p": 0.0
+   }
+  }
+ ],
+ "oracle_wer": 0.1673,
+ "green_vs_raw": {
+  "diff": -0.0035,
+  "ci": [
+   -0.0059,
+   -0.0016
+  ],
+  "p": 1.0
+ }
+}

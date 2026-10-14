@@ -1,6 +1,6 @@
 import { ClipboardPaste, Download, Eraser, Fingerprint, PhoneIncoming, RefreshCw, ShieldCheck, Siren } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { api, ApiError, SCENARIO_LABEL, TIER_RANK, TIERS, type CallSummary, type CallView, type ExportResult, type Tier, type User } from '../api'
+import { api, ApiError, parsePasted, SCENARIO_LABEL, TIER_RANK, TIERS, type CallSummary, type CallView, type ExportResult, type Tier, type User } from '../api'
 import TierBadge from '../components/TierBadge'
 import { BreakGlass, Line, Locked, SourceLabel } from '../components/Transcript'
 
@@ -16,18 +16,6 @@ const TIER_NOTE: Record<Tier, string> = {
   GREEN: 'Model training corpus',
 }
 const MIN_REASON = 15
-
-function parsePasted(text: string) {
-  return text
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean)
-    .map((l) => {
-      const m = l.match(/^(a|agent|c|client|customer)\s*:\s*(.+)$/i)
-      const who = m?.[1].toLowerCase() ?? 'c'
-      return { speaker: who.startsWith('a') ? 'agent' : 'client', text: m ? m[2] : l }
-    })
-}
 
 /** RED opening a low-risk call that is not theirs: a break-glass access, so ask before fetching. */
 function needsBreakGlass(user: User, call: CallSummary | undefined, tier: Tier) {
@@ -329,7 +317,10 @@ export default function Calls({ user }: { user: User }) {
                     {c?.state === 'ok' ? (
                       <span className="inline-flex flex-wrap items-center gap-1 text-base-content/70">
                         <Fingerprint size={12} aria-hidden="true" />
-                        Log #{c.view.receipt.seq} · <code className="font-mono">sha256:{c.view.digest.slice(0, 12)}…</code> · signed receipt
+                        Log #{c.view.receipt.entry.seq} · <code className="font-mono">sha256:{c.view.digest.slice(0, 12)}…</code> ·
+                        <a className="link" download={`receipt-${c.view.receipt.entry.seq}.json`}
+                          href={`data:application/json,${encodeURIComponent(JSON.stringify(c.view.receipt, null, 1))}`}>receipt</a>
+                        <span title="Checkable offline: python -m server.merkle receipt.json log-key.pem">(verifiable offline)</span>
                       </span>
                     ) : (
                       <span className="text-base-content/60">Nothing released at {t}.</span>

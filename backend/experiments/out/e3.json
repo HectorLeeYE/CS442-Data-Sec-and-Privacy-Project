@@ -5,172 +5,172 @@
   "clean": [
    {
     "condition": "raw transcript",
-    "reidentified": 0.838,
+    "reidentified": 0.85,
     "ci": [
-     0.804,
-     0.868
+     0.818,
+     0.88
     ],
-    "true_client_in_candidates": 0.978,
+    "true_client_in_candidates": 0.97,
     "median_candidates": 1,
     "direct_id_leak": 1.0
    },
    {
     "condition": "GREEN, quasi-IDs kept",
-    "reidentified": 0.208,
+    "reidentified": 0.222,
     "ci": [
-     0.174,
-     0.244
+     0.184,
+     0.258
     ],
     "true_client_in_candidates": 0.634,
-    "median_candidates": 16,
-    "direct_id_leak": 0.004
+    "median_candidates": 15,
+    "direct_id_leak": 0.006
    },
    {
     "condition": "GREEN policy",
-    "reidentified": 0.1,
+    "reidentified": 0.098,
     "ci": [
-     0.074,
-     0.126
+     0.072,
+     0.124
     ],
-    "true_client_in_candidates": 0.538,
-    "median_candidates": 17,
-    "direct_id_leak": 0.004
+    "true_client_in_candidates": 0.534,
+    "median_candidates": 16,
+    "direct_id_leak": 0.006
    },
    {
     "condition": "GREEN + k-anonymity gate",
-    "reidentified": 0.002,
+    "reidentified": 0.0,
     "ci": [
      0.0,
-     0.006
+     0.0
     ],
-    "true_client_in_candidates": 0.538,
+    "true_client_in_candidates": 0.534,
     "median_candidates": 23,
-    "direct_id_leak": 0.004
+    "direct_id_leak": 0.006
    },
    {
     "condition": "GREEN policy, perfect detector",
-    "reidentified": 0.096,
+    "reidentified": 0.092,
     "ci": [
-     0.072,
-     0.124
+     0.066,
+     0.116
     ],
-    "true_client_in_candidates": 0.538,
-    "median_candidates": 17,
-    "direct_id_leak": 0.0
-   },
-   {
-    "condition": "GREEN policy vs. insider with transaction log",
-    "reidentified": 0.214,
-    "ci": [
-     0.178,
-     0.25
-    ],
-    "true_client_in_candidates": 0.52,
-    "median_candidates": 1,
-    "direct_id_leak": 0.004
-   },
-   {
-    "condition": "GREEN + k-gate vs. insider with transaction log",
-    "reidentified": 0.026,
-    "ci": [
-     0.012,
-     0.04
-    ],
-    "true_client_in_candidates": 0.52,
-    "median_candidates": 4,
-    "direct_id_leak": 0.004
-   }
-  ],
-  "noisy": [
-   {
-    "condition": "raw transcript",
-    "reidentified": 0.838,
-    "ci": [
-     0.804,
-     0.868
-    ],
-    "true_client_in_candidates": 0.978,
-    "median_candidates": 1,
-    "direct_id_leak": 1.0
-   },
-   {
-    "condition": "GREEN, quasi-IDs kept",
-    "reidentified": 0.206,
-    "ci": [
-     0.172,
-     0.242
-    ],
-    "true_client_in_candidates": 0.632,
+    "true_client_in_candidates": 0.534,
     "median_candidates": 16,
-    "direct_id_leak": 0.216
-   },
-   {
-    "condition": "GREEN policy",
-    "reidentified": 0.104,
-    "ci": [
-     0.078,
-     0.13
-    ],
-    "true_client_in_candidates": 0.55,
-    "median_candidates": 17,
-    "direct_id_leak": 0.216
-   },
-   {
-    "condition": "GREEN + k-anonymity gate",
-    "reidentified": 0.008,
-    "ci": [
-     0.002,
-     0.016
-    ],
-    "true_client_in_candidates": 0.552,
-    "median_candidates": 23,
-    "direct_id_leak": 0.216
-   },
-   {
-    "condition": "GREEN policy, perfect detector",
-    "reidentified": 0.096,
-    "ci": [
-     0.072,
-     0.124
-    ],
-    "true_client_in_candidates": 0.548,
-    "median_candidates": 17,
-    "direct_id_leak": 0.202
+    "direct_id_leak": 0.0
    },
    {
     "condition": "GREEN policy vs. insider with transaction log",
     "reidentified": 0.218,
     "ci": [
-     0.184,
-     0.256
+     0.18,
+     0.254
     ],
-    "true_client_in_candidates": 0.532,
+    "true_client_in_candidates": 0.512,
     "median_candidates": 1,
-    "direct_id_leak": 0.216
+    "direct_id_leak": 0.006
    },
    {
     "condition": "GREEN + k-gate vs. insider with transaction log",
-    "reidentified": 0.032,
+    "reidentified": 0.022,
     "ci": [
-     0.018,
-     0.048
+     0.01,
+     0.036
     ],
-    "true_client_in_candidates": 0.534,
+    "true_client_in_candidates": 0.512,
+    "median_candidates": 3,
+    "direct_id_leak": 0.006
+   }
+  ],
+  "noisy": [
+   {
+    "condition": "raw transcript",
+    "reidentified": 0.85,
+    "ci": [
+     0.818,
+     0.88
+    ],
+    "true_client_in_candidates": 0.97,
+    "median_candidates": 1,
+    "direct_id_leak": 1.0
+   },
+   {
+    "condition": "GREEN, quasi-IDs kept",
+    "reidentified": 0.212,
+    "ci": [
+     0.176,
+     0.25
+    ],
+    "true_client_in_candidates": 0.634,
+    "median_candidates": 14,
+    "direct_id_leak": 0.244
+   },
+   {
+    "condition": "GREEN policy",
+    "reidentified": 0.09,
+    "ci": [
+     0.064,
+     0.116
+    ],
+    "true_client_in_candidates": 0.538,
+    "median_candidates": 16,
+    "direct_id_leak": 0.244
+   },
+   {
+    "condition": "GREEN + k-anonymity gate",
+    "reidentified": 0.01,
+    "ci": [
+     0.002,
+     0.02
+    ],
+    "true_client_in_candidates": 0.544,
+    "median_candidates": 23,
+    "direct_id_leak": 0.244
+   },
+   {
+    "condition": "GREEN policy, perfect detector",
+    "reidentified": 0.092,
+    "ci": [
+     0.066,
+     0.116
+    ],
+    "true_client_in_candidates": 0.538,
+    "median_candidates": 16,
+    "direct_id_leak": 0.232
+   },
+   {
+    "condition": "GREEN policy vs. insider with transaction log",
+    "reidentified": 0.214,
+    "ci": [
+     0.174,
+     0.25
+    ],
+    "true_client_in_candidates": 0.514,
+    "median_candidates": 1,
+    "direct_id_leak": 0.244
+   },
+   {
+    "condition": "GREEN + k-gate vs. insider with transaction log",
+    "reidentified": 0.036,
+    "ci": [
+     0.022,
+     0.052
+    ],
+    "true_client_in_candidates": 0.52,
     "median_candidates": 4,
-    "direct_id_leak": 0.216
+    "direct_id_leak": 0.244
    }
   ]
  },
  "k_anonymity": {
   "clean": {
-   "calls_below_k": 0.266,
+   "calls_below_k": 0.29,
    "median_k": 11,
-   "gated": 133
+   "gated": 145
   },
   "noisy": {
-   "calls_below_k": 0.362,
-   "median_k": 9,
-   "gated": 177
+   "calls_below_k": 0.414,
+   "median_k": 6,
+   "gated": 207
   }
  }
 }

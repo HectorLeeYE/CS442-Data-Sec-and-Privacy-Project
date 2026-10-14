@@ -37,7 +37,7 @@ classes:
     harm: 10
     description: Live credential. No business reason for anyone to read it, so nobody does.
     harm_rationale: Immediate account takeover, irreversible once funds move; twice the weight of an identifier.
-    regulation: [PDP (Notification of Data Breaches) Regulations 2021 reg 3(1)(b) (account identifier plus a password or security answer), MAS TRM Guidelines s9 access control, PDPA s24 protection, PDPA s25 retention limitation]
+    regulation: [PDP (Notification of Data Breaches) Regulations 2021 reg 3(1)(b) (account identifier plus a password or security answer), MAS TRM Guidelines s9 access control, PCI DSS v4 req 3.3.1 (no card verification code stored after authorisation), PDPA s24 protection, PDPA s25 retention limitation]
     actions: {RED: suppress, AMBER: suppress, GREEN: suppress}
   QUASI_ID:
     harm: 1
@@ -64,6 +64,10 @@ types:
   ACCOUNT_NO:      {class: FINANCIAL_ID, description: Bank account number}
   IBAN:            {class: FINANCIAL_ID, description: International account number (ISO 13616 mod-97 validated)}
   CARD_NO:         {class: FINANCIAL_ID, description: Payment card number (Luhn-validated)}
+  CARD_EXPIRY:
+    class: FINANCIAL_ID
+    description: Card expiry date (PCI DSS cardholder data, like the card number)
+    actions: {AMBER: pseudonym}                 # mask_last4 would leave all four digits
   TXN_REF:         {class: FINANCIAL_ID, description: Transaction / case reference}
   AMOUNT:
     class: FINANCIAL_ID
@@ -72,6 +76,7 @@ types:
   OTP:             {class: AUTH_SECRET, description: One-time password}
   PIN:             {class: AUTH_SECRET, description: Card / account PIN}
   SECURITY_ANSWER: {class: AUTH_SECRET, description: Answer to a security question}
+  CVV:             {class: AUTH_SECRET, description: "Card verification code (PCI DSS 3.3.1: never stored after authorisation, even encrypted)"}
   LOCATION:        {class: QUASI_ID, description: Town the client lives in}
   BRANCH:          {class: QUASI_ID, description: Home branch of the client}
   SWIFT:           {class: QUASI_ID, description: Payee bank SWIFT/BIC (identifies a bank, not a person)}
@@ -88,8 +93,22 @@ types:
 # are referred to compliance in full (privacy/triage.py).
 triage:
   overseas_transfer_threshold: 5000      # S$; overseas transfers at or above this are high risk
-  fraud_cues: [fraud, scam, scammer, pretending to be from the bank, suspicious activity, police report]
-  transfer_cues: [overseas transfer, transfer overseas, telegraphic transfer, remittance, wire transfer, iban, swift]
+  # Scam cues follow the Singapore Police Force's scam categories (phishing, impersonation of
+  # government or bank officials, fake friend calls, e-commerce, investment, job and love scams),
+  # not the wording of any test call.
+  fraud_cues: [fraud, fraudulent, scam, scams, scammed, scammer, scammers, phishing, pretending to be, impersonating,
+               impersonation, government official, china official, fake friend, money mule, identity theft,
+               unauthorised transaction, unauthorized transaction, suspicious activity, police report]
+  # "I gave them the OTP": a client who handed a credential to someone is a fraud victim, so high risk.
+  # Matched within one client utterance with no negation in it.
+  disclosure:
+    credentials: [otp, one-time password, one time password, pin, password, cvv, security code, verification code, the code]
+    verbs: [gave, give, given, shared, share, told, tell, sent, send, read out, keyed in, entered, typed]
+    negations: [never, not, "didn't", "don't", dont, didnt]
+  transfer_cues: [overseas transfer, transfer overseas, overseas, abroad, telegraphic transfer, remittance, wire transfer,
+                  iban, swift]
+  # A transfer word plus a foreign destination (vocab.FOREIGN_PLACES) is also an overseas transfer.
+  transfer_words: [transfer, transferring, send, sending, sent, remit, remittance, wire]
 
 # Calls the detector is unsure about are held from GREEN until a RED reviewer approves them
 # (privacy/review.py).
@@ -100,6 +119,20 @@ review:
 # GREEN bulk export gate (privacy/release.py).
 release:
   k: 5                      # calls whose quasi-ID combination is shared by fewer than k calls lose their quasi-IDs
+  # Where k = 5 comes from: PDPC Guide to Basic Anonymisation, Annex D (pp52-54).
+  # Risk = (1/k) x P(attempt) must stay below the threshold for the data's potential harm.
+  # Banking data is high harm (0.01). The bank's controls (CP-ABE, audit, approved recipients)
+  # are "high"; an insider's motivation is "medium", so P(attempt) = 0.05 and k >= 0.05 / 0.01 = 5.
+  annex_d:
+    threshold: {low: 0.2, medium: 0.1, high: 0.01}     # by potential harm
+    harm: high
+    controls: high
+    motivation: medium
+    p_attempt:                                          # insider; rows: mitigating controls, cols: motivation
+      high:   {low: 0.03, medium: 0.05, high: 0.1}
+      medium: {low: 0.2,  medium: 0.25, high: 0.3}
+      low:    {low: 0.4,  medium: 0.5,  high: 0.6}
+      none:   {low: 1.0,  medium: 1.0,  high: 1.0}
 
 # PDPA retention limitation: erase (crypto-shred) calls older than this.
 retention_days:

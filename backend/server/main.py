@@ -11,6 +11,7 @@ import json
 import os
 import random
 import re
+import time
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -24,12 +25,13 @@ from pydantic import BaseModel, Field
 
 from data import gen
 from privacy import detect, redact, release, review, taxonomy, triage
-from server import abe, store
+from server import abe, overview, store
 
 ROOT = Path(__file__).resolve().parent.parent
 JWT_KEY = store.subkey("jwt")
 SURROGATE_KEY = store.subkey("surrogate")
 SEED_CALLS = int(os.environ.get("SEED_CALLS", "30"))
+GLINER_REVIEW = os.environ.get("GLINER_REVIEW") == "1"     # needs requirements-experiments.txt (torch)
 MIN_JUSTIFICATION = 15
 DEMO_USERS = [  # username, display name, tier, agent name — password "demo" for all
     ("compliance", "Rachel Ong — Compliance", "RED", None),
@@ -57,10 +59,11 @@ def ingest(db, call_id: str, scenario: str, source: str, agent: str, utterances:
     The raw transcript itself is never stored: AUTH_SECRET values exist in no copy (data minimisation)."""
     text = "\n".join(u["text"] for u in utterances)
     spans = detect.detect(text)
-    risk, why = triage.classify(text, spans)
+    risk, why = triage.classify(text, spans, [u["speaker"] for u in utterances])
     copies = {t: redact.render(utterances, spans, t, call_id, SURROGATE_KEY) for t in taxonomy.tiers()}
+    held = review.reasons(text, spans, detect.gliner(text) if GLINER_REVIEW else None)
     call = {"id": call_id, "scenario": scenario, "source": source, "agent": agent, "risk": risk,
-            "risk_reason": why, "review_reasons": review.reasons(text, spans), "created_at": created_at}
+            "risk_reason": why, "review_reasons": held, "created_at": created_at}
     store.put_call(db, call, copies)
     return call
 
@@ -69,9 +72,6 @@ def ingest(db, call_id: str, scenario: str, source: str, agent: str, utterances:
 def seed() -> None:
     db = store.connect()
     fresh = not db.execute("SELECT 1 FROM calls").fetchone() and not db.execute("SELECT 1 FROM audit").fetchone()
-    anchor = store.authority().anchor
-    if fresh and anchor.exists():           # a new database starts a new anchor; the old one is kept
-        anchor.rename(anchor.with_suffix(f".{datetime.now():%Y%m%d%H%M%S}.old"))
     for u, name, tier, agent in DEMO_USERS:
         if not db.execute("SELECT 1 FROM users WHERE username = ?", (u,)).fetchone():
             db.execute("INSERT INTO users VALUES (?,?,?,?,?)", (u, name, tier, agent, store.hash_password("demo")))
@@ -173,11 +173,6 @@ def list_calls(user: dict = Depends(current_user), db=Depends(get_db)):
     return [_call_summary(r, user) for r in rows]
 
 
-def _receipt(entry: dict) -> dict:
-    body = {k: entry[k] for k in ("seq", "ts", "username", "call_id", "view_tier", "digest")}
-    return body | {"signature": store.authority().sign(body)}
-
-
 @app.get("/api/calls/{call_id}")
 def view_call(call_id: str, tier: str, justification: str | None = None,
               user: dict = Depends(current_user), db=Depends(get_db)):
@@ -191,8 +186,8 @@ def view_call(call_id: str, tier: str, justification: str | None = None,
         raise HTTPException(*refused)
     breakglass = is_breakglass(user, row, tier)
     try:
-        utterances = store.open_copy(db, call_id, tier, store.user_key(user, breakglass))
-    except abe.PolicyNotSatisfied as e:     # defence in depth: the rules above passed, the crypto did not
+        utterances = store.open_copy(db, call_id, tier, store.user_key(user, breakglass, justification))
+    except (abe.PolicyNotSatisfied, PermissionError) as e:   # defence in depth: the rules passed, the crypto did not
         store.audit(db, user["username"], user["tier"], "deny", call_id, tier, detail=str(e))
         raise HTTPException(403, f"Your attribute key cannot open this copy: {e}")
     released = [{"speaker": u["speaker"], "text": u["text"]} for u in utterances]
@@ -200,7 +195,7 @@ def view_call(call_id: str, tier: str, justification: str | None = None,
                         released, detail=justification.strip() if breakglass else None)
     actions = Counter(p["entity"]["action"] for u in utterances for p in u["pieces"] if "entity" in p)
     return {"call": _call_summary(row, user), "tier": tier, "utterances": utterances, "digest": entry["digest"],
-            "actions": actions, "receipt": _receipt(entry)}
+            "actions": actions, "receipt": store.receipt(entry)}
 
 
 class Utterance(BaseModel):
@@ -235,6 +230,31 @@ def simulate_call(user: dict = Depends(require("AMBER")), db=Depends(get_db)):
     ingest(db, call_id, call["scenario"], "asr", user["agent_name"] or call["agent"], call["noisy"]["utterances"])
     store.audit(db, user["username"], user["tier"], "ingest", call_id)
     return {"id": call_id}
+
+
+@app.post("/api/anonymize")
+def anonymize(body: NewCall, user: dict = Depends(current_user)):
+    """Live view for demos: detect and render every tier for text the caller supplies. Nothing is stored or
+    logged: the caller already holds this text, and no stored call is disclosed."""
+    t0 = time.perf_counter()
+    utts = [{"speaker": u.speaker, "text": re.sub(r"\s*\n\s*", " ", u.text).strip()} for u in body.utterances]
+    text = "\n".join(u["text"] for u in utts)
+    spans = detect.detect(text)
+    risk, why = triage.classify(text, spans, [u["speaker"] for u in utts])
+    cid = f"preview-{user['username']}"            # stable surrogates while typing, unlinkable to stored calls
+    return {"detected": redact.render(utts, spans, "RED", cid, SURROGATE_KEY, policy=lambda _: "keep"),
+            "tiers": {t: redact.render(utts, spans, t, cid, SURROGATE_KEY) for t in taxonomy.tiers()},
+            "risk": risk, "risk_reason": why, "review_reasons": review.reasons(text, spans),
+            "ms": round((time.perf_counter() - t0) * 1000)}
+
+
+@app.get("/api/sample-call")
+def sample_call(style: str = "asr", user: dict = Depends(current_user)):
+    """A fresh synthetic call to play through the live view (nothing stored)."""
+    rng = random.Random()
+    call = gen.make_call(rng.randrange(10**6), gen.make_client(0, rng), rng)
+    return {"scenario": call["scenario"],
+            "utterances": call["noisy" if style == "asr" else "clean"]["utterances"]}
 
 
 class Decision(BaseModel):
@@ -290,8 +310,20 @@ def export(user: dict = Depends(current_user), db=Depends(get_db)):
 
 @app.get("/api/signing-key", response_class=PlainTextResponse)
 def signing_key():
-    """Ed25519 public key: anyone holding a receipt or export manifest can verify it offline."""
+    """The server's Ed25519 public key: anyone holding a receipt or export manifest can verify it offline."""
     return store.authority().public_pem()
+
+
+@app.get("/api/log-key", response_class=PlainTextResponse)
+def log_key():
+    """The key authority's tree-head key: `python -m server.merkle receipt.json log-key.pem` checks a receipt."""
+    return store.authority().log_key
+
+
+@app.get("/api/tree-head")
+def tree_head(db=Depends(get_db)):
+    """The latest audit tree head the key authority signed. Publish it anywhere the server cannot rewrite."""
+    return (store.ka("heads", log=store.log_id(db)) or [None])[-1]
 
 
 # ------------------------------------------------------------ policy, audit, results
@@ -306,7 +338,13 @@ def get_taxonomy(user: dict = Depends(current_user)):
 @app.get("/api/audit")
 def get_audit(limit: int = 200, user: dict = Depends(require("RED")), db=Depends(get_db)):
     rows = db.execute("SELECT * FROM audit ORDER BY seq DESC LIMIT ?", (min(limit, 1000),)).fetchall()
-    return {"entries": [dict(r) for r in rows], "chain": store.verify_chain(db)}
+    return {"entries": [dict(r) for r in rows], "chain": store.verify_log(db)}
+
+
+@app.get("/api/overview")
+def project_overview(user: dict = Depends(current_user)):
+    """The six project requirements: each privacy and utility target against the latest results."""
+    return overview.overview()
 
 
 @app.get("/api/results")

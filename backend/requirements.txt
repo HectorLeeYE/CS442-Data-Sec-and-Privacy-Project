@@ -1,6 +1,7 @@
 fastapi==0.115.*
 uvicorn[standard]
 pyjwt
+httpx
 cryptography
 pyyaml
 presidio-analyzer

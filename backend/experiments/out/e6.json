@@ -1,0 +1,626 @@
+{
+ "n_train": 400,
+ "candidates": 5000,
+ "max_exposure": 12.29,
+ "releases": [
+  "raw",
+  "GREEN",
+  "GREEN, held calls withheld"
+ ],
+ "rows": [
+  {
+   "kind": "NRIC",
+   "frame": "caught",
+   "reps": 1,
+   "detected": 1,
+   "held": 0,
+   "exposure": {
+    "raw": 1.9,
+    "GREEN": 1.04,
+    "GREEN, held calls withheld": 0.85
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "caught",
+   "reps": 5,
+   "detected": 1,
+   "held": 0.2,
+   "exposure": {
+    "raw": 4.21,
+    "GREEN": 2.72,
+    "GREEN, held calls withheld": 2.07
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "caught",
+   "reps": 20,
+   "detected": 1,
+   "held": 0.1167,
+   "exposure": {
+    "raw": 11.62,
+    "GREEN": 1.37,
+    "GREEN, held calls withheld": 1.47
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "missed",
+   "reps": 1,
+   "detected": 0,
+   "held": 1,
+   "exposure": {
+    "raw": 1.97,
+    "GREEN": 2.66,
+    "GREEN, held calls withheld": 1.17
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "missed",
+   "reps": 5,
+   "detected": 0,
+   "held": 1,
+   "exposure": {
+    "raw": 4.74,
+    "GREEN": 5.01,
+    "GREEN, held calls withheld": 2.38
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "missed",
+   "reps": 20,
+   "detected": 0,
+   "held": 1,
+   "exposure": {
+    "raw": 11.23,
+    "GREEN": 11.96,
+    "GREEN, held calls withheld": 0.3
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "caught",
+   "reps": 1,
+   "detected": 1,
+   "held": 0,
+   "exposure": {
+    "raw": 0.41,
+    "GREEN": 0.51,
+    "GREEN, held calls withheld": 0.24
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "caught",
+   "reps": 5,
+   "detected": 1,
+   "held": 0.2,
+   "exposure": {
+    "raw": 2.44,
+    "GREEN": 0.85,
+    "GREEN, held calls withheld": 1.16
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "caught",
+   "reps": 20,
+   "detected": 1,
+   "held": 0.1167,
+   "exposure": {
+    "raw": 7.4,
+    "GREEN": 0.85,
+    "GREEN, held calls withheld": 1.12
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "missed",
+   "reps": 1,
+   "detected": 0,
+   "held": 0,
+   "exposure": {
+    "raw": 4.5,
+    "GREEN": 4.64,
+    "GREEN, held calls withheld": 5.02
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "missed",
+   "reps": 5,
+   "detected": 0,
+   "held": 0.1333,
+   "exposure": {
+    "raw": 10.41,
+    "GREEN": 10.45,
+    "GREEN, held calls withheld": 10.72
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "missed",
+   "reps": 20,
+   "detected": 0,
+   "held": 0.1333,
+   "exposure": {
+    "raw": 12.29,
+    "GREEN": 12.29,
+    "GREEN, held calls withheld": 12.29
+   }
+  }
+ ],
+ "canaries": [
+  {
+   "kind": "NRIC",
+   "frame": "caught",
+   "reps": 1,
+   "secret": "3055605",
+   "detected": 1,
+   "held": 0,
+   "exposure": {
+    "raw": 2.18,
+    "GREEN": 0.31,
+    "GREEN, held calls withheld": 0.13
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "caught",
+   "reps": 1,
+   "secret": "2005170",
+   "detected": 1,
+   "held": 0,
+   "exposure": {
+    "raw": 2.85,
+    "GREEN": 1.53,
+    "GREEN, held calls withheld": 1.56
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "caught",
+   "reps": 1,
+   "secret": "7419943",
+   "detected": 1,
+   "held": 0,
+   "exposure": {
+    "raw": 0.66,
+    "GREEN": 1.28,
+    "GREEN, held calls withheld": 0.87
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "caught",
+   "reps": 5,
+   "secret": "2268236",
+   "detected": 1,
+   "held": 0.4,
+   "exposure": {
+    "raw": 4.77,
+    "GREEN": 7.2,
+    "GREEN, held calls withheld": 4.6
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "caught",
+   "reps": 5,
+   "secret": "9698744",
+   "detected": 1,
+   "held": 0,
+   "exposure": {
+    "raw": 5.06,
+    "GREEN": 0.59,
+    "GREEN, held calls withheld": 0.83
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "caught",
+   "reps": 5,
+   "secret": "2403712",
+   "detected": 1,
+   "held": 0.2,
+   "exposure": {
+    "raw": 2.8,
+    "GREEN": 0.36,
+    "GREEN, held calls withheld": 0.77
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "caught",
+   "reps": 20,
+   "secret": "9108212",
+   "detected": 1,
+   "held": 0.1,
+   "exposure": {
+    "raw": 10.29,
+    "GREEN": 0.79,
+    "GREEN, held calls withheld": 1.1
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "caught",
+   "reps": 20,
+   "secret": "9677887",
+   "detected": 1,
+   "held": 0.05,
+   "exposure": {
+    "raw": 12.29,
+    "GREEN": 1.95,
+    "GREEN, held calls withheld": 2.0
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "caught",
+   "reps": 20,
+   "secret": "3627056",
+   "detected": 1,
+   "held": 0.2,
+   "exposure": {
+    "raw": 12.29,
+    "GREEN": 1.36,
+    "GREEN, held calls withheld": 1.32
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "missed",
+   "reps": 1,
+   "secret": "4524595",
+   "detected": 0,
+   "held": 1,
+   "exposure": {
+    "raw": 1.74,
+    "GREEN": 2.18,
+    "GREEN, held calls withheld": 1.78
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "missed",
+   "reps": 1,
+   "secret": "3042169",
+   "detected": 0,
+   "held": 1,
+   "exposure": {
+    "raw": 0.64,
+    "GREEN": 0.97,
+    "GREEN, held calls withheld": 0.91
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "missed",
+   "reps": 1,
+   "secret": "9313662",
+   "detected": 0,
+   "held": 1,
+   "exposure": {
+    "raw": 3.53,
+    "GREEN": 4.82,
+    "GREEN, held calls withheld": 0.81
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "missed",
+   "reps": 5,
+   "secret": "2808875",
+   "detected": 0,
+   "held": 1,
+   "exposure": {
+    "raw": 6.2,
+    "GREEN": 4.39,
+    "GREEN, held calls withheld": 2.67
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "missed",
+   "reps": 5,
+   "secret": "5964142",
+   "detected": 0,
+   "held": 1,
+   "exposure": {
+    "raw": 4.77,
+    "GREEN": 5.72,
+    "GREEN, held calls withheld": 2.03
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "missed",
+   "reps": 5,
+   "secret": "0199928",
+   "detected": 0,
+   "held": 1,
+   "exposure": {
+    "raw": 3.25,
+    "GREEN": 4.93,
+    "GREEN, held calls withheld": 2.44
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "missed",
+   "reps": 20,
+   "secret": "8111135",
+   "detected": 0,
+   "held": 1,
+   "exposure": {
+    "raw": 9.12,
+    "GREEN": 12.29,
+    "GREEN, held calls withheld": 0.03
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "missed",
+   "reps": 20,
+   "secret": "5232232",
+   "detected": 0,
+   "held": 1,
+   "exposure": {
+    "raw": 12.29,
+    "GREEN": 12.29,
+    "GREEN, held calls withheld": 0.79
+   }
+  },
+  {
+   "kind": "NRIC",
+   "frame": "missed",
+   "reps": 20,
+   "secret": "7791927",
+   "detected": 0,
+   "held": 1,
+   "exposure": {
+    "raw": 12.29,
+    "GREEN": 11.29,
+    "GREEN, held calls withheld": 0.07
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "caught",
+   "reps": 1,
+   "secret": "89525414",
+   "detected": 1,
+   "held": 0,
+   "exposure": {
+    "raw": 0.1,
+    "GREEN": 0.28,
+    "GREEN, held calls withheld": 0.05
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "caught",
+   "reps": 1,
+   "secret": "80077500",
+   "detected": 1,
+   "held": 0,
+   "exposure": {
+    "raw": 0.58,
+    "GREEN": 0.44,
+    "GREEN, held calls withheld": 0.4
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "caught",
+   "reps": 1,
+   "secret": "91695152",
+   "detected": 1,
+   "held": 0,
+   "exposure": {
+    "raw": 0.55,
+    "GREEN": 0.8,
+    "GREEN, held calls withheld": 0.28
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "caught",
+   "reps": 5,
+   "secret": "85760821",
+   "detected": 1,
+   "held": 0.2,
+   "exposure": {
+    "raw": 1.72,
+    "GREEN": 0.08,
+    "GREEN, held calls withheld": 0.16
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "caught",
+   "reps": 5,
+   "secret": "95028741",
+   "detected": 1,
+   "held": 0.4,
+   "exposure": {
+    "raw": 2.12,
+    "GREEN": 1.39,
+    "GREEN, held calls withheld": 2.5
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "caught",
+   "reps": 5,
+   "secret": "91638275",
+   "detected": 1,
+   "held": 0,
+   "exposure": {
+    "raw": 3.49,
+    "GREEN": 1.08,
+    "GREEN, held calls withheld": 0.83
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "caught",
+   "reps": 20,
+   "secret": "98548478",
+   "detected": 1,
+   "held": 0.1,
+   "exposure": {
+    "raw": 4.27,
+    "GREEN": 1.21,
+    "GREEN, held calls withheld": 1.77
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "caught",
+   "reps": 20,
+   "secret": "88390878",
+   "detected": 1,
+   "held": 0.1,
+   "exposure": {
+    "raw": 8.97,
+    "GREEN": 0.82,
+    "GREEN, held calls withheld": 0.92
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "caught",
+   "reps": 20,
+   "secret": "92050394",
+   "detected": 1,
+   "held": 0.15,
+   "exposure": {
+    "raw": 8.97,
+    "GREEN": 0.53,
+    "GREEN, held calls withheld": 0.67
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "missed",
+   "reps": 1,
+   "secret": "82404453",
+   "detected": 0,
+   "held": 0,
+   "exposure": {
+    "raw": 6.24,
+    "GREEN": 6.31,
+    "GREEN, held calls withheld": 6.62
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "missed",
+   "reps": 1,
+   "secret": "89015925",
+   "detected": 0,
+   "held": 0,
+   "exposure": {
+    "raw": 3.57,
+    "GREEN": 3.66,
+    "GREEN, held calls withheld": 4.1
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "missed",
+   "reps": 1,
+   "secret": "87376895",
+   "detected": 0,
+   "held": 0,
+   "exposure": {
+    "raw": 3.7,
+    "GREEN": 3.94,
+    "GREEN, held calls withheld": 4.35
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "missed",
+   "reps": 5,
+   "secret": "81609939",
+   "detected": 0,
+   "held": 0.2,
+   "exposure": {
+    "raw": 11.29,
+    "GREEN": 11.29,
+    "GREEN, held calls withheld": 11.29
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "missed",
+   "reps": 5,
+   "secret": "94307884",
+   "detected": 0,
+   "held": 0.2,
+   "exposure": {
+    "raw": 12.29,
+    "GREEN": 12.29,
+    "GREEN, held calls withheld": 12.29
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "missed",
+   "reps": 5,
+   "secret": "95465186",
+   "detected": 0,
+   "held": 0,
+   "exposure": {
+    "raw": 7.64,
+    "GREEN": 7.76,
+    "GREEN, held calls withheld": 8.59
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "missed",
+   "reps": 20,
+   "secret": "84085801",
+   "detected": 0,
+   "held": 0.25,
+   "exposure": {
+    "raw": 12.29,
+    "GREEN": 12.29,
+    "GREEN, held calls withheld": 12.29
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "missed",
+   "reps": 20,
+   "secret": "80768124",
+   "detected": 0,
+   "held": 0.1,
+   "exposure": {
+    "raw": 12.29,
+    "GREEN": 12.29,
+    "GREEN, held calls withheld": 12.29
+   }
+  },
+  {
+   "kind": "PHONE",
+   "frame": "missed",
+   "reps": 20,
+   "secret": "90144566",
+   "detected": 0,
+   "held": 0.05,
+   "exposure": {
+    "raw": 12.29,
+    "GREEN": 12.29,
+    "GREEN, held calls withheld": 12.29
+   }
+  }
+ ]
+}

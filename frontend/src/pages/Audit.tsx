@@ -58,11 +58,11 @@ export default function Audit({ user }: { user: User }) {
             {!data ? <span className="loading loading-spinner loading-sm" /> : data.chain.ok
               ? <CircleCheck className="text-success" aria-hidden="true" /> : <CircleX className="text-error" aria-hidden="true" />}
           </div>
-          <div className="stat-title">Hash chain</div>
+          <div className="stat-title">Merkle log</div>
           <div className="stat-value text-2xl">{!data ? '…' : data.chain.ok ? 'Intact' : 'Broken'}</div>
           <div className="stat-desc">
             {!data ? 'Verifying' : data.chain.ok
-              ? `${data.chain.checked} entries re-hashed; ${data.chain.anchored ?? 0} match the external anchor`
+              ? `${data.chain.checked} entries re-hashed; the tree matches the head the key authority signed (${data.chain.signed_heads ?? 0} heads)`
               : `Entry #${data.chain.broken_at}: ${data.chain.reason}`}
           </div>
         </div>
@@ -101,13 +101,13 @@ export default function Audit({ user }: { user: User }) {
             ))}
           </div>
           <button className="btn btn-sm ml-auto" onClick={load}>
-            <RefreshCw size={14} aria-hidden="true" /> Re-verify chain
+            <RefreshCw size={14} aria-hidden="true" /> Re-verify log
           </button>
         </div>
         <div className="max-w-full overflow-x-auto">
           <table className="table table-sm">
             <thead>
-              <tr><th>#</th><th>Time (UTC)</th><th>User</th><th>Event</th><th>Call</th><th>View</th><th>Reason / detail</th><th>Released digest</th><th>Entry hash</th></tr>
+              <tr><th>#</th><th>Time (UTC)</th><th>User</th><th>Event</th><th>Call</th><th>View</th><th>Reason / detail</th><th>Released digest</th><th>Leaf hash</th></tr>
             </thead>
             <tbody className="tabular-nums">
               {!data && [0, 1, 2].map((i) => <tr key={i}><td colSpan={9}><div className="skeleton h-5 w-full" /></td></tr>)}
@@ -125,9 +125,7 @@ export default function Audit({ user }: { user: User }) {
                     <td className="min-w-48 text-xs">{e.detail ?? '—'}</td>
                     <td className="font-mono text-xs">{e.digest ? `${e.digest.slice(0, 10)}…` : '—'}</td>
                     <td className="font-mono text-xs">
-                      <span className="tooltip tooltip-left" data-tip={`prev ${e.prev.slice(0, 10)}…`}>
-                        <span tabIndex={0} className="inline-flex items-center gap-1"><Link2 size={11} aria-hidden="true" />{e.hash.slice(0, 10)}…</span>
-                      </span>
+                      <span className="inline-flex items-center gap-1" title={e.hash}><Link2 size={11} aria-hidden="true" />{e.hash.slice(0, 10)}…</span>
                     </td>
                   </tr>
                 )

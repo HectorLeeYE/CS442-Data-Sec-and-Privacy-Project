@@ -12,11 +12,11 @@ import re
 from privacy import spoken, taxonomy
 from privacy.detect import Span, iban_check, iban_valid, nric_valid
 from privacy.vocab import (DIGIT_WORDS, EMAIL_DOMAINS, EMPLOYERS, HEALTH, LEGAL, MONTHS, NATIONALITIES,
-                           OCCUPATIONS, PEP_ROLES, PETS, RELIGIONS, STREET_KINDS, SURROGATE_GIVEN,
-                           SURROGATE_SURNAMES, TOWNS)
+                           OCCUPATIONS, PEP_ROLES, PETS, RELIGIONS, SG_PLACES, STREET_KINDS,
+                           SURROGATE_GIVEN, SURROGATE_SURNAMES, TOWNS)
 
 _UNITS = re.compile(r"\d|\b(?:%s)\b" % "|".join(DIGIT_WORDS + ["oh"]), re.I)
-DIGITY = {"NRIC", "PASSPORT", "PHONE", "ACCOUNT_NO", "IBAN", "CARD_NO", "TXN_REF", "OTP", "PIN", "AMOUNT"}
+DIGITY = {"NRIC", "PASSPORT", "PHONE", "ACCOUNT_NO", "IBAN", "CARD_NO", "TXN_REF", "OTP", "PIN", "CVV", "CARD_EXPIRY", "AMOUNT"}
 
 
 def _key(surface: str) -> str:
@@ -113,12 +113,14 @@ def generalize(etype: str, surface: str) -> str:
         v = amount_value(surface)
         if v is None:
             return "[AMOUNT]"
-        for lo, hi in ((0, 1e3), (1e3, 1e4), (1e4, 1e5), (1e5, 1e6)):
+        # an edge at the triage threshold, so GREEN still shows which side of it a transfer falls
+        edges = sorted({0, 1e3, 1e4, 1e5, 1e6, taxonomy.load()["triage"]["overseas_transfer_threshold"]})
+        for lo, hi in zip(edges, edges[1:]):
             if v < hi:
                 return _match_case(surface, f"between {lo:,.0f} and {hi:,.0f} dollars")
         return _match_case(surface, "over a million dollars")
     if etype in ("LOCATION", "BRANCH"):
-        towns = {t.lower(): r for t, r in TOWNS.items()}
+        towns = {t.lower(): r for t, r in (TOWNS | SG_PLACES).items()}
         return _match_case(surface, towns.get(low, "Singapore"))
     if etype == "SWIFT":
         letters = re.sub(r"[^a-z0-9]", "", low)

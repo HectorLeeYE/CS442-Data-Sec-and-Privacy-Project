@@ -18,6 +18,8 @@ Two jobs, both kept away from the server so that a full compromise of the server
 
 With no KA_URL the server calls these functions in its own process: development only, because the
 master key then sits in the server's memory (though still not in its files or database).
+authority.json is sealed at rest under a key derived from KA_SECRET (seal_json), so a copy of the
+authority's volume alone yields no master key.
 A bank would use a KMS or HSM for the keys and a policy engine (e.g. Cedar) for the assertion check.
 """
 
@@ -33,6 +35,7 @@ from pathlib import Path
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
@@ -49,6 +52,36 @@ class Refused(ValueError):
     pass
 
 
+# ------------------------------------------------------------ key files at rest
+
+def _file_key(f: Path, secret: bytes) -> bytes:
+    return hmac.new(secret, b"keyfile|" + f.name.encode(), hashlib.sha256).digest()
+
+
+def seal_json(f: Path, obj: dict, secret: bytes) -> None:
+    """Write a key file AES-256-GCM-sealed under a key derived from an env secret, so a copied
+    volume or backup without that secret holds no usable key. ponytail: the secret is an env var;
+    a bank would wrap the file key in a KMS or HSM instead."""
+    nonce = os.urandom(12)
+    tmp = f.with_suffix(".tmp")
+    tmp.write_bytes(nonce + AESGCM(_file_key(f, secret)).encrypt(nonce, json.dumps(obj).encode(), f.name.encode()))
+    os.chmod(tmp, 0o600)
+    tmp.replace(f)
+
+
+def open_json(f: Path, secret: bytes, migrate: bool = True) -> dict:
+    raw = f.read_bytes()
+    if raw.startswith(b"{"):           # plaintext, from before key files were sealed: seal it now
+        if migrate:
+            seal_json(f, obj := json.loads(raw), secret)
+        return json.loads(raw)
+    try:
+        return json.loads(AESGCM(_file_key(f, secret)).decrypt(raw[:12], raw[12:], f.name.encode()))
+    except Exception:
+        raise RuntimeError(f"{f} does not open with this secret. Restore the secret it was sealed under, "
+                           "or reset the demo (README, Resetting the demo).") from None
+
+
 @lru_cache
 def state() -> dict:
     KA_DIR.mkdir(parents=True, exist_ok=True)
@@ -57,11 +90,8 @@ def state() -> dict:
         pk, msk = abe.setup()
         sig = Ed25519PrivateKey.generate().private_bytes(
             serialization.Encoding.Raw, serialization.PrivateFormat.Raw, serialization.NoEncryption())
-        tmp = f.with_suffix(".tmp")
-        tmp.write_text(json.dumps({"abe": abe.dump_keys(pk, msk), "ed25519": sig.hex()}))
-        os.chmod(tmp, 0o600)
-        tmp.replace(f)
-    d = json.loads(f.read_text())
+        seal_json(f, {"abe": abe.dump_keys(pk, msk), "ed25519": sig.hex()}, SECRET)
+    d = open_json(f, SECRET)
     pk, msk = abe.load_keys(d["abe"])
     return {"pk": pk, "msk": msk, "signer": Ed25519PrivateKey.from_private_bytes(bytes.fromhex(d["ed25519"]))}
 

@@ -25,7 +25,7 @@ from pydantic import BaseModel, Field
 
 from data import gen
 from privacy import detect, redact, release, review, taxonomy, triage
-from server import abe, overview, store
+from server import abe, attack, overview, store
 
 ROOT = Path(__file__).resolve().parent.parent
 JWT_KEY = store.subkey("jwt")
@@ -162,7 +162,7 @@ def _call_summary(r, user: dict | None = None) -> dict:
     if user:
         out["mine"] = r["agent"] == user["agent_name"]
     if user and user["tier"] == "RED":
-        out |= {"risk_reason": r["risk_reason"], "review_reasons": json.loads(r["review_reasons"])}
+        out |= store.reasons(r)
     return out
 
 
@@ -339,6 +339,32 @@ def get_taxonomy(user: dict = Depends(current_user)):
 def get_audit(limit: int = 200, user: dict = Depends(require("RED")), db=Depends(get_db)):
     rows = db.execute("SELECT * FROM audit ORDER BY seq DESC LIMIT ?", (min(limit, 1000),)).fetchall()
     return {"entries": [dict(r) for r in rows], "chain": store.verify_log(db)}
+
+
+class Attack(BaseModel):
+    """What the attacker holds."""
+    database: bool = True
+    user_key: str | None = None        # a username whose ABE key was stolen
+    keys_volume: bool = False
+    ka_volume: bool = False
+    app_secret: bool = False
+    ka_secret: bool = False
+    ka_access: bool = False
+
+
+@app.post("/api/attack")
+def simulate_attack(body: Attack, user: dict = Depends(require("RED")), db=Depends(get_db)):
+    """Run the attack for real against the stored data. Returns only what opened, never content."""
+    victim = None
+    if body.user_key:
+        victim = db.execute("SELECT username, tier, agent_name FROM users WHERE username = ?",
+                            (body.user_key,)).fetchone()
+        if not victim:
+            raise HTTPException(404, "No such user")
+    held = [k for k, v in body.model_dump().items() if v and k != "user_key"] + ([body.user_key] if victim else [])
+    out = attack.simulate(db, **body.model_dump(exclude={"user_key"}), user=dict(victim) if victim else None)
+    store.audit(db, user["username"], user["tier"], "attack", detail="simulated attacker with " + (", ".join(held) or "nothing"))
+    return out
 
 
 @app.get("/api/overview")

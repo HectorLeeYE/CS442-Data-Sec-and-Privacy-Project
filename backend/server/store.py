@@ -12,6 +12,10 @@ level of access depending on their security clearance"):
                                  GREEN copy                   tier:GREEN      (tier:RED while held for review)
     user key                   CP-ABE secret key for the user's attributes, issued by the key authority
 
+    triage and review reasons  AES-256-GCM under a subkey of APP_SECRET, AAD = call id (they quote
+                               amounts and destinations; only RED users see them)
+    key files on disk          server.json under APP_SECRET, authority.json under KA_SECRET
+
 So the database alone decrypts nothing, and a stolen GREEN key decrypts only GREEN copies.
 Ingest needs only public keys. One ABE decryption per (user key, policy) unlocks that policy's
 private key, which is then cached in memory, so a page view costs AES, not pairings.
@@ -52,10 +56,12 @@ KEYS_DIR = Path(os.environ.get("KEYS_DIR", HERE / "keys"))
 KA_URL = os.environ.get("KA_URL")              # unset: the authority runs in this process (development only)
 
 
-def subkey(label: str) -> bytes:
-    """One env secret, independent keys per purpose (JWT, surrogates)."""
-    return hmac.new(APP_SECRET, label.encode(), hashlib.sha256).digest()
+def subkey(label: str, secret: bytes = APP_SECRET) -> bytes:
+    """One env secret, independent keys per purpose (JWT, surrogates, call metadata)."""
+    return hmac.new(secret, label.encode(), hashlib.sha256).digest()
 
+
+META_KEY = subkey("call-metadata")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -88,7 +94,8 @@ def connect() -> sqlite3.Connection:
     db.execute("PRAGMA secure_delete=ON")   # deleted rows are zeroed, not left in free pages (erase)
     cols = {r[1] for r in db.execute("PRAGMA table_info(calls)")}
     audit_cols = {r[1] for r in db.execute("PRAGMA table_info(audit)")}
-    if cols and "risk" not in cols or "prev" in audit_cols:
+    plain = "risk_reason" in cols and db.execute("SELECT 1 FROM calls WHERE typeof(risk_reason) = 'text' LIMIT 1").fetchone()
+    if cols and "risk" not in cols or "prev" in audit_cols or plain:
         raise RuntimeError(f"{DB_PATH} was created by an older version. Delete it and restart.")
     db.executescript(SCHEMA)
     # one Merkle log per database; a new database starts a new log, the authority keeps the old one's heads
@@ -119,15 +126,13 @@ class Authority:
 
     def __init__(self, path: Path):
         path.mkdir(parents=True, exist_ok=True)
-        f = path / "server.json"
+        f = path / "server.json"       # sealed at rest under APP_SECRET
         if not f.exists():
             sig = Ed25519PrivateKey.generate().private_bytes(
                 serialization.Encoding.Raw, serialization.PrivateFormat.Raw, serialization.NoEncryption())
-            tmp = f.with_suffix(".tmp")
-            tmp.write_text(json.dumps({"ed25519": sig.hex()}))
-            os.chmod(tmp, 0o600)
-            tmp.replace(f)
-        self.signer = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(json.loads(f.read_text())["ed25519"]))
+            keyauthority.seal_json(f, {"ed25519": sig.hex()}, APP_SECRET)
+        self.signer = Ed25519PrivateKey.from_private_bytes(
+            bytes.fromhex(keyauthority.open_json(f, APP_SECRET)["ed25519"]))
         pub = ka("public")
         self.pk, self.log_key = abe.load_pk(pub["abe_pk"]), pub["log_key"]
 
@@ -253,9 +258,11 @@ def put_call(db, call: dict, copies: dict[str, list[dict]]) -> None:
     """call: {id, scenario, source, agent, risk, risk_reason, review_reasons}; copies: {tier: rendering}.
     Only public keys are used, so ingest never needs anyone's ABE key."""
     held = bool(call["review_reasons"])
+    aad = call["id"].encode()
     db.execute("INSERT OR REPLACE INTO calls VALUES (?,?,?,?,?,?,?,?,?)",
-               (call["id"], call["scenario"], call["source"], call["agent"], call["risk"], call["risk_reason"],
-                "pending" if held else "none", json.dumps(call["review_reasons"]), call.get("created_at") or now()))
+               (call["id"], call["scenario"], call["source"], call["agent"], call["risk"],
+                _seal(META_KEY, call["risk_reason"].encode(), aad), "pending" if held else "none",
+                _seal(META_KEY, json.dumps(call["review_reasons"]).encode(), aad), call.get("created_at") or now()))
     for tier, rendering in copies.items():
         _put_copy(db, call["id"], tier, policy_for(tier, call["risk"], call["agent"], held), rendering)
 
@@ -265,6 +272,14 @@ def _put_copy(db, call_id: str, tier: str, tree, rendering) -> None:
     dek, aad = AESGCM.generate_key(bit_length=256), f"{call_id}|{tier}".encode()
     db.execute("INSERT OR REPLACE INTO dek VALUES (?,?,?,?)", (call_id, tier, row["id"], _wrap(row["pub"], dek, aad)))
     db.execute("INSERT OR REPLACE INTO copies VALUES (?,?,?)", (call_id, tier, _seal(dek, json.dumps(rendering).encode(), aad)))
+
+
+def reasons(row: sqlite3.Row, key: bytes = META_KEY) -> dict:
+    """Decrypt a call's triage and review reasons. ponytail: under a server-held key, so this stops a
+    stolen database, not root on the server; seal them under the tier:RED ABE policy for that."""
+    aad = row["id"].encode()
+    return {"risk_reason": _open(key, row["risk_reason"], aad).decode(),
+            "review_reasons": json.loads(_open(key, row["review_reasons"], aad))}
 
 
 def get_call(db, call_id: str) -> sqlite3.Row | None:

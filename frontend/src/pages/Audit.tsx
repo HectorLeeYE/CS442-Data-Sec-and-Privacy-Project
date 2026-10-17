@@ -1,4 +1,4 @@
-import { CircleCheck, CircleX, Download, Eraser, Eye, FileInput, Link2, RefreshCw, ShieldCheck, ShieldOff, Siren } from 'lucide-react'
+import { CircleCheck, CircleX, Crosshair, Download, Eraser, Eye, FileInput, Link2, RefreshCw, ShieldCheck, ShieldOff, Siren } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { api, ApiError, TIER_RANK, type AuditAction, type AuditEntry, type Chain, type User } from '../api'
 import TierBadge from '../components/TierBadge'
@@ -11,8 +11,9 @@ const ACTION: Record<AuditAction, { label: string; Icon: typeof Eye; cls: string
   review: { label: 'Review release', Icon: ShieldCheck, cls: 'badge badge-sm badge-ghost' },
   export: { label: 'Export', Icon: Download, cls: 'badge badge-sm badge-ghost' },
   erase: { label: 'Erased', Icon: Eraser, cls: 'badge badge-sm badge-ghost' },
+  attack: { label: 'Attack simulation', Icon: Crosshair, cls: 'badge badge-sm badge-soft badge-warning' },
 }
-const FILTERS: ('all' | AuditAction)[] = ['all', 'view', 'breakglass', 'deny', 'export', 'review', 'erase', 'ingest']
+const FILTERS: ('all' | AuditAction)[] = ['all', 'view', 'breakglass', 'deny', 'export', 'review', 'erase', 'ingest', 'attack']
 
 export default function Audit({ user }: { user: User }) {
   const [data, setData] = useState<{ entries: AuditEntry[]; chain: Chain } | null>(null)

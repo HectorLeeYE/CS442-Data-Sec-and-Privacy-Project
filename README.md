@@ -39,7 +39,8 @@ All transcripts, clients and names are synthetic sample data.
 
 ```bash
 docker build -t quietline .
-docker run --rm -p 8000:8000 -e APP_SECRET="$(openssl rand -hex 32)" \
+echo "APP_SECRET=$(openssl rand -hex 32)" > .env      # once: the server's key file is sealed under it
+docker run --rm -p 8000:8000 --env-file .env \
   -v quietline-data:/data -v quietline-keys:/keys quietline
 ```
 
@@ -49,12 +50,17 @@ is about 2.4 GB, mostly the spaCy `en_core_web_lg` model.
 
 The database (`/data`), the server's receipt key (`/keys`) and the key authority (`/ka`: ABE
 master key, audit tree-head key) are separate volumes on purpose. Stealing `/data` alone decrypts
-nothing. Run like this, the authority shares the server's process, which is fine for a demo.
+nothing, and the key files on `/keys` and `/ka` are themselves sealed under `APP_SECRET` and
+`KA_SECRET`, so a backup of all three volumes without the secrets holds no usable key. Run like this, the authority shares the server's process, which is fine for a demo.
 To run it as its own container, so that root on the server reaches no master key:
 
 ```bash
-KA_SECRET="$(openssl rand -hex 32)" APP_SECRET="$(openssl rand -hex 32)" docker compose up --build
+printf 'APP_SECRET=%s\nKA_SECRET=%s\n' "$(openssl rand -hex 32)" "$(openssl rand -hex 32)" > .env   # once
+docker compose up --build
 ```
+
+Keep `.env` between runs: a restart with different secrets cannot open the sealed key files and
+stops with an error saying so.
 
 ### Option B: local development (two processes, hot reload)
 
@@ -87,18 +93,18 @@ When `frontend/dist` exists, FastAPI serves the dashboard at `/` alongside the A
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `APP_SECRET` | `dev-only-change-me` | Root secret for the JWT signing key and the surrogate HMAC key. **Set it for anything beyond a laptop demo.** |
+| `APP_SECRET` | `dev-only-change-me` | Root secret for the JWT signing key, the surrogate HMAC key, the key that encrypts each call's triage and review reasons, and the key that seals `KEYS_DIR/server.json`. **Set it for anything beyond a laptop demo, and keep it the same across restarts.** |
 | `DB_PATH` | `backend/demo.sqlite3` | SQLite file: users, encrypted copies, audit log. |
 | `KEYS_DIR` | `backend/keys/` | The server's Ed25519 key for receipts and export manifests. |
 | `KA_DIR` | `backend/keyauthority/` | The key authority's folder: ABE master key, tree-head signing key, signed heads, issued-key log. Keep it apart from both. |
 | `KA_URL` | unset | URL of a separate key authority (`uvicorn server.keyauthority:app`). Unset: the authority runs in the server's process. |
-| `KA_SECRET` | `dev-only-change-me` | Shared by the server and the authority to MAC clearance assertions. |
+| `KA_SECRET` | `dev-only-change-me` | Shared by the server and the authority to MAC clearance assertions. The authority also seals `KA_DIR/authority.json` (ABE master key, tree-head key) under a key derived from it. Keep it the same across restarts. |
 | `GLINER_REVIEW` | unset | `1` holds a call for review when GLiNER-PII finds a quasi-identifier or sensitive attribute the rules missed. Needs `requirements-experiments.txt`. |
 | `SEED_CALLS` | `30` | Calls generated on first start. The first half are written as by a human transcriber, the second half as raw ASR output. |
 
 **Resetting the demo.** Stop the server and delete `backend/demo.sqlite3*`, `backend/keys/` and
 `backend/keyauthority/` (Docker: remove the volumes). Deleting only some leaves copies that no key
-can open. A database from an earlier round (before CP-ABE, or with the old hash-chain audit log)
+can open. A database from an earlier round (before CP-ABE, with the old hash-chain audit log, or with plaintext triage reasons)
 is refused at start-up with a clear error telling you to delete it.
 
 ### Demo accounts (password `demo` for all)
@@ -163,7 +169,11 @@ RED included, and never stored.
    ```
    Bypassing the server, the GREEN key opens only GREEN copies (29 of 30: the one held for review is refused too) and nothing else; with no
    key, nothing opens. `python -m server.attack --server` plays root on the server: the ABE master
-   key is in none of the files it can read. See [design §5.9](docs/design.md#59-attack-demonstration).
+   key is in none of the files it can read. `--volumes` plays a thief with a backup of every volume
+   but not the env secrets: no private key is in the clear anywhere. In the dashboard, **Simulate
+   attack** (as `compliance`) runs the same attacks on the live data, with the attacker's files,
+   secrets, stolen key and access chosen by checkbox or preset. *Stolen backup of every volume*
+   fails; *Root on the app server* succeeds through a key the authority issues and logs. See [design §5.9](docs/design.md#59-attack-demonstration).
 10. **Show tamper evidence.** Rewrite history behind the app's back, then click *Re-verify log*:
     ```bash
     cd backend
@@ -191,7 +201,7 @@ RED included, and never stored.
 ```bash
 cd backend
 .venv/bin/python -m data.gen              # 500 calls × {clean, noisy} + 300 clients -> data/corpus/
-.venv/bin/pip install pytest httpx && .venv/bin/python -m pytest -q          # 39 tests: detection, redaction, CP-ABE, access control, audit, export, live view, overview
+.venv/bin/pip install pytest httpx && .venv/bin/python -m pytest -q          # 40 tests: detection, redaction, CP-ABE, access control, audit, export, live view, overview, attack simulation
 
 # experiments need the extra dependencies (GLiNER, Whisper, TTS)
 .venv/bin/pip install -r requirements-experiments.txt
@@ -216,7 +226,7 @@ the frontend build and the linter on every push.
 | **1. A realistic data analysis task** | Fine-tuning a bank's in-house ASR model on transcripts of recorded client calls (Singapore-accented English, Singlish, code-switching), by data scientists with the lowest clearance. Secondary flow: compliance review of high-risk calls, as in the brief's BPMN. Data-flow diagram, data lifecycle, 15-entry risk register, LINDDUN and STRIDE threat models. | [design §1](docs/design.md#1-domain-data-flows-and-disclosure-risks), [`docs/dpia.md`](docs/dpia.md) |
 | **2. Privacy and utility requirements** | Privacy: a five-class taxonomy (DIRECT_ID, FINANCIAL_ID, AUTH_SECRET, QUASI_ID, SENSITIVE_ATTR) with harm weights, legal basis and a class × tier action matrix, **a YAML file the code loads**, so the documented policy is the enforced policy. Utility: per tier, what each reader must still be able to do, with measurable targets. | [requirements.md](docs/requirements.md#privacy-and-utility-requirements), [design §2](docs/design.md#2-sensitive-data-taxonomy), [`taxonomy.yaml`](backend/taxonomy.yaml) |
 | **3. A privacy-preserving solution** | Detection: Presidio + spaCy NER; Singapore formats with checksum validation; filler-tolerant cues and lexicons; a **spoken-form normaliser** (English, Mandarin and Malay digits, homophones, number words, ASR digit groups); dialogue-slot tracking; propagation. Redaction per tier: keep, **shape-preserving surrogate**, mask-last-4, pseudonym, generalise, suppress. k-anonymity gate on export; triage; review queue. **CP-ABE** so the stored copies enforce the policy without the server. | [design §3–5](docs/design.md#3-detection), [`privacy/`](backend/privacy) |
-| **4. Prototype** | FastAPI + React/daisyUI. CP-ABE (BSW07 on BLS12-381) over one copy per tier, a **separate key authority** holding the master key; clearance rules backed by the crypto; break-glass; review hold and release; signed GREEN export; retention and crypto-shredding; an **RFC 6962 Merkle audit log** with authority-signed heads and receipts that verify offline; a **live anonymiser** view and a **project overview** that checks every target against the latest results. 39 tests. | [design §5](docs/design.md#5-the-prototype-access-control-encryption-integrity), [`server/`](backend/server), [`frontend/src/`](frontend/src) |
+| **4. Prototype** | FastAPI + React/daisyUI. CP-ABE (BSW07 on BLS12-381) over one copy per tier, a **separate key authority** holding the master key; clearance rules backed by the crypto; break-glass; review hold and release; signed GREEN export; retention and crypto-shredding; key files and triage reasons encrypted at rest; an **RFC 6962 Merkle audit log** with authority-signed heads and receipts that verify offline; a **live anonymiser** view, a **simulate attack** page and a **project overview** that checks every target against the latest results. 40 tests. | [design §5](docs/design.md#5-the-prototype-access-control-encryption-integrity), [`server/`](backend/server), [`frontend/src/`](frontend/src) |
 | **5. Experimental data** | A generator for 500 calls about 300 synthetic Singapore clients, rendered **clean** and **ASR-noisy**, with exact ground-truth spans and risk labels. A **hand-written development set** of 24 calls, and the tooling for an **independent held-out set** written outside the team (typed placeholders, frozen by hash before scoring). Synthetic speech for E4. | [design §6](docs/design.md#6-experimental-data), [`data/`](backend/data) |
 | **6. Demo** | A project overview page that follows these six requirements and checks every target live; a live anonymiser; the 12-step script above, with the PCI moment, the offline receipt check, the Annex D panel and the canary result; the attack demo and the tamper demo. | §1 above, [design §5.9](docs/design.md#59-attack-demonstration) |
 | **Evaluation** | E1 leakage (with entity-level recall, exact intervals and paired tests), E2 utility (perplexity, a downstream triage classifier, a differentially private bigram), E3 re-identification against the PDPC Annex D threshold, E4 real ASR and audio bleeping, E5 cost, E6 canary exposure. | [design §7–8](docs/design.md#8-what-the-experiments-showed) |
@@ -306,6 +316,7 @@ frontend/  React 19 + Vite + Tailwind 4 + daisyUI 5 (Blueprint MCP); charts are 
   src/pages/Live.tsx        live anonymiser: type or play a call, all tiers re-render per utterance (stores nothing)
   src/pages/Calls.tsx       three-tier aligned view, break-glass, release, erase, ingest, export
   src/pages/Audit.tsx       disclosure log, Merkle log verification against signed heads (RED only)
+  src/pages/Attack.tsx      simulate attack: pick the attacker's assets, run it on the stored calls (RED only)
   src/pages/Policy.tsx      taxonomy matrix, harm rationale, legal basis
   src/pages/Dashboard.tsx   results dashboard: charts for E1–E3, E6, E7, E8
   src/pages/Results.tsx     experiment tables E1–E8, Annex D calculator
@@ -326,7 +337,7 @@ backend/   Python 3.12
   server/keyauthority.py    the key authority: ABE master key, user keys, signed tree heads (own process)
   server/merkle.py          RFC 6962 tree, inclusion/consistency proofs, offline receipt check
   server/abe.py             CP-ABE (BSW07) on BLS12-381
-  server/attack.py          stolen-database and server-compromise demos
+  server/attack.py          stolen-database, server-compromise and stolen-volume demos; the dashboard's simulation
   data/gen.py               synthetic corpus generator (clean + ASR-noisy, labelled)
   data/heldout.py, ood/     hand-written development set; typed-placeholder loader, freeze-by-hash
   data/independent/         brief for the independent held-out set (calls.txt arrives later)

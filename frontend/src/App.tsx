@@ -1,7 +1,8 @@
-import { BarChart3, FileLock2, House, LayoutDashboard, LogOut, Menu, Radio, ScrollText, Table2 } from 'lucide-react'
+import { BarChart3, Crosshair, FileLock2, House, LayoutDashboard, LogOut, Menu, Radio, ScrollText, Table2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { api, session, type User } from './api'
 import TierBadge from './components/TierBadge'
+import Attack from './pages/Attack'
 import Audit from './pages/Audit'
 import Calls from './pages/Calls'
 import Dashboard from './pages/Dashboard'
@@ -17,6 +18,7 @@ const ROUTES = [
   { path: 'live', label: 'Live anonymiser', Icon: Radio, Page: Live },
   { path: 'audit', label: 'Disclosure log', Icon: ScrollText, Page: Audit },
   { path: 'policy', label: 'Redaction policy', Icon: Table2, Page: Policy },
+  { path: 'attack', label: 'Simulate attack', Icon: Crosshair, Page: Attack },
   { path: 'dashboard', label: 'Results dashboard', Icon: LayoutDashboard, Page: Dashboard },
   { path: 'results', label: 'Experiment tables', Icon: BarChart3, Page: Results },
 ] as const

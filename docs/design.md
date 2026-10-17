@@ -115,7 +115,7 @@ exact text released and answered with a signed receipt.
 | R5 | Over-redaction makes teams fall back to raw data | Data science | All | Medium | High | Shape-preserving surrogates | E2 |
 | R6 | ASR-form leakage ("nine one two three", "wu liu qi") | Detector | Spoken identifiers | High on ASR text | High | Spoken-form normaliser (English, Mandarin, Malay, homophones) | E1, E4, E7 |
 | R7 | Audit log altered after the fact | Insider / admin | Audit log | Low | High | RFC 6962 Merkle log; the **key authority signs each tree head** and only signs heads that extend the last | `test_audit_tampering_and_rewrite_detected` |
-| R8 | Theft of the database file, or root on the server | Attacker with disk access | Everything | Low | Critical | CP-ABE; the ABE master key lives only in the **key authority, a separate process with its own volume** | attack demo, `test_stolen_database_and_key`, `test_server_compromise_yields_no_master_key` |
+| R8 | Theft of the database file, or root on the server | Attacker with disk access | Everything | Low | Critical | CP-ABE; the ABE master key lives only in the **key authority, a separate process with its own volume**; triage reasons encrypted; key files sealed under env secrets (5.2) | attack demo, `test_stolen_database_and_key`, `test_server_compromise_yields_no_master_key`, `test_encrypted_at_rest` |
 | R9 | Surrogate inversion ("which real name maps to this fake?") | Adversary who knows the algorithm | DIRECT_ID | Medium | High | Surrogates seeded by HMAC with a server secret | `test_surrogates_stable_within_call_and_keyed` |
 | R10 | Agents read other agents' clients | AMBER staff | Everything | Medium | High | AMBER scoped to own calls, in code and in the ABE policy | `test_triage_and_clearance_rules` (IDOR), attack demo |
 | R11 | Audio disclosure (voice is biometric) | Anyone with audio access | Voice, spoken PII | Medium | High | Audio never leaves RED; bleeped GREEN audio is a measured option (E4) | E4 audio |
@@ -495,6 +495,26 @@ user ABE key             ── issued by the key authority for the user's curre
 Ingest needs only public keys. A user's first read under a policy costs one ABE decryption, which
 unlocks that policy's private key (cached in memory). Later reads are AES only (E5).
 
+**The rest of what sits on disk.** Two more things are encrypted at rest, with AES-256-GCM and no
+ABE:
+
+* **Triage and review reasons.** The `calls` table keeps the scenario, risk and review state in
+  the clear, because listings and the export filter on them. The reasons are different: they quote
+  amounts and destinations (`overseas transfer ("transfer to malaysia") of 50,000 >= 5,000`), and only RED
+  users see them. They are encrypted under a subkey of `APP_SECRET`, with the call id as AAD so a
+  value cannot be moved to another call. A database that still has plaintext reasons is refused at
+  start-up.
+* **Key files.** `KEYS_DIR/server.json` (the receipt key) is sealed under a key derived from
+  `APP_SECRET`, and `KA_DIR/authority.json` (ABE master key, tree-head key) under one derived from
+  `KA_SECRET`. A copy of a volume, or a backup of it, then holds no usable key without the
+  matching env secret (`python -m server.attack --volumes`, tested). A key file written in plaintext
+  by an earlier version is sealed the first time it is read. Restarting with a different secret
+  stops with an error.
+
+Both keys come from env secrets that the running server holds, so they protect against stolen
+disks and backups, not against an attacker on the running host. A bank would wrap these file keys
+in a KMS or HSM, and could seal the reasons under the `tier:RED` ABE policy instead.
+
 **Policies.** User attributes are `tier:X` for the user's tier and every tier below it,
 `agent:<name>` for agents, and `breakglass` on break-glass requests only.
 
@@ -627,12 +647,31 @@ $ python -m server.attack tier:AMBER tier:GREEN "agent:Priya Nair"   # one agent
 ```
 $ python -m server.attack --server           # root on the main server: database + KEYS_DIR
 Root on the server: database + /keys. ABE master key found in: nothing
+$ python -m server.attack --volumes          # a backup of /data, /keys and /ka, without the env secrets
+Stolen volumes, no secrets: database + /keys + /ka. Private keys in the clear: none
 ```
 
 The agent's key opens the AMBER copies of the 13 calls that agent handled and none of the
 others (R10). One of the 30 seeded calls (C0026, ASR) is held for review: a 13-digit number in it
 matches no detector, so its GREEN copy is wrapped to `tier:RED`, and the stolen GREEN key is
 refused on it too.
+
+**In the dashboard.** *Simulate attack* (RED only, `POST /api/attack`, `simulate()` in
+[`server/attack.py`](../backend/server/attack.py)) runs the same attack with the assets chosen in the
+UI: the database, the `/keys` and `/ka` volumes, `APP_SECRET`, `KA_SECRET`, one user's ABE key, and
+network access to the key authority. Every step is the real operation on the stored calls. A secret
+the attacker lacks is replaced by a random guess, so a sealed key file fails to open for real, and a
+forged clearance assertion is really refused by the authority. With `/ka` and `KA_SECRET` the
+attacker mints a key for every attribute from the stolen master key. With `KA_SECRET` and network
+access it asks the authority for one, which the authority grants and records in `issued.jsonl`: the
+residual risk of 5.2, shown live. The page returns which copies and triage reasons opened per call,
+never their text, and each run is a log entry of its own (`attack`).
+
+| Attacker holds | Result on the 30 seeded calls |
+|---|---|
+| Database, `/keys` and `/ka`, no secrets | Nothing opens; both key files stay sealed |
+| Database and Priya's key | Her AMBER copies and the GREEN copies; no RED copy, no triage reason |
+| Root on the app server (database, `/keys`, both secrets, network access to the authority) | Everything, through a key the authority issues and logs |
 
 ### 5.10 Dashboard
 
@@ -642,6 +681,7 @@ refused on it too.
 |---|---|
 | **Calls** | The three tiers side by side with aligned utterances; hover explanations; risk and review badges; break-glass box; *Release to GREEN* and *Erase* (RED); *Take a call*, *Paste* and *Training set* export; release receipts |
 | **Disclosure log** | RED only: Merkle log status against the authority's signed heads; releases, break-glass openings and denials; a reason column; filters per event type |
+| **Simulate attack** | RED only: choose what an attacker holds (files, secrets, a user's key, access to the key authority) or a preset, run it on the stored calls, and see a verdict, opened counts per tier, the state of each key file and a per-call grid of what opened (5.9) |
 | **Redaction policy** | The matrix, harm rationales, legal basis and operating policy, all read from `taxonomy.yaml` |
 | **Project overview** | The landing page: the six project requirements in order, each privacy and utility target with its threshold, the latest result and a met / not-met badge (`GET /api/overview`, computed from `experiments/out/*.json` by `server/overview.py`; targets a property of the code guarantees name the test that checks it), the datasets, and the demo steps |
 | **Live anonymiser** | Type, paste or play a synthetic call one utterance at a time; detection and all three tier renderings update after each change, with the server time, risk and review status |
@@ -1163,7 +1203,8 @@ equally. The comparison is between releases, which is what the question needs.
   It is a lower bound on ASR difficulty. E8 measures the task through n-best re-ranking with a bigram LM,
   not by fine-tuning Whisper's weights, and its 460 training calls share a generator with its test calls.
 * The key authority is a separate process, not an HSM, and an attacker on the server can request
-  keys while there (5.2). Users' keys are held server-side. Signed tree heads are kept by the
+  keys while there (5.2). Key files and triage reasons are encrypted under keys derived from env
+  secrets, not a KMS, so they stop a stolen disk or backup but not an attacker on the running host. Users' keys are held server-side. Signed tree heads are kept by the
   authority but not published anywhere public (5.8).
 * Erasure does not reach released training sets or trained models, and a pre-erasure database
   backup restores an erased call ([dpia.md](dpia.md) §2).

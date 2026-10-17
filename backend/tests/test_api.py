@@ -123,7 +123,7 @@ def test_review_hold_then_release(c):
     red, green = login(c, "compliance"), login(c, "datasci")
     held = ingest(c, "priya", UNSURE)
     row = call_row(held)
-    assert row["review"] == "pending" and "OTP" in row["review_reasons"]
+    assert row["review"] == "pending" and "OTP" in str(store.reasons(row)["review_reasons"])
     assert c.get(f"/api/calls/{held}?tier=GREEN", headers=green).status_code == 403
     assert held in c.get("/api/export", headers=green).json()["manifest"]["withheld_for_review"]
     assert c.get(f"/api/calls/{held}?tier=GREEN", headers=red).status_code == 200           # the reviewer's preview
@@ -234,6 +234,33 @@ def test_encrypted_at_rest(c):
     db = store.connect()
     for (blob,) in db.execute("SELECT blob FROM copies"):
         assert b"utterances" not in blob and b"speaker" not in blob and b"Tan" not in blob
+    fraud = ingest(c, "priya", FRAUD)
+    row = call_row(fraud)
+    assert isinstance(row["risk_reason"], bytes) and b"fraud" not in row["risk_reason"]
+    assert store.reasons(row)["risk_reason"].startswith("fraud report")
+    # key files: sealed, no private key in the clear on any volume, and the wrong secret opens nothing
+    assert not attack.stolen_volumes()
+    for f in (store.KEYS_DIR / "server.json", keyauthority.KA_DIR / "authority.json"):
+        assert not f.read_bytes().startswith(b"{")
+        with pytest.raises(RuntimeError):
+            keyauthority.open_json(f, b"wrong-secret")
+
+
+def test_attack_simulation(c):
+    """The dashboard's simulated attacker: real decryptions, only with the secrets it is given."""
+    red = login(c, "compliance")
+    assert c.post("/api/attack", json={}, headers=login(c, "datasci")).status_code == 403
+    sim = lambda **body: c.post("/api/attack", json=body, headers=red).json()
+    opened = lambda r, k: sum(v.get(k, False) for v in r["calls"].values())
+    backup = sim(keys_volume=True, ka_volume=True)
+    assert backup["receipt_key"] == backup["authority_keys"] == "sealed"
+    assert not any(opened(backup, k) for k in ("RED", "AMBER", "GREEN", "reasons"))
+    assert sim(ka_access=True)["ka_request"].startswith("refused")
+    green = sim(user_key="datasci")
+    assert opened(green, "RED") == opened(green, "AMBER") == 0 and opened(green, "GREEN") > 0
+    full = sim(keys_volume=True, ka_volume=True, app_secret=True, ka_secret=True)
+    assert full["authority_keys"] == "opened" and opened(full, "RED") == opened(full, "reasons") == len(full["calls"])
+    assert c.get("/api/audit", headers=red).json()["entries"][0]["action"] == "attack"
 
 
 def test_audit_tampering_and_rewrite_detected(c):

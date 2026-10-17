@@ -9,6 +9,7 @@ backend/experiments/out/cache_*.pkl
 .pytest_cache/
 backend/keys/
 backend/keyauthority/
+.env
 backend/experiments/audio/
 backend/experiments/out/gliner_*.pkl
 

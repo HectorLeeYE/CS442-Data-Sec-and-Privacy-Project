@@ -25,7 +25,7 @@ export type CallView = {
   actions: Record<string, number>
   receipt: Receipt
 }
-export type AuditAction = 'view' | 'deny' | 'ingest' | 'breakglass' | 'review' | 'erase' | 'export'
+export type AuditAction = 'view' | 'deny' | 'ingest' | 'breakglass' | 'review' | 'erase' | 'export' | 'attack'
 export type AuditEntry = {
   seq: number; ts: string; username: string; user_tier: Tier; action: AuditAction
   call_id: string | null; view_tier: Tier | null; digest: string | null; detail: string | null; hash: string
@@ -108,6 +108,16 @@ export type Anonymized = {
   detected: Utterance[]
   tiers: Record<Tier, Utterance[]>
   risk: 'high' | 'low'; risk_reason: string; review_reasons: string[]; ms: number
+}
+
+export type AttackAssets = {
+  database: boolean; user_key: string | null; keys_volume: boolean; ka_volume: boolean
+  app_secret: boolean; ka_secret: boolean; ka_access: boolean
+}
+type KeyFile = 'not stolen' | 'absent' | 'sealed' | 'opened'
+export type AttackResult = {
+  calls: Record<string, { risk: 'high' | 'low'; review: string; reasons: boolean } & Partial<Record<Tier, boolean>>> | null
+  keys: string[]; receipt_key: KeyFile; authority_keys: KeyFile; ka_request: string
 }
 
 export type Target = {

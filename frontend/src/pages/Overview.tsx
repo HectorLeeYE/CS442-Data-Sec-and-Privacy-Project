@@ -1,6 +1,6 @@
 import { ArrowRight, Check, Database, FileLock2, FlaskConical, Hourglass, KeyRound, ListChecks, Mic, Radio, ScanSearch, ScrollText, Split, Target as TargetIcon, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { api, ApiError, type Overview as OverviewData, type Target } from '../api'
+import { api, ApiError, type Overview as OverviewData, type Target, type Task } from '../api'
 import TierBadge from '../components/TierBadge'
 
 function Section({ n, title, Icon, children }: { n: number; title: string; Icon: typeof Mic; children: React.ReactNode }) {
@@ -61,6 +61,93 @@ function Targets({ rows, caption }: { rows: Target[]; caption: string }) {
   )
 }
 
+const pct = (v: number) => `${(v * 100).toFixed(1)}%`
+
+function Recogniser({ label, wer, note, primary }: { label: string; wer: number; note: string; primary?: boolean }) {
+  return (
+    <div className={`min-w-0 flex-1 rounded-box border p-3 ${primary ? 'border-primary' : 'border-base-300'}`}>
+      <div className="text-xs text-base-content/70">{label}</div>
+      <div className="text-2xl font-semibold tabular-nums">{pct(wer)} <span className="text-xs font-normal text-base-content/60">word error rate</span></div>
+      <div className="text-xs text-base-content/70">{note}</div>
+    </div>
+  )
+}
+
+function TaskResult({ t }: { t: Task }) {
+  const deploy = t.new_wer < t.old_wer && t.new_wer <= t.raw_wer + 0.01
+  return (
+    <div className="flex flex-col gap-3 border-t border-base-300 pt-3">
+      <h3 className="text-sm font-semibold">The analysis, run: old recogniser against new</h3>
+      <div className="flex flex-col gap-2 md:flex-row">
+        <Recogniser label="Old: the in-house recogniser today" wer={t.old_wer}
+          note={`Stand-in: ${t.asr_model} alone, on ${t.test_calls} test calls of Singapore-English speech`} />
+        <Recogniser label="New: adapted on the GREEN release" wer={t.new_wer} primary
+          note={`Its language model trained on ${t.n_train_calls} de-identified calls; ${((t.old_wer - t.new_wer) * 100).toFixed(1)} points fewer errors`} />
+        <Recogniser label="Adapted on raw transcripts (not releasable)" wer={t.raw_wer}
+          note="The upper bound: what the bank would get if data science could read the calls in full" />
+      </div>
+      <div className="overflow-x-auto">
+        <table className="table table-sm">
+          <caption className="pb-1 text-left text-xs font-medium text-base-content/70">Inspect: where the old recogniser fails (share of words it gets wrong), and what adapting fixes</caption>
+          <thead><tr><th>Kind of word</th><th className="text-right">Words</th><th className="text-right">Old</th><th className="text-right">New (GREEN)</th><th className="text-right">Raw-trained</th></tr></thead>
+          <tbody>
+            {t.breakdown.map((b) => (
+              <tr key={b.category}>
+                <td>{b.category}</td>
+                <td className="text-right tabular-nums">{b.words.toLocaleString()}</td>
+                <td className="text-right tabular-nums">{pct(b.old_missed)}</td>
+                <td className="text-right font-medium tabular-nums">{pct(b.new_missed)}</td>
+                <td className="text-right tabular-nums text-base-content/60">{pct(b.raw_missed)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs text-base-content/70">
+        Adapting fixes everyday banking English and Mandarin or Malay phrases. Singlish particles defeat both: the right spelling is
+        not among the recogniser&apos;s guesses, so fixing them needs acoustic fine-tuning, not text. The GREEN release matches raw
+        transcripts everywhere except names and numbers, the very words it replaces with fakes.
+      </p>
+      {t.examples.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="table table-sm">
+            <caption className="pb-1 text-left text-xs font-medium text-base-content/70">Utterances the new recogniser gets right (only ones with no personal data are shown)</caption>
+            <thead><tr><th>Said</th><th>Old</th><th>New</th></tr></thead>
+            <tbody>
+              {t.examples.map((x) => (
+                <tr key={x.reference}><td>{x.reference}</td><td className="text-base-content/70">{x.old}</td><td>{x.new}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div role="status" className={`alert alert-soft text-sm ${deploy ? 'alert-success' : 'alert-warning'}`}>
+        <span>
+          <strong>Decision: {deploy ? 'deploy the new recogniser, trained on GREEN' : 'do not deploy yet'}.</strong>{' '}
+          It beats the old one by {((t.old_wer - t.new_wer) * 100).toFixed(1)} points and stays {((t.new_wer - t.raw_wer) * 100).toFixed(1)} points
+          from raw (target U8: within 1). The bank gets most of the gain without data science reading a single real identifier.
+        </span>
+      </div>
+      <h3 className="text-sm font-semibold">How the new recogniser is kept private</h3>
+      <ul className="list-disc space-y-1 pl-5 text-sm">
+        <li><strong>It only ever sees GREEN.</strong> The training pipeline is the <code>model</code> account at GREEN clearance; its CP-ABE key cannot open a RED or AMBER copy, even with the database in hand.</li>
+        <li><strong>Identifiers are replaced, not blacked out.</strong> NRIC, account and card numbers become checksum-valid fakes of the same shape; names become pseudonyms from a pool that shares no word with real names; places and employers become a region or a sector. The fakes are why GREEN keeps most of the gain.</li>
+        <li><strong>Credentials never reach it.</strong> OTPs, PINs, CVVs and security answers are removed at ingest and exist in no copy, RED included.</li>
+        <li><strong>Doubtful calls are held back.</strong> A call with an unanswered credential question or a stray long number is held for review and stays encrypted to RED until compliance releases it.</li>
+        <li><strong>Rare combinations are suppressed.</strong> The training export passes a k-anonymity gate (k = 5): a call whose combination of quasi-identifiers (region, sector and so on) fewer than 5 calls share loses them.</li>
+        <li><strong>What it was trained on is provable.</strong> The export carries an Ed25519-signed manifest, and every release is hashed into the Merkle disclosure log.</li>
+        {t.canary && (
+          <li><strong>Memorisation was tested.</strong> A fake NRIC planted 20 times is memorised by a model trained on raw text ({t.canary.raw} of {t.canary.max} bits of exposure) and not by one trained on GREEN ({t.canary.green} bits), E6.</li>
+        )}
+      </ul>
+      <p className="text-xs text-base-content/60">
+        Not done: differentially private training (at this data size its noise destroys the model, E2), and erasing a client
+        does not untrain a model already trained; the next release retrains without them.
+      </p>
+    </div>
+  )
+}
+
 const PAGES = [
   { href: '#/live', label: 'Live anonymiser', Icon: Radio, text: 'Type or play a call; detection and all three tier renderings update per utterance.' },
   { href: '#/calls', label: 'Calls', Icon: FileLock2, text: 'Stored calls opened per clearance, break-glass, review hold, signed export, erasure.' },
@@ -95,7 +182,9 @@ export default function Overview() {
       <Section n={1} title="A realistic data analysis task" Icon={Mic}>
         <p className="text-sm">
           A Singapore bank&apos;s speech recogniser performs poorly on Singapore-accented English, Singlish and code-switching.
-          To fix it, <strong>data scientists fine-tune it on transcripts of recorded client calls</strong>. They hold the lowest
+          The analysis: <strong>where does it fail, and does adapting it on recorded client calls cut those errors enough to
+          deploy it?</strong> Data scientists inspect the transcripts and errors, clean and transform them into a training set,
+          adapt the model and measure word error rate (E8). They hold the lowest
           clearance, while the transcripts are banking-secrecy data that only compliance may read in full, and only for
           high-risk calls (fraud reports, large overseas transfers).
         </p>
@@ -112,6 +201,7 @@ export default function Overview() {
             <span className="flex items-center gap-2"><TierBadge tier="GREEN" /> Data science: training set</span>
           </div>
         </div>
+        {data?.task && <TaskResult t={data.task} />}
       </Section>
 
       <Section n={2} title="Privacy and utility requirements" Icon={TargetIcon}>
@@ -155,7 +245,7 @@ export default function Overview() {
             </a>
           ))}
         </div>
-        <p className="text-xs text-base-content/60">FastAPI and React; CP-ABE over BLS12-381; 39 automated tests run in CI.</p>
+        <p className="text-xs text-base-content/60">FastAPI and React; CP-ABE over BLS12-381; 41 automated tests run in CI.</p>
       </Section>
 
       <Section n={5} title="Experimental data" Icon={Database}>
@@ -179,8 +269,9 @@ export default function Overview() {
       <Section n={6} title="Demo" Icon={ScanSearch}>
         <ol className="list-inside list-decimal space-y-1 text-sm">
           <li><a className="link" href="#/live">Live anonymiser</a>: press <em>Play a call</em> and watch each tier update as the call arrives.</li>
-          <li><a className="link" href="#/calls">Calls</a>: sign in as <code>compliance</code>, <code>priya</code> (agent) or <code>datasci</code> and open the same call; each sees only their tier.</li>
+          <li><a className="link" href="#/calls">Calls</a>: sign in as <code>compliance</code>, <code>priya</code> (agent) or <code>datasci</code> and open the same call. Each sees only the tiers their clearance reads and only the tools their job needs: compliance reviews and reads the log, the agent takes calls, data science exports the training set.</li>
           <li>Open a low-risk call as compliance: break-glass asks for a reason, and the access lands in the <a className="link" href="#/audit">disclosure log</a>.</li>
+          <li><a className="link" href="#/attack">Simulate attack</a>: steal the database, a key or a backup, and see what opens.</li>
           <li><a className="link" href="#/dashboard">Results dashboard</a>: what is caught, what each tier sees, what still leaks.</li>
         </ol>
         <a href="#/live" className="btn btn-sm btn-primary self-start"><Radio size={14} aria-hidden="true" /> Start the live demo</a>

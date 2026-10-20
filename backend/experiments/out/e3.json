@@ -95,10 +95,10 @@
    },
    {
     "condition": "GREEN, quasi-IDs kept",
-    "reidentified": 0.212,
+    "reidentified": 0.216,
     "ci": [
-     0.176,
-     0.25
+     0.178,
+     0.252
     ],
     "true_client_in_candidates": 0.634,
     "median_candidates": 14,
@@ -168,9 +168,9 @@
    "gated": 145
   },
   "noisy": {
-   "calls_below_k": 0.414,
-   "median_k": 6,
-   "gated": 207
+   "calls_below_k": 0.4,
+   "median_k": 7,
+   "gated": 200
   }
  }
 }

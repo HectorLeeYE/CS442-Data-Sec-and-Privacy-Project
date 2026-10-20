@@ -64,7 +64,7 @@ for the evidence. The legal references are a course project's mapping, not legal
 | Tampering with the disclosure record (R7) | Low × High | Merkle-tree log; tree heads signed by the key authority, which signs only heads that extend the last; receipts with inclusion proofs | Low |
 | Card verification codes in transcripts (PCI DSS 3.3.1) | Medium × High | CVV type, suppressed at every tier including RED | Low for transcripts; **the RED audio still holds a spoken CVV** (DTMF masking at source would remove it) |
 | Audio disclosure (R11) | Medium × High | Audio stays RED; bleeping measured as an option | Medium: 14.2% of values still recoverable from bleeped audio (E4) |
-| Live anonymiser used to probe the detector (R18) | Medium × Low | Stores nothing, discloses no stored call; signed-in users only | Low in a demo; disable in production (condition 6) |
+| Live anonymiser used to probe the detector (R18) | Medium × Low | Stores nothing, discloses no stored call; only the demo `admin` role has it | Low in a demo; disable in production (condition 6) |
 | Evaluation data (NSC) | Low × Medium | Licensed open data, text only, used only for measurement; not committed, not deployed | Low |
 
 ## 4. Outcome

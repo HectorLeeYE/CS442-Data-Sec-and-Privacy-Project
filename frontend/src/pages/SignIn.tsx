@@ -4,11 +4,12 @@ import { api, session, type Tier, type User } from '../api'
 import TierBadge from '../components/TierBadge'
 
 const DEMO: { username: string; who: string; tier: Tier; sees: string }[] = [
-  { username: 'compliance', who: 'Rachel Ong, compliance', tier: 'RED', sees: 'High-risk calls in full, credentials still withheld; low-risk calls only with a logged reason.' },
-  { username: 'priya', who: 'Priya Nair, call agent', tier: 'AMBER', sees: 'Own calls with names pseudonymised and accounts masked.' },
+  { username: 'compliance', who: 'Rachel Ong, compliance', tier: 'RED', sees: 'High-risk calls in full, credentials still withheld; low-risk calls only with a logged reason. Releases held calls, erases calls, reads the disclosure log.' },
+  { username: 'priya', who: 'Priya Nair, call agent', tier: 'AMBER', sees: 'Own calls with names pseudonymised and accounts masked. Takes and pastes calls.' },
   { username: 'daniel', who: 'Daniel Koh, call agent', tier: 'AMBER', sees: 'Same as Priya, for his own calls; not hers.' },
   { username: 'datasci', who: 'Alex Chua, data science', tier: 'GREEN', sees: 'De-identified training text with realistic surrogates; the training-set export.' },
   { username: 'model', who: 'ASR training pipeline', tier: 'GREEN', sees: 'Service account: the model gets GREEN data, not raw.' },
+  { username: 'admin', who: 'Demo admin, for presenting', tier: 'RED', sees: 'Every page: project overview, live anonymiser, attack simulation, experiment results. Demo only; a bank would have no such account.' },
 ]
 
 export default function SignIn({ onSignedIn }: { onSignedIn: (u: User) => void }) {
@@ -46,8 +47,8 @@ export default function SignIn({ onSignedIn }: { onSignedIn: (u: User) => void }
         </h1>
         <p className="max-w-xl text-base-content/70">
           Compliance must read the call to approve a high-risk transfer. The agent needs it for follow-up. Data
-          science needs it to train the transcription model. Each gets only what their clearance allows, and every
-          release is logged.
+          science needs it to train the transcription model. Each gets only what their clearance allows and only the
+          tools their job needs, and every release is logged.
         </p>
         <div className="max-w-full overflow-x-auto">
           <table className="table table-sm max-w-xl bg-base-100">
@@ -55,7 +56,7 @@ export default function SignIn({ onSignedIn }: { onSignedIn: (u: User) => void }
               Demo accounts — select one to fill the form. Password for all: <code className="font-mono">demo</code>
             </caption>
             <thead>
-              <tr><th>Account</th><th>Clearance</th><th>Sees</th></tr>
+              <tr><th>Account</th><th>Clearance</th><th>Sees and does</th></tr>
             </thead>
             <tbody>
               {DEMO.map((d) => (

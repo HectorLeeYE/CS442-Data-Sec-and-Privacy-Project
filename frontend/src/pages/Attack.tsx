@@ -1,6 +1,6 @@
 import { Crosshair, Lock, LockOpen, ShieldAlert, ShieldCheck, ShieldOff } from 'lucide-react'
 import { useState } from 'react'
-import { api, ApiError, TIER_RANK, TIERS, type AttackAssets, type AttackResult, type User } from '../api'
+import { api, ApiError, TIERS, type AttackAssets, type AttackResult } from '../api'
 import TierBadge from '../components/TierBadge'
 
 const NONE: AttackAssets = {
@@ -69,23 +69,11 @@ const Opened = ({ ok }: { ok?: boolean }) =>
     : ok ? <LockOpen size={15} className="text-error" aria-label="opened" />
       : <Lock size={15} className="text-base-content/40" aria-label="refused" />
 
-export default function Attack({ user }: { user: User }) {
+export default function Attack() {
   const [assets, setAssets] = useState<AttackAssets>({ ...NONE, database: true })
   const [result, setResult] = useState<AttackResult | null>(null)
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  if (TIER_RANK[user.tier] < TIER_RANK.RED) {
-    return (
-      <div role="status" className="alert alert-soft max-w-2xl">
-        <ShieldOff size={18} aria-hidden="true" />
-        <div>
-          <h2 className="font-semibold">Attack simulation is RED-only</h2>
-          <p className="text-sm">It decrypts every stored call with the attacker's keys. You hold {user.tier}; sign in as compliance to run it.</p>
-        </div>
-      </div>
-    )
-  }
 
   const run = () => {
     setRunning(true)

@@ -122,9 +122,25 @@ def datasets(r: dict) -> list[dict]:
     return out
 
 
+def task(r: dict) -> dict | None:
+    """The analysis task, old recogniser against new (E8), with the memorisation check on the new one (E6)."""
+    if "e8" not in r:
+        return None
+    e = r["e8"]
+    w = {x["release"]: x["wer"] for x in e["rows"]}
+    out = {"asr_model": e["asr_model"], "test_calls": e["test_calls"], "n_train_calls": e["n_train_calls"],
+           "old_wer": w["Whisper alone (no adaptation)"], "new_wer": w["GREEN policy, real detector"],
+           "raw_wer": w["raw transcripts (upper bound, not releasable)"], "oracle_wer": e["oracle_wer"],
+           "breakdown": e.get("breakdown", []), "examples": e.get("examples", [])}
+    if "e6" in r:
+        c = next(x for x in r["e6"]["rows"] if x["kind"] == "NRIC" and x["frame"] == "caught" and x["reps"] == 20)
+        out["canary"] = {"raw": c["exposure"]["raw"], "green": c["exposure"]["GREEN"], "max": r["e6"]["max_exposure"]}
+    return out
+
+
 def overview() -> dict:
     r = _results()
-    return {"targets": targets(r), "datasets": datasets(r)}
+    return {"targets": targets(r), "datasets": datasets(r), "task": task(r)}
 
 
 if __name__ == "__main__":

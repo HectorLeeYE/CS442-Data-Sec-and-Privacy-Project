@@ -54,16 +54,11 @@ export function Line({ u }: { u: Utterance }) {
   )
 }
 
-export function Locked({ tier, reason, onTry }: { tier: Tier; reason: string; onTry?: () => void }) {
+export function Locked({ tier, reason }: { tier: Tier; reason: string }) {
   return (
     <div role="status" className="flex flex-col items-start gap-2 rounded-box border border-dashed border-base-300 p-4 text-sm">
       <span className="inline-flex items-center gap-2 font-medium"><Lock size={14} aria-hidden="true" /> {tier} view withheld</span>
       <span className="text-base-content/70">{reason}</span>
-      {onTry && (
-        <button className="btn btn-xs" onClick={onTry}>
-          Request it anyway (the denial is logged)
-        </button>
-      )}
     </div>
   )
 }

@@ -93,5 +93,79 @@
    -0.0016
   ],
   "p": 1.0
- }
+ },
+ "breakdown": [
+  {
+   "category": "Singlish particles",
+   "words": 106,
+   "old_missed": 0.9906,
+   "new_missed": 0.9811,
+   "raw_missed": 0.9811
+  },
+  {
+   "category": "Mandarin / Malay words",
+   "words": 37,
+   "old_missed": 0.6216,
+   "new_missed": 0.5405,
+   "raw_missed": 0.5405
+  },
+  {
+   "category": "Numbers and identifiers",
+   "words": 250,
+   "old_missed": 0.532,
+   "new_missed": 0.532,
+   "raw_missed": 0.504
+  },
+  {
+   "category": "Names and places",
+   "words": 280,
+   "old_missed": 0.6679,
+   "new_missed": 0.6607,
+   "raw_missed": 0.625
+  },
+  {
+   "category": "Everyday English",
+   "words": 4403,
+   "old_missed": 0.0902,
+   "new_missed": 0.0752,
+   "raw_missed": 0.0752
+  }
+ ],
+ "examples": [
+  {
+   "reference": "Dui, I understand.",
+   "old": "Do I? I understand.",
+   "new": "DUI, I understand.",
+   "fixed": 2,
+   "left": 0
+  },
+  {
+   "reference": "Morning, I want to ask about a personal loan.",
+   "old": "Morning, I want to ask about a person alone.",
+   "new": "Morning, I want to ask about a personal loan.",
+   "fixed": 2,
+   "left": 0
+  },
+  {
+   "reference": "Morning, I want to ask about a personal loan, can or not.",
+   "old": "Morning, I want to ask about a person alone, can or not.",
+   "new": "Morning, I want to ask about a personal loan, can or not.",
+   "fixed": 2,
+   "left": 0
+  },
+  {
+   "reference": "Dui! Someone called pretending to be from the bank and asked for my details.",
+   "old": "DUI Someone call pretending to be from the bank and ask for my details.",
+   "new": "DUI Someone called pretending to be from the bank and asked for my details.",
+   "fixed": 2,
+   "left": 0
+  },
+  {
+   "reference": "Sure. May I have your full name and NRIC please?",
+   "old": "Sure. May I have your full name and NRC, please?",
+   "new": "Sure. May I have your full name and NRIC please?",
+   "fixed": 1,
+   "left": 0
+  }
+ ]
 }

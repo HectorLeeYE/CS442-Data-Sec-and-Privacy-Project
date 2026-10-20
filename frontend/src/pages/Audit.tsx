@@ -1,6 +1,6 @@
 import { CircleCheck, CircleX, Crosshair, Download, Eraser, Eye, FileInput, Link2, RefreshCw, ShieldCheck, ShieldOff, Siren } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { api, ApiError, TIER_RANK, type AuditAction, type AuditEntry, type Chain, type User } from '../api'
+import { api, ApiError, type AuditAction, type AuditEntry, type Chain } from '../api'
 import TierBadge from '../components/TierBadge'
 
 const ACTION: Record<AuditAction, { label: string; Icon: typeof Eye; cls: string }> = {
@@ -15,11 +15,10 @@ const ACTION: Record<AuditAction, { label: string; Icon: typeof Eye; cls: string
 }
 const FILTERS: ('all' | AuditAction)[] = ['all', 'view', 'breakglass', 'deny', 'export', 'review', 'erase', 'ingest', 'attack']
 
-export default function Audit({ user }: { user: User }) {
+export default function Audit() {
   const [data, setData] = useState<{ entries: AuditEntry[]; chain: Chain } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | AuditEntry['action']>('all')
-  const allowed = TIER_RANK[user.tier] >= TIER_RANK.RED
 
   const load = useCallback(() => {
     setError(null)
@@ -29,20 +28,8 @@ export default function Audit({ user }: { user: User }) {
   }, [])
 
   useEffect(() => {
-    if (allowed) load()
-  }, [allowed, load])
-
-  if (!allowed) {
-    return (
-      <div role="status" className="alert alert-soft max-w-2xl">
-        <ShieldOff size={18} aria-hidden="true" />
-        <div>
-          <h2 className="font-semibold">The disclosure log is RED-only</h2>
-          <p className="text-sm">It records who received which call at which clearance. You hold {user.tier}; sign in as compliance to inspect it.</p>
-        </div>
-      </div>
-    )
-  }
+    load()
+  }, [load])
 
   const rows = data?.entries.filter((e) => filter === 'all' || e.action === filter) ?? []
   const counts = data ? {

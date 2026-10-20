@@ -561,7 +561,7 @@ def dp_bigram(texts_by_client: dict[str, list[str]], vocab: set[str], eps: float
         return Bigram([], vocab, uni, bi)
     b = DP_CAP / (eps / 2)
     tau = 1 + b * math.log(DP_CAP / (2 * DP_DELTA / 2))
-    noisy_uni = {w: max(0.0, uni[w] + lap(b)) for w in vocab | {"<s>"}}
+    noisy_uni = {w: max(0.0, uni[w] + lap(b)) for w in sorted(vocab | {"<s>"})}      # sorted: set order varies per process
     noisy_bi = {k: v for k, n in bi.items() if (v := n + lap(b)) > tau}
     return Bigram([], vocab, noisy_uni, noisy_bi)
 
@@ -1261,6 +1261,17 @@ def report(r: dict) -> str:
         g = e["green_vs_raw"]
         L += ["", f"GREEN (real detector) against raw, paired by call: {g['diff'] * 100:+.1f} points of word accuracy "
               f"[{g['ci'][0] * 100:+.1f}, {g['ci'][1] * 100:+.1f}].", ""]
+        if "breakdown" in e:
+            L += ["### Error analysis: old recogniser vs new", "",
+                  "Share of reference words misrecognised (substituted or dropped) on the test calls, by kind of word. "
+                  "Old: Whisper alone. New: re-ranked by the LM adapted on the GREEN release (real detector). "
+                  "Raw-trained: the not-releasable upper bound.", "",
+                  "| Kind of word | Words | Old | New (GREEN) | Raw-trained |", "|---|---|---|---|---|"]
+            L += [f"| {b['category']} | {b['words']:,} | {pct(b['old_missed'])} | {pct(b['new_missed'])} | "
+                  f"{pct(b['raw_missed'])} |" for b in e["breakdown"]]
+            L += ["", "Utterances the new recogniser fixes (only utterances with no personal data are shown):", "",
+                  "| Said | Old | New |", "|---|---|---|"]
+            L += [f"| {x['reference']} | {x['old']} | {x['new']} |" for x in e["examples"]] + [""]
     if "e5" in r:
         L += ["## E5 — Cost", "", "| Operation | Time |", "|---|---|"]
         L += [f"| {k} | {v} ms |" for k, v in r["e5"].items() if k != "n_calls"] + [""]

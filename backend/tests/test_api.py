@@ -248,7 +248,7 @@ def test_encrypted_at_rest(c):
 
 def test_attack_simulation(c):
     """The dashboard's simulated attacker: real decryptions, only with the secrets it is given."""
-    red = login(c, "compliance")
+    red = login(c, "admin")
     assert c.post("/api/attack", json={}, headers=login(c, "datasci")).status_code == 403
     sim = lambda **body: c.post("/api/attack", json=body, headers=red).json()
     opened = lambda r, k: sum(v.get(k, False) for v in r["calls"].values())
@@ -312,17 +312,37 @@ def test_live_anonymize_stores_nothing(c):
     assert c.post("/api/anonymize", json={"utterances": utts}).status_code == 401
     db = store.connect()
     calls, log = (db.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] for t in ("calls", "audit"))
-    r = c.post("/api/anonymize", json={"utterances": utts}, headers=login(c, "datasci")).json()
+    r = c.post("/api/anonymize", json={"utterances": utts}, headers=login(c, "admin")).json()
     green = " ".join(u["text"] for u in r["tiers"]["GREEN"])
     assert "482913" not in green and "Tan Wei Ming" not in green
     assert any(p.get("entity", {}).get("type") == "OTP" for u in r["detected"] for p in u["pieces"])
     assert (db.execute("SELECT COUNT(*) FROM calls").fetchone()[0], db.execute("SELECT COUNT(*) FROM audit").fetchone()[0]) == (calls, log)
-    assert c.get("/api/sample-call", headers=login(c, "datasci")).json()["utterances"]
+    assert c.get("/api/sample-call", headers=login(c, "admin")).json()["utterances"]
 
 
 def test_overview_targets(c):
     assert c.get("/api/overview").status_code == 401
-    r = c.get("/api/overview", headers=login(c, "datasci")).json()
+    r = c.get("/api/overview", headers=login(c, "admin")).json()
     ids = {t["id"] for t in r["targets"]}
     assert {"P1", "P2", "P7", "P8", "P10", "U4"} <= ids                  # the code-guaranteed rows never depend on results
     assert all(t["met"] in (True, False, None) and t["target"] for t in r["targets"])
+    if r["task"]:                                   # shown on screen: examples carry no identifier digits
+        assert not any(ch.isdigit() for x in r["task"]["examples"] for ch in x["reference"] + x["old"] + x["new"])
+
+
+def test_roles_scope_the_api(c):
+    """Each role gets what its job needs, whatever its clearance; refusals are logged."""
+    can = {u: set(c.get("/api/me", headers=login(c, u)).json()["can"]) for u in ("compliance", "priya", "datasci", "admin")}
+    assert can["compliance"] == {"calls", "review", "audit", "policy"}
+    assert can["datasci"] == {"calls", "export", "policy"} and "ingest" in can["priya"]
+    assert can["admin"] >= can["compliance"] | can["priya"] | can["datasci"] | {"attack", "live", "overview", "results"}
+    red, priya, green = login(c, "compliance"), login(c, "priya"), login(c, "datasci")
+    before = store.connect().execute("SELECT COUNT(*) FROM audit WHERE action = 'deny'").fetchone()[0]
+    assert c.post("/api/attack", json={}, headers=red).status_code == 403          # RED, but not compliance's job
+    assert c.get("/api/overview", headers=red).status_code == 403
+    assert c.post("/api/calls/simulate", headers=red).status_code == 403
+    assert c.get("/api/export", headers=red).status_code == 403
+    assert c.get("/api/export", headers=priya).status_code == 403
+    assert c.get("/api/sample-call", headers=green).status_code == 403
+    assert c.get("/api/results", headers=green).status_code == 403
+    assert store.connect().execute("SELECT COUNT(*) FROM audit WHERE action = 'deny'").fetchone()[0] == before + 7

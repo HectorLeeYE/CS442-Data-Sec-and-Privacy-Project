@@ -7,7 +7,7 @@ import { BreakGlass, Line, Locked, SourceLabel } from '../components/Transcript'
 type Column =
   | { state: 'loading' }
   | { state: 'ok'; view: CallView }
-  | { state: 'locked'; reason: string; local: boolean }
+  | { state: 'locked'; reason: string }
   | { state: 'breakglass'; reason: string }
 
 const TIER_NOTE: Record<Tier, string> = {
@@ -16,6 +16,7 @@ const TIER_NOTE: Record<Tier, string> = {
   GREEN: 'Model training corpus',
 }
 const MIN_REASON = 15
+const COLS = ['', 'lg:grid-cols-1', 'lg:grid-cols-2', 'lg:grid-cols-3']   // static strings, so Tailwind emits them
 
 /** RED opening a low-risk call that is not theirs: a break-glass access, so ask before fetching. */
 function needsBreakGlass(user: User, call: CallSummary | undefined, tier: Tier) {
@@ -23,6 +24,8 @@ function needsBreakGlass(user: User, call: CallSummary | undefined, tier: Tier) 
 }
 
 export default function Calls({ user }: { user: User }) {
+  const shown = TIERS.filter((t) => TIER_RANK[t] <= TIER_RANK[user.tier])   // columns above the user's clearance are not offered
+  const cols = COLS[shown.length]
   const [calls, setCalls] = useState<CallSummary[] | null>(null)
   const [listError, setListError] = useState<string | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
@@ -67,7 +70,7 @@ export default function Calls({ user }: { user: User }) {
       setColumns((c) => ({ ...c, [tier]: { state: 'ok', view } }))
     } catch (e) {
       const reason = e instanceof ApiError ? e.message : 'Could not load this view'
-      const next: Column = e instanceof ApiError && e.status === 428 ? { state: 'breakglass', reason } : { state: 'locked', reason, local: false }
+      const next: Column = e instanceof ApiError && e.status === 428 ? { state: 'breakglass', reason } : { state: 'locked', reason }
       setColumns((c) => ({ ...c, [tier]: next }))
     }
   }, [])
@@ -78,15 +81,13 @@ export default function Calls({ user }: { user: User }) {
     if (!selected || !calls) return
     const call = calls.find((c) => c.id === selected)
     const next: Partial<Record<Tier, Column>> = {}
-    for (const t of TIERS) {
-      if (TIER_RANK[t] > TIER_RANK[user.tier]) {
-        next[t] = { state: 'locked', reason: `Requires ${t} clearance; you hold ${user.tier}.`, local: true }
-      } else if (needsBreakGlass(user, call, t)) {
+    for (const t of shown) {
+      if (needsBreakGlass(user, call, t)) {
         next[t] = { state: 'breakglass', reason: 'Low-risk call: never referred to compliance. Opening it in full is a break-glass access.' }
       }
     }
     setColumns(next)
-    TIERS.filter((t) => !next[t]).forEach((t) => fetchTier(selected, t))
+    shown.filter((t) => !next[t]).forEach((t) => fetchTier(selected, t))
     // re-run only when the selection changes, not when the list refreshes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, user.tier, fetchTier])
@@ -143,9 +144,10 @@ export default function Calls({ user }: { user: User }) {
     }
   }
 
-  const canIngest = TIER_RANK[user.tier] >= TIER_RANK.AMBER
+  const canIngest = user.can.includes('ingest')
+  const canReview = user.can.includes('review')
   const isRed = user.tier === 'RED'
-  const reference = TIERS.map((t) => columns[t]).find((c): c is { state: 'ok'; view: CallView } => c?.state === 'ok')
+  const reference = shown.map((t) => columns[t]).find((c): c is { state: 'ok'; view: CallView } => c?.state === 'ok')
   const rows = reference?.view.utterances.length ?? 0
 
   return (
@@ -164,14 +166,15 @@ export default function Calls({ user }: { user: User }) {
               </button>
             </>
           )}
-          <button className="btn btn-sm" onClick={runExport} disabled={busy}>
-            <Download size={14} aria-hidden="true" /> Training set
-          </button>
+          {user.can.includes('export') && (
+            <button className="btn btn-sm" onClick={runExport} disabled={busy}>
+              <Download size={14} aria-hidden="true" /> Training set
+            </button>
+          )}
           <button className="btn btn-sm btn-ghost btn-square ml-auto" aria-label="Refresh call list" onClick={loadList}>
             <RefreshCw size={14} aria-hidden="true" />
           </button>
         </div>
-        {!canIngest && <p className="px-3 pt-2 text-xs text-base-content/60">GREEN clearance reads the de-identified corpus and exports the training set; it cannot ingest calls.</p>}
         {listError && <div role="alert" className="alert alert-soft alert-error m-3 text-sm">{listError}</div>}
         <div className="max-h-[32rem] max-w-full overflow-x-auto overflow-y-auto xl:max-h-[calc(100vh-11rem)]">
           <table className="table table-sm">
@@ -225,7 +228,7 @@ export default function Calls({ user }: { user: User }) {
                   {current.risk === 'high' ? 'High risk: referred to compliance' : 'Low risk: not referred'}
                 </span>
               )}
-              {isRed && current && (
+              {canReview && current && (
                 <span className="ml-auto flex flex-wrap gap-2">
                   {current.review === 'pending' && (
                     <button className="btn btn-sm" onClick={() => { setDecision('approve'); decisionDialog.current?.showModal() }}>
@@ -249,7 +252,7 @@ export default function Calls({ user }: { user: User }) {
             ) : null}
 
             <div role="tablist" aria-label="Clearance" className="tabs tabs-box tabs-sm m-3 lg:hidden">
-              {TIERS.map((t) => (
+              {shown.map((t) => (
                 <button key={t} role="tab" aria-selected={mobileTier === t}
                         className={mobileTier === t ? 'tab tab-active' : 'tab'} onClick={() => setMobileTier(t)}>
                   {t}
@@ -258,8 +261,8 @@ export default function Calls({ user }: { user: User }) {
             </div>
 
             {/* column headers */}
-            <div className="grid border-b border-base-300 lg:grid-cols-3">
-              {TIERS.map((t) => {
+            <div className={`grid border-b border-base-300 ${cols}`}>
+              {shown.map((t) => {
                 const c = columns[t]
                 return (
                   <div key={t} className={mobileTier === t ? 'flex flex-col gap-1 p-3 lg:border-l lg:border-base-300 lg:first:border-l-0' : 'flex flex-col gap-1 p-3 max-lg:hidden lg:border-l lg:border-base-300 lg:first:border-l-0'}>
@@ -275,7 +278,7 @@ export default function Calls({ user }: { user: User }) {
                       </div>
                     )}
                     {c?.state === 'locked' && (
-                      <Locked tier={t} reason={c.reason} onTry={c.local ? () => fetchTier(selected, t) : undefined} />
+                      <Locked tier={t} reason={c.reason} />
                     )}
                     {c?.state === 'breakglass' && (
                       <BreakGlass id={`bg-${t}`} reason={c.reason} min={MIN_REASON} onOpen={(why) => fetchTier(selected, t, why)} />
@@ -287,15 +290,15 @@ export default function Calls({ user }: { user: User }) {
 
             {/* utterance rows, aligned across tiers */}
             <div className="divide-y divide-base-200">
-              {!reference && TIERS.some((t) => columns[t]?.state === 'loading') &&
+              {!reference && shown.some((t) => columns[t]?.state === 'loading') &&
                 [0, 1, 2, 3].map((i) => (
-                  <div key={i} className="grid gap-3 p-3 lg:grid-cols-3">
-                    {TIERS.map((t) => <div key={t} className={mobileTier === t ? 'skeleton h-10' : 'skeleton h-10 max-lg:hidden'} />)}
+                  <div key={i} className={`grid gap-3 p-3 ${cols}`}>
+                    {shown.map((t) => <div key={t} className={mobileTier === t ? 'skeleton h-10' : 'skeleton h-10 max-lg:hidden'} />)}
                   </div>
                 ))}
               {Array.from({ length: rows }, (_, i) => (
-                <div key={i} className="grid lg:grid-cols-3">
-                  {TIERS.map((t) => {
+                <div key={i} className={`grid ${cols}`}>
+                  {shown.map((t) => {
                     const c = columns[t]
                     return (
                       <div key={t} className={mobileTier === t ? 'min-w-0 px-3 py-2 lg:border-l lg:border-base-200 lg:first:border-l-0' : 'min-w-0 px-3 py-2 max-lg:hidden lg:border-l lg:border-base-200 lg:first:border-l-0'}>
@@ -309,8 +312,8 @@ export default function Calls({ user }: { user: User }) {
             </div>
 
             {/* release receipts */}
-            <footer className="grid border-t border-base-300 lg:grid-cols-3">
-              {TIERS.map((t) => {
+            <footer className={`grid border-t border-base-300 ${cols}`}>
+              {shown.map((t) => {
                 const c = columns[t]
                 return (
                   <div key={t} className={mobileTier === t ? 'p-3 text-xs lg:border-l lg:border-base-300 lg:first:border-l-0' : 'p-3 text-xs max-lg:hidden lg:border-l lg:border-base-300 lg:first:border-l-0'}>

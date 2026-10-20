@@ -225,7 +225,7 @@ Word-bigram LM trained on 400 released ASR-style calls, evaluated on 100 held-ou
 | pseudonym all | 83.29 | [78.88, 88.0] | 52073.7 | 86.7% | 0.0% |
 | surrogate all | 23.88 | [23.21, 24.63] | 353.93 | 22.7% | 100.0% |
 | GREEN policy | 28.18 | [27.13, 29.3] | 589.87 | 27.1% | 81.0% |
-| GREEN policy, real detector | 26.76 | [25.8, 27.78] | 462.57 | 20.7% | 81.0% |
+| GREEN policy, real detector | 26.61 | [25.65, 27.61] | 460.08 | 20.7% | 81.0% |
 
 ### E2-DP: a differentially private bigram
 
@@ -233,14 +233,14 @@ User-level (ε, δ = 1e-05)-DP counts over 221 training clients: each client con
 
 | Training text | ε | Test perplexity |
 |---|---|---|
-| raw | 1 | 3480.26 |
-| raw | 4 | 830.84 |
-| raw | 8 | 519.47 |
+| raw | 1 | 3787.48 |
+| raw | 4 | 811.06 |
+| raw | 8 | 519.94 |
 | raw | ∞ | 20.97 |
-| GREEN policy | 1 | 3948.77 |
-| GREEN policy | 4 | 955.91 |
-| GREEN policy | 8 | 550.28 |
-| GREEN policy | ∞ | 29.33 |
+| GREEN policy | 1 | 2689.77 |
+| GREEN policy | 4 | 734.57 |
+| GREEN policy | 8 | 495.31 |
+| GREEN policy | ∞ | 29.14 |
 
 ### A downstream task: learning the high-risk triage from each release
 
@@ -276,12 +276,12 @@ GREEN release: 29.0% of calls have a quasi-ID combination shared by fewer than 5
 
 ### noisy transcripts
 
-GREEN release: 41.4% of calls have a quasi-ID combination shared by fewer than 5 calls (median k = 6); the gate suppressed quasi-IDs in 207.
+GREEN release: 40.0% of calls have a quasi-ID combination shared by fewer than 5 calls (median k = 7); the gate suppressed quasi-IDs in 200.
 
 | Release | Re-identified | 95% CI | True client in candidates | Median candidates | Direct-ID leak |
 |---|---|---|---|---|---|
 | raw transcript | 85.0% | [81.8%, 88.0%] | 97.0% | 1 | 100.0% |
-| GREEN, quasi-IDs kept | 21.2% | [17.6%, 25.0%] | 63.4% | 14 | 24.4% |
+| GREEN, quasi-IDs kept | 21.6% | [17.8%, 25.2%] | 63.4% | 14 | 24.4% |
 | GREEN policy | 9.0% | [6.4%, 11.6%] | 53.8% | 16 | 24.4% |
 | GREEN + k-anonymity gate | 1.0% | [0.2%, 2.0%] | 54.4% | 23 | 24.4% |
 | GREEN policy, perfect detector | 9.2% | [6.6%, 11.6%] | 53.8% | 16 | 23.2% |
@@ -316,15 +316,15 @@ Canaries planted in 400 training calls as an extra client utterance, three per c
 | NRIC | caught | 1 | 100.0% | 0.0% | 1.9 | 1.0 | 0.8 |
 | NRIC | caught | 5 | 100.0% | 20.0% | 4.2 | 2.7 | 2.1 |
 | NRIC | caught | 20 | 100.0% | 11.7% | 11.6 | 1.4 | 1.5 |
-| NRIC | missed | 1 | 0.0% | 100.0% | 2.0 | 2.7 | 1.2 |
+| NRIC | missed | 1 | 0.0% | 100.0% | 2.0 | 2.6 | 1.2 |
 | NRIC | missed | 5 | 0.0% | 100.0% | 4.7 | 5.0 | 2.4 |
 | NRIC | missed | 20 | 0.0% | 100.0% | 11.2 | 12.0 | 0.3 |
-| PHONE | caught | 1 | 100.0% | 0.0% | 0.4 | 0.5 | 0.2 |
-| PHONE | caught | 5 | 100.0% | 20.0% | 2.4 | 0.8 | 1.2 |
+| PHONE | caught | 1 | 100.0% | 0.0% | 0.4 | 0.5 | 0.3 |
+| PHONE | caught | 5 | 100.0% | 20.0% | 2.4 | 0.9 | 1.1 |
 | PHONE | caught | 20 | 100.0% | 11.7% | 7.4 | 0.8 | 1.1 |
 | PHONE | missed | 1 | 0.0% | 0.0% | 4.5 | 4.6 | 5.0 |
 | PHONE | missed | 5 | 0.0% | 13.3% | 10.4 | 10.4 | 10.7 |
-| PHONE | missed | 20 | 0.0% | 13.3% | 12.3 | 12.3 | 12.3 |
+| PHONE | missed | 20 | 0.0% | 11.7% | 12.3 | 12.3 | 12.3 |
 
 ## E7 — Real Singapore speech (IMDA National Speech Corpus, no PII labels)
 
@@ -445,15 +445,11 @@ Every miss, full detector:
 | Detector | Harm-wtd recall | Entity recall | Strict recall | Char leakage | Precision | Token F1 | Over-redaction | DIRECT_ID | FINANCIAL_ID | AUTH_SECRET | QUASI_ID | SENSITIVE_ATTR |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | presidio only | 46.5% | 45.4% | 6.6% | 72.3% | 84.8% | 41.9% | 2.0% | 62.7% | 19.7% | 45.3% | 51.2% | 17.6% |
-| full minus spoken | 81.0% | 79.9% | 12.9% | 49.4% | 88.5% | 66.0% | 2.2% | 78.5% | 85.5% | 81.1% | 72.0% | 91.2% |
-| our full detector | 85.3% | 83.2% | 14.6% | 43.8% | 89.4% | 71.4% | 2.2% | 81.5% | 90.6% | 88.7% | 72.0% | 91.2% |
+| full minus spoken | 82.3% | 81.1% | 13.7% | 48.3% | 86.5% | 67.0% | 2.2% | 81.1% | 85.5% | 81.1% | 72.0% | 91.2% |
+| our full detector | 86.1% | 84.0% | 15.4% | 42.9% | 87.5% | 72.1% | 2.2% | 83.3% | 90.6% | 88.7% | 72.0% | 91.2% |
 
 Every miss, full detector:
 
-- `PERSON` — "pre -earned their" (C0001)
-- `PERSON` — "MDM1." (C0003)
-- `PERSON` — "-in -law lecture me" (C0003)
-- `PERSON` — "pre -earned their" (C0009)
 - `ADDRESS` — "BLK679 .0 .58 -19 -46D1 Singapore 373798?" (C0001)
 - `ADDRESS` — "be okay 118 issuing Crescent 64 Hashtag 04 -290 Singapore 237686?" (C0021)
 - `ADDRESS` — "be okay 690? It would learn's avenue 44 hashtag 25 -869 Singapore 799554?" (C0022)
@@ -474,6 +470,10 @@ Every miss, full detector:
 - `NRIC` — "-Tri1672500Z." (C0008)
 - `NRIC` — "T8528077E" (C0011)
 - `NRIC` — "217 4605Z." (C0012)
+- `PERSON` — "MDM1." (C0003)
+- `PERSON` — "-in -law lecture me" (C0003)
+- `PERSON` — "in." (C0011)
+- `PERSON` — "you'll ace your" (C0011)
 - `SWIFT` — "-DBSSSG -SG," (C0003)
 - `SWIFT` — "-SwiftCode .DeF." (C0005)
 - `SWIFT` — "Citus 33." (C0008)
@@ -502,7 +502,7 @@ Every miss, full detector:
 
 ### Audio redaction (bleeping by word timestamps)
 
-GREEN audio: every detected span replaced by a 1 kHz tone using Whisper's word timestamps, then re-transcribed. PII values still recoverable from the bleeped audio: 14.2% of spans (vs 100.0% before bleeping); 24.9% of the audio was bleeped.
+GREEN audio: every detected span replaced by a 1 kHz tone using Whisper's word timestamps, then re-transcribed. PII values still recoverable from the bleeped audio: 14.2% of spans (vs 100.0% before bleeping); 25.2% of the audio was bleeped.
 
 ## E8 — The analysis task itself: adapting the speech recogniser on each release
 
@@ -518,17 +518,39 @@ Whisper (`openai/whisper-base`) gives its 5 best guesses for each utterance of t
 
 GREEN (real detector) against raw, paired by call: -0.4 points of word accuracy [-0.6, -0.2].
 
+### Error analysis: old recogniser vs new
+
+Share of reference words misrecognised (substituted or dropped) on the test calls, by kind of word. Old: Whisper alone. New: re-ranked by the LM adapted on the GREEN release (real detector). Raw-trained: the not-releasable upper bound.
+
+| Kind of word | Words | Old | New (GREEN) | Raw-trained |
+|---|---|---|---|---|
+| Singlish particles | 106 | 99.1% | 98.1% | 98.1% |
+| Mandarin / Malay words | 37 | 62.2% | 54.0% | 54.0% |
+| Numbers and identifiers | 250 | 53.2% | 53.2% | 50.4% |
+| Names and places | 280 | 66.8% | 66.1% | 62.5% |
+| Everyday English | 4,403 | 9.0% | 7.5% | 7.5% |
+
+Utterances the new recogniser fixes (only utterances with no personal data are shown):
+
+| Said | Old | New |
+|---|---|---|
+| Dui, I understand. | Do I? I understand. | DUI, I understand. |
+| Morning, I want to ask about a personal loan. | Morning, I want to ask about a person alone. | Morning, I want to ask about a personal loan. |
+| Morning, I want to ask about a personal loan, can or not. | Morning, I want to ask about a person alone, can or not. | Morning, I want to ask about a personal loan, can or not. |
+| Dui! Someone called pretending to be from the bank and asked for my details. | DUI Someone call pretending to be from the bank and ask for my details. | DUI Someone called pretending to be from the bank and asked for my details. |
+| Sure. May I have your full name and NRIC please? | Sure. May I have your full name and NRC, please? | Sure. May I have your full name and NRIC please? |
+
 ## E5 — Cost
 
 | Operation | Time |
 |---|---|
-| detect_ms_per_call | 30.5 ms |
-| render_3_tiers_ms_per_call | 0.7 ms |
-| abe_setup_ms | 422.2 ms |
-| abe_keygen_3_attrs_ms | 382.1 ms |
-| abe_encrypt_4_leaf_policy_ms | 257.6 ms |
-| abe_decrypt_2_leaf_path_ms | 243.1 ms |
-| ingest_encrypt_ms_per_call_incl_new_policies | 68.6 ms |
-| first_open_ms (ABE unlock of the policy key) | 250.2 ms |
+| detect_ms_per_call | 33.9 ms |
+| render_3_tiers_ms_per_call | 0.6 ms |
+| abe_setup_ms | 393.3 ms |
+| abe_keygen_3_attrs_ms | 452.5 ms |
+| abe_encrypt_4_leaf_policy_ms | 358.6 ms |
+| abe_decrypt_2_leaf_path_ms | 298.6 ms |
+| ingest_encrypt_ms_per_call_incl_new_policies | 84.1 ms |
+| first_open_ms (ABE unlock of the policy key) | 206.0 ms |
 | cached_open_ms_per_call (AES only) | 0.1 ms |
 | export_ms_per_call | 0.1 ms |

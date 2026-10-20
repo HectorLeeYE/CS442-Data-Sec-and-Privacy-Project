@@ -33,13 +33,24 @@ SURROGATE_KEY = store.subkey("surrogate")
 SEED_CALLS = int(os.environ.get("SEED_CALLS", "30"))
 GLINER_REVIEW = os.environ.get("GLINER_REVIEW") == "1"     # needs requirements-experiments.txt (torch)
 MIN_JUSTIFICATION = 15
-DEMO_USERS = [  # username, display name, tier, agent name — password "demo" for all
-    ("compliance", "Rachel Ong — Compliance", "RED", None),
-    ("priya", "Priya Nair — Call agent", "AMBER", "Priya Nair"),
-    ("daniel", "Daniel Koh — Call agent", "AMBER", "Daniel Koh"),
-    ("datasci", "Alex Chua — Data science", "GREEN", None),
-    ("model", "ASR training pipeline — service account", "GREEN", None),
+DEMO_USERS = [  # username, display name, tier, agent name, role — password "demo" for all
+    ("compliance", "Rachel Ong — Compliance", "RED", None, "compliance"),
+    ("priya", "Priya Nair — Call agent", "AMBER", "Priya Nair", "agent"),
+    ("daniel", "Daniel Koh — Call agent", "AMBER", "Daniel Koh", "agent"),
+    ("datasci", "Alex Chua — Data science", "GREEN", None, "datasci"),
+    ("model", "ASR training pipeline — service account", "GREEN", None, "datasci"),
+    ("admin", "Demo admin — every page", "RED", None, "admin"),
 ]
+# What each role's job needs. The dashboard shows only these, and the API refuses the rest (least privilege on
+# top of clearance: compliance is RED but has no use for the attack simulator). `admin` exists to present the
+# project, with every page; a real deployment would have no such account.
+ROLES = {
+    "compliance": {"calls", "review", "audit", "policy"},
+    "agent": {"calls", "ingest", "policy"},
+    "datasci": {"calls", "export", "policy"},
+    "admin": {"overview", "calls", "ingest", "review", "export", "audit", "policy", "live", "attack", "results"},
+}
+ROLE = {u[0]: u[4] for u in DEMO_USERS}
 
 app = FastAPI(title="Quietline: call transcript redaction")
 
@@ -72,7 +83,7 @@ def ingest(db, call_id: str, scenario: str, source: str, agent: str, utterances:
 def seed() -> None:
     db = store.connect()
     fresh = not db.execute("SELECT 1 FROM calls").fetchone() and not db.execute("SELECT 1 FROM audit").fetchone()
-    for u, name, tier, agent in DEMO_USERS:
+    for u, name, tier, agent, _ in DEMO_USERS:
         if not db.execute("SELECT 1 FROM users WHERE username = ?", (u,)).fetchone():
             db.execute("INSERT INTO users VALUES (?,?,?,?,?)", (u, name, tier, agent, store.hash_password("demo")))
     for call_id in store.expired(db):       # PDPA retention limitation
@@ -107,14 +118,24 @@ def current_user(cred: HTTPAuthorizationCredentials | None = Depends(HTTPBearer(
                      (sub,)).fetchone()
     if not row:
         raise HTTPException(401, "Unknown user")
-    return dict(row)
+    return _with_role(row)
 
 
-def require(tier: str):
+def _with_role(row) -> dict:
+    user = {k: row[k] for k in ("username", "display_name", "tier", "agent_name")}
+    role = ROLE.get(user["username"], "")
+    return user | {"role": role, "can": sorted(ROLES.get(role, ()))}
+
+
+def allow(cap: str, tier: str = "GREEN"):
+    """The caller's role must include `cap` and their clearance must reach `tier`; a refusal is logged."""
     def dep(user: dict = Depends(current_user), db=Depends(get_db)) -> dict:
         if taxonomy.rank(user["tier"]) < taxonomy.rank(tier):
             store.audit(db, user["username"], user["tier"], "deny", view_tier=tier)
             raise HTTPException(403, f"Requires {tier} clearance")
+        if cap not in user["can"]:
+            store.audit(db, user["username"], user["tier"], "deny", detail=f"role {user['role']} lacks {cap}")
+            raise HTTPException(403, f"Not part of the {user['role']} role")
         return user
     return dep
 
@@ -126,7 +147,7 @@ def login(body: Login, db=Depends(get_db)):
         raise HTTPException(401, "Wrong username or password")
     token = jwt.encode({"sub": row["username"], "exp": datetime.now(timezone.utc) + timedelta(hours=8)},
                        JWT_KEY, algorithm="HS256")
-    return {"token": token, "user": {k: row[k] for k in ("username", "display_name", "tier", "agent_name")}}
+    return {"token": token, "user": _with_role(row)}
 
 
 @app.get("/api/me")
@@ -212,7 +233,7 @@ def _new_id() -> str:
 
 
 @app.post("/api/calls")
-def create_call(body: NewCall, user: dict = Depends(require("AMBER")), db=Depends(get_db)):
+def create_call(body: NewCall, user: dict = Depends(allow("ingest", "AMBER")), db=Depends(get_db)):
     """Ingest a pasted / live transcript; the caller is recorded as the handling agent."""
     call_id = _new_id()
     utts = [{"speaker": u.speaker, "text": re.sub(r"\s*\n\s*", " ", u.text).strip()} for u in body.utterances]
@@ -222,7 +243,7 @@ def create_call(body: NewCall, user: dict = Depends(require("AMBER")), db=Depend
 
 
 @app.post("/api/calls/simulate")
-def simulate_call(user: dict = Depends(require("AMBER")), db=Depends(get_db)):
+def simulate_call(user: dict = Depends(allow("ingest", "AMBER")), db=Depends(get_db)):
     """'An agent takes a call': a fresh synthetic ASR transcript, owned by the caller."""
     rng = random.Random()
     call = gen.make_call(rng.randrange(10**6), gen.make_client(0, rng), rng)
@@ -233,7 +254,7 @@ def simulate_call(user: dict = Depends(require("AMBER")), db=Depends(get_db)):
 
 
 @app.post("/api/anonymize")
-def anonymize(body: NewCall, user: dict = Depends(current_user)):
+def anonymize(body: NewCall, user: dict = Depends(allow("live"))):
     """Live view for demos: detect and render every tier for text the caller supplies. Nothing is stored or
     logged: the caller already holds this text, and no stored call is disclosed."""
     t0 = time.perf_counter()
@@ -249,7 +270,7 @@ def anonymize(body: NewCall, user: dict = Depends(current_user)):
 
 
 @app.get("/api/sample-call")
-def sample_call(style: str = "asr", user: dict = Depends(current_user)):
+def sample_call(style: str = "asr", user: dict = Depends(allow("live"))):
     """A fresh synthetic call to play through the live view (nothing stored)."""
     rng = random.Random()
     call = gen.make_call(rng.randrange(10**6), gen.make_client(0, rng), rng)
@@ -262,7 +283,7 @@ class Decision(BaseModel):
 
 
 @app.post("/api/calls/{call_id}/approve")
-def approve(call_id: str, body: Decision, user: dict = Depends(require("RED")), db=Depends(get_db)):
+def approve(call_id: str, body: Decision, user: dict = Depends(allow("review", "RED")), db=Depends(get_db)):
     """A RED reviewer has read the held GREEN rendering and releases it to GREEN."""
     row = store.get_call(db, call_id)
     if not row or row["review"] != "pending":
@@ -273,7 +294,7 @@ def approve(call_id: str, body: Decision, user: dict = Depends(require("RED")), 
 
 
 @app.post("/api/calls/{call_id}/erase")
-def erase_call(call_id: str, body: Decision, user: dict = Depends(require("RED")), db=Depends(get_db)):
+def erase_call(call_id: str, body: Decision, user: dict = Depends(allow("review", "RED")), db=Depends(get_db)):
     """PDPA erasure / retention: crypto-shred the call's data keys, then its copies."""
     if not store.get_call(db, call_id):
         raise HTTPException(404, "No such call")
@@ -285,7 +306,7 @@ def erase_call(call_id: str, body: Decision, user: dict = Depends(require("RED")
 # ------------------------------------------------------------ GREEN bulk export
 
 @app.get("/api/export")
-def export(user: dict = Depends(current_user), db=Depends(get_db)):
+def export(user: dict = Depends(allow("export")), db=Depends(get_db)):
     """The data scientists' real flow: a de-identified training set, k-anonymity gated, manifest signed."""
     rows = db.execute("SELECT * FROM calls ORDER BY id").fetchall()
     key = store.user_key(user)
@@ -336,7 +357,7 @@ def get_taxonomy(user: dict = Depends(current_user)):
 
 
 @app.get("/api/audit")
-def get_audit(limit: int = 200, user: dict = Depends(require("RED")), db=Depends(get_db)):
+def get_audit(limit: int = 200, user: dict = Depends(allow("audit", "RED")), db=Depends(get_db)):
     rows = db.execute("SELECT * FROM audit ORDER BY seq DESC LIMIT ?", (min(limit, 1000),)).fetchall()
     return {"entries": [dict(r) for r in rows], "chain": store.verify_log(db)}
 
@@ -353,7 +374,7 @@ class Attack(BaseModel):
 
 
 @app.post("/api/attack")
-def simulate_attack(body: Attack, user: dict = Depends(require("RED")), db=Depends(get_db)):
+def simulate_attack(body: Attack, user: dict = Depends(allow("attack", "RED")), db=Depends(get_db)):
     """Run the attack for real against the stored data. Returns only what opened, never content."""
     victim = None
     if body.user_key:
@@ -368,13 +389,13 @@ def simulate_attack(body: Attack, user: dict = Depends(require("RED")), db=Depen
 
 
 @app.get("/api/overview")
-def project_overview(user: dict = Depends(current_user)):
+def project_overview(user: dict = Depends(allow("overview"))):
     """The six project requirements: each privacy and utility target against the latest results."""
     return overview.overview()
 
 
 @app.get("/api/results")
-def results(user: dict = Depends(current_user)):
+def results(user: dict = Depends(allow("results"))):
     out = ROOT / "experiments" / "out"
     return {p.stem: json.loads(p.read_text()) for p in sorted(out.glob("e*.json"))}
 

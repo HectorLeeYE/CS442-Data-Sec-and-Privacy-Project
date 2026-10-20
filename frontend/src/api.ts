@@ -2,7 +2,11 @@ export type Tier = 'GREEN' | 'AMBER' | 'RED'
 export const TIERS: Tier[] = ['RED', 'AMBER', 'GREEN']
 export const TIER_RANK: Record<Tier, number> = { GREEN: 0, AMBER: 1, RED: 2 }
 
-export type User = { username: string; display_name: string; tier: Tier; agent_name: string | null }
+export type Capability = 'overview' | 'calls' | 'ingest' | 'review' | 'export' | 'audit' | 'policy' | 'live' | 'attack' | 'results'
+export type User = {
+  username: string; display_name: string; tier: Tier; agent_name: string | null
+  role: 'compliance' | 'agent' | 'datasci' | 'admin'; can: Capability[]   // what the role's job needs; the API enforces it
+}
 export type Entity = { type: string; class: string; action: string; layer: string; score: number }
 export type Piece = { text: string; entity?: Entity }
 export type Utterance = { speaker: 'agent' | 'client'; text: string; pieces: Piece[] }
@@ -125,4 +129,11 @@ export type Target = {
   value: string | null; met: boolean | null; evidence: string; kind: 'measured' | 'test'
 }
 export type Dataset = { name: string; size: string; use: string; source: string }
-export type Overview = { targets: Target[]; datasets: Dataset[] }
+export type Task = {
+  asr_model: string; test_calls: number; n_train_calls: number
+  old_wer: number; new_wer: number; raw_wer: number; oracle_wer: number
+  breakdown: { category: string; words: number; old_missed: number; new_missed: number; raw_missed: number }[]
+  examples: { reference: string; old: string; new: string }[]
+  canary?: { raw: number; green: number; max: number }
+}
+export type Overview = { targets: Target[]; datasets: Dataset[]; task: Task | null }

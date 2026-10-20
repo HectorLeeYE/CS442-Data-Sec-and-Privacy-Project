@@ -60,12 +60,12 @@
   },
   {
    "variant": "GREEN policy, real detector",
-   "perplexity": 26.76,
+   "perplexity": 26.61,
    "ci": [
-    25.8,
-    27.78
+    25.65,
+    27.61
    ],
-   "pii_perplexity": 462.57,
+   "pii_perplexity": 460.08,
    "pii_oov": 0.207,
    "digit_shape_preserved": 0.8098
   }
@@ -78,17 +78,17 @@
    {
     "text": "raw",
     "epsilon": 1,
-    "perplexity": 3480.26
+    "perplexity": 3787.48
    },
    {
     "text": "raw",
     "epsilon": 4,
-    "perplexity": 830.84
+    "perplexity": 811.06
    },
    {
     "text": "raw",
     "epsilon": 8,
-    "perplexity": 519.47
+    "perplexity": 519.94
    },
    {
     "text": "raw",
@@ -98,22 +98,22 @@
    {
     "text": "GREEN policy",
     "epsilon": 1,
-    "perplexity": 3948.77
+    "perplexity": 2689.77
    },
    {
     "text": "GREEN policy",
     "epsilon": 4,
-    "perplexity": 955.91
+    "perplexity": 734.57
    },
    {
     "text": "GREEN policy",
     "epsilon": 8,
-    "perplexity": 550.28
+    "perplexity": 495.31
    },
    {
     "text": "GREEN policy",
     "epsilon": null,
-    "perplexity": 29.33
+    "perplexity": 29.14
    }
   ]
  },

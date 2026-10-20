@@ -31,7 +31,7 @@ from pathlib import Path
 import numpy as np
 
 from experiments import run
-from privacy import detect
+from privacy import detect, vocab
 
 AUDIO = Path(__file__).parent / "audio"
 VOICES = {"agent": "en-SG-WayneNeural", "client": "en-SG-LunaNeural"}
@@ -249,6 +249,41 @@ NBEST = AUDIO / "nbest.json"
 N_BEST, DEV_CALLS = 5, 10
 LAMBDAS = (0, 0.05, 0.1, 0.2, 0.3, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0)
 
+# Error analysis: which kinds of word does each recogniser get wrong? Word lists come from the generator's
+# vocabularies, so every reference word falls in exactly one category (first match wins).
+_PARTICLES = {"lah", "leh", "lor", "sia", "hor", "ah", "meh", "wah", "aiyo", "aiya", "alamak"}
+_OTHER_LANG = ({"wo", "yao", "saya", "mahu", "dui", "ya", "xie", "terima", "kasih", "hao"}
+               | set(vocab.PINYIN_DIGITS) | set(vocab.MALAY_DIGITS))
+_NUMBER = set(vocab.DIGIT_WORDS) | {"oh", "double", "triple", "ten", "hundred", "thousand", "million", "dollars"}
+_GENERIC = {"bank", "city", "group", "airport", "international", "port", "hospital", "national", "university",
+            "ministry", "of", "education", "medical", "place", "village", "the"}
+_NAMES = {w.lower() for s in (vocab.SURNAMES + vocab.GIVEN + vocab.AGENTS + vocab.BANKS + vocab.PETS
+                              + list(vocab.TOWNS) + list(vocab.EMPLOYERS)) for w in s.split()} - _GENERIC
+CATEGORIES = ("Singlish particles", "Mandarin / Malay words", "Numbers and identifiers", "Names and places",
+              "Everyday English")
+
+
+def _category(w: str) -> str:
+    if w in _PARTICLES:
+        return CATEGORIES[0]
+    if w in _OTHER_LANG:
+        return CATEGORIES[1]
+    if w in _NUMBER or any(ch.isdigit() for ch in w):
+        return CATEGORIES[2]
+    return CATEGORIES[3] if w in _NAMES else CATEGORIES[4]
+
+
+def _missed(ref: str, hyp: str) -> list[tuple[str, bool]]:
+    """Each reference word with whether the hypothesis got it wrong (substituted or dropped), by word alignment.
+    Runs of digit groups are joined first, so "4460 3536" and "44603536" are the same one word."""
+    def toks(t):
+        return re.sub(r"(?<=\d) (?=\d)", "", " ".join(_norm(w) for w in t.split() if _norm(w))).split()
+    r, h = toks(ref), toks(hyp)
+    ok = set()
+    for a, b, n in difflib.SequenceMatcher(None, r, h, autojunk=False).get_matching_blocks():
+        ok.update(range(a, a + n))
+    return [(w, i not in ok) for i, w in enumerate(r)]
+
 
 def _words(text: str) -> list[str]:
     return re.findall(r"[a-z0-9]+", text.lower())
@@ -356,7 +391,7 @@ def task(n: int = 40) -> dict:
     base = parts(lambda nb: nb[0][0])
     res = {"n_calls": n, "dev_calls": DEV_CALLS, "test_calls": n - DEV_CALLS, "n_best": N_BEST, "asr_model": MODEL,
            "n_train_calls": len(train), "lm": "interpolated word bigram", "rows": []}
-    best_parts = {}
+    best_parts, pickers = {}, {}
     o_e = o_m = 0
     for ci, ref, nbest in utts:
         if ci >= DEV_CALLS:
@@ -366,13 +401,36 @@ def task(n: int = 40) -> dict:
     for name, fn in releases.items():
         lm = run.Bigram([norm(fn(c, r)) for c, r in zip(train, raw)], vocab)
         lam = min(LAMBDAS, key=lambda l: dev_wer(rescorer(lm, l)))
-        ps = best_parts[name] = parts(rescorer(lm, lam))
+        pickers[name] = rescorer(lm, lam)
+        ps = best_parts[name] = parts(pickers[name])
         res["rows"].append({"release": name, "lambda": lam, "wer": total(ps), "ci": run.bootstrap(ps),
                             "wer_reduction_vs_whisper": run.paired(acc(base), acc(ps))})
         print(f"  E8 {name}: lambda {lam}, test WER {total(ps)}")
     res["oracle_wer"] = round(o_e / o_m, 4)
     res["green_vs_raw"] = run.paired(acc(best_parts["raw transcripts (upper bound, not releasable)"]),
                                      acc(best_parts["GREEN policy, real detector"]))
+
+    # Error analysis, old recogniser (Whisper alone) vs new (re-ranked by the LM adapted on the GREEN release).
+    # The raw-trained column shows what the GREEN release's fakes cost in each category.
+    new, raw_lm = pickers["GREEN policy, real detector"], pickers["raw transcripts (upper bound, not releasable)"]
+    counts = {k: [0, 0, 0, 0] for k in CATEGORIES}            # words, then errors: old, new (GREEN), raw-trained
+    for ci, ref, nbest in utts:
+        if ci >= DEV_CALLS:
+            for (w, a), (_, b), (_, c) in zip(*(_missed(ref, h) for h in (nbest[0][0], new(nbest), raw_lm(nbest)))):
+                x = counts[_category(w)]
+                x[0], x[1], x[2], x[3] = x[0] + 1, x[1] + a, x[2] + b, x[3] + c
+    res["breakdown"] = [{"category": k, "words": n, "old_missed": round(o / n, 4), "new_missed": round(g / n, 4),
+                         "raw_missed": round(r / n, 4)} for k, (n, o, g, r) in counts.items() if n]
+    # Examples for the demo: test utterances the adapted recogniser fixes, taken only from utterances with no
+    # personal data in them, so the overview page shows no (synthetic) client's identifiers to any clearance.
+    ex = []
+    starts = [sum(len(v["text"]) + 1 for v in c["utterances"][:i]) for c in heard for i in range(len(c["utterances"]))]
+    for (ci, ref, nbest), start in zip(utts, starts):
+        clean = not any(s["start"] < start + len(ref) and s["end"] > start for s in heard[ci]["spans"])
+        old_e, new_e = wer(ref, nbest[0][0])[0], wer(ref, new(nbest))[0]
+        if ci >= DEV_CALLS and clean and new_e < old_e and ref not in {x["reference"] for x in ex}:
+            ex.append({"reference": ref, "old": nbest[0][0], "new": new(nbest), "fixed": old_e - new_e, "left": new_e})
+    res["examples"] = sorted(ex, key=lambda x: (x["left"], -x["fixed"]))[:5]      # fully fixed first
     (run.OUT / "e8.json").write_text(json.dumps(res, indent=1))
     run.main([])
     return res

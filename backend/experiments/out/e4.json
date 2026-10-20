@@ -42,14 +42,14 @@
   },
   "full minus spoken": {
    "recall": {
-    "DIRECT_ID": 0.7854,
+    "DIRECT_ID": 0.8112,
     "FINANCIAL_ID": 0.8547,
     "AUTH_SECRET": 0.8113,
     "QUASI_ID": 0.7195,
     "SENSITIVE_ATTR": 0.9118
    },
    "class_accuracy": {
-    "DIRECT_ID": 0.8525,
+    "DIRECT_ID": 0.9365,
     "FINANCIAL_ID": 0.9,
     "AUTH_SECRET": 0.9767,
     "QUASI_ID": 0.8305,
@@ -62,24 +62,24 @@
     "QUASI_ID": 82,
     "SENSITIVE_ATTR": 34
    },
-   "harm_weighted_recall": 0.8105,
-   "strict_recall": 0.1291,
-   "entity_recall": 0.7988,
-   "precision": 0.8848,
-   "char_leakage": 0.4938,
+   "harm_weighted_recall": 0.8226,
+   "strict_recall": 0.1368,
+   "entity_recall": 0.8107,
+   "precision": 0.8654,
+   "char_leakage": 0.4828,
    "over_redaction": 0.0216,
-   "token_f1": 0.6604
+   "token_f1": 0.6698
   },
   "our full detector": {
    "recall": {
-    "DIRECT_ID": 0.8155,
+    "DIRECT_ID": 0.8326,
     "FINANCIAL_ID": 0.906,
     "AUTH_SECRET": 0.8868,
     "QUASI_ID": 0.7195,
     "SENSITIVE_ATTR": 0.9118
    },
    "class_accuracy": {
-    "DIRECT_ID": 0.8632,
+    "DIRECT_ID": 0.9536,
     "FINANCIAL_ID": 0.9151,
     "AUTH_SECRET": 1.0,
     "QUASI_ID": 0.8305,
@@ -92,36 +92,16 @@
     "QUASI_ID": 82,
     "SENSITIVE_ATTR": 34
    },
-   "harm_weighted_recall": 0.8531,
-   "strict_recall": 0.1464,
-   "entity_recall": 0.8323,
-   "precision": 0.8939,
-   "char_leakage": 0.4384,
+   "harm_weighted_recall": 0.8612,
+   "strict_recall": 0.1541,
+   "entity_recall": 0.8402,
+   "precision": 0.8748,
+   "char_leakage": 0.4287,
    "over_redaction": 0.0216,
-   "token_f1": 0.7142
+   "token_f1": 0.7212
   }
  },
  "misses": [
-  {
-   "call": "C0001",
-   "type": "PERSON",
-   "text": "pre -earned their"
-  },
-  {
-   "call": "C0003",
-   "type": "PERSON",
-   "text": "MDM1."
-  },
-  {
-   "call": "C0003",
-   "type": "PERSON",
-   "text": "-in -law lecture me"
-  },
-  {
-   "call": "C0009",
-   "type": "PERSON",
-   "text": "pre -earned their"
-  },
   {
    "call": "C0001",
    "type": "ADDRESS",
@@ -221,6 +201,26 @@
    "call": "C0012",
    "type": "NRIC",
    "text": "217 4605Z."
+  },
+  {
+   "call": "C0003",
+   "type": "PERSON",
+   "text": "MDM1."
+  },
+  {
+   "call": "C0003",
+   "type": "PERSON",
+   "text": "-in -law lecture me"
+  },
+  {
+   "call": "C0011",
+   "type": "PERSON",
+   "text": "in."
+  },
+  {
+   "call": "C0011",
+   "type": "PERSON",
+   "text": "you'll ace your"
   },
   {
    "call": "C0003",
@@ -360,6 +360,6 @@
   "spans_checked": 506,
   "recoverable_before_bleep": 1.0,
   "recoverable_after_bleep": 0.1423,
-  "audio_bleeped": 0.2494
+  "audio_bleeped": 0.2523
  }
 }

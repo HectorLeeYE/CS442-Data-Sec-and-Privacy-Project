@@ -27,11 +27,19 @@ serves; [requirements.md](requirements.md) is the one-page map with the measurab
 
 ### 1.1 The domain and the analysis task
 
-**The analysis task is to fine-tune the bank's in-house speech-recognition model on transcripts of
-recorded client calls**, so that it stops failing on Singapore-accented English, Singlish particles
-and code-switching. The people who do this are data scientists with the lowest clearance; the
-input is banking-secrecy data. The secondary flow is the existing one: compliance reads high-risk
-calls in full.
+**The analysis task answers one question: where does the bank's in-house speech recogniser fail on
+Singapore speech, and does adapting it on recorded client calls cut those errors enough to deploy
+it?** The people who do this are data scientists with the lowest clearance; the input is
+banking-secrecy data. The secondary flow is the existing one: compliance reads high-risk calls in
+full.
+
+| Step | What the data scientists do | Where in this project |
+|---|---|---|
+| Inspect | Read transcripts and the recogniser's errors to find the failure patterns: Singlish particles, code-switching, numbers read out digit by digit | The GREEN view on the Calls page; E8's error analysis (8.8) |
+| Clean | Normalise spoken forms, hold back calls the detector is unsure of | Spoken layer (3), review queue (3.2) |
+| Transform | Turn the calls into a training set | GREEN rendering, k-anonymity gate, JSONL export (4, 5) |
+| Model | Adapt the recogniser's language model on that set; measure word error rate | E8 (8.8) |
+| Decide | Deploy the adapted recogniser if it beats the current one, trained on GREEN if GREEN stays within 1 point of raw (U8) | E8 (8.8) |
 
 When a client calls the bank, the agent records the call. If the transaction is high risk (an
 overseas transfer above a threshold, or a fraud report), the recording is transcribed and referred
@@ -43,6 +51,39 @@ gateway: *"Is the transaction considered high risk?"*
 The bank also wants to improve its in-house transcription model, which performs poorly on
 Singapore-accented English, Singlish particles and code-switching. The best training material is
 these calls, and the people who would use it (data scientists) hold the lowest security rating.
+
+**The old recogniser and the new one.** The *old* recogniser is the bank's in-house model as it is
+today; in the prototype `whisper-base` stands in for it. The *new* one is the same recogniser with
+a language model adapted on the GREEN release, which re-ranks its five best guesses (the text-only
+form of fine-tuning). E8 runs both on 30 calls of Singapore-English speech (8.8):
+
+| Recogniser | Word error rate | Trained on |
+|---|---|---|
+| Old: in-house recogniser today | 20.7% | Nothing from the bank's calls |
+| **New: adapted on the GREEN release** | **19.2%** | 460 de-identified calls |
+| Adapted on raw transcripts (upper bound) | 18.9% | The same calls in full, which data science may not read |
+
+The error analysis finds the pattern: adapting fixes everyday banking English (9.0% → 7.5% of
+words wrong) and Mandarin or Malay phrases (62% → 54%); Singlish particles stay wrong (99% → 98%),
+because the right spelling is not among the recogniser's guesses, so they need acoustic fine-tuning.
+GREEN matches raw in every category except names and numbers, the words it replaces with fakes.
+**Decision: deploy the new recogniser, trained on GREEN**: it beats the old one by 1.5 points and
+stays within the 1-point target of raw (U8).
+
+**What keeps the new recogniser private.** Each measure is in place in the prototype:
+
+| Measure | What it stops | Where |
+|---|---|---|
+| The training pipeline is the `model` account at GREEN; its CP-ABE key opens GREEN copies only | The model, and everyone who can query it, gaining RED or AMBER access (R2) | 1.2, 5.2 |
+| Identifiers become checksum-valid fakes of the same shape; names become pseudonyms from a pool disjoint from real names; places and employers are generalised to a region or sector | The model learning, and later repeating, a real identifier; fakes keep what follows "my account is" learnable | 4 |
+| Credentials (OTP, PIN, CVV, security answers) are removed at ingest and stored in no copy | Any credential reaching any training set | 2.4 |
+| Calls with an unanswered credential question or a stray long number are held for review, encrypted to RED only | A value the detector missed reaching the model (E6: 12.0 → 0.3 bits for a missed NRIC) | 3.2, 5.5 |
+| k-anonymity gate (k = 5) on the export | Linking a call to a client through a rare combination of region, sector and other quasi-identifiers (E3) | 4.1 |
+| Ed25519-signed export manifest; every release hashed into the Merkle log | Not knowing what the model was trained on; finding the training sets to retrain after an erasure | 5.6, 5.8 |
+| Canary test (E6) | Unmeasured memorisation: a fake NRIC planted 20 times gives 11.6 bits of exposure (of 12.3) from raw, 1.4 from GREEN | 8.6 |
+
+Not done: differentially private training (at this data size its noise destroys the model, E2),
+and erasure does not untrain a model already trained; the next release retrains without the client.
 
 ### 1.2 Clearance tiers, and where we depart from the brief
 
@@ -125,7 +166,7 @@ exact text released and answered with a signed receipt.
 | R15 | Recipient disputes what was released | Data recipient | Released text | Low | Medium | Ed25519-signed receipts with Merkle inclusion proofs, checkable offline; signed export manifests | `test_signed_receipts_and_export` |
 | R16 | A spoken card verification code is stored (PCI DSS 3.3.1 forbids it after authorisation, even encrypted) | Anyone with read access | CVV | Medium | High | CVV is AUTH_SECRET: suppressed at every tier, never stored. **The RED audio still holds it** (R11) | `test_cvv_never_released_at_any_tier` |
 | R17 | A detector built and tested on synthetic calls misses what real speakers say | Detector | Everything | High | High | Evaluation on real speech with frozen held-out sets; function-word filter; slots that follow numbers read out over several turns; review queue | E7: 73.0% held-out recall on real bank calls, 92.5% after review |
-| R18 | The live anonymiser used as an unlogged oracle to find what the detector misses | Any signed-in user | Detector behaviour | Medium | Low | Stores nothing and discloses no stored call; demo deployments only (DPIA §3) | `test_live_anonymize_stores_nothing` |
+| R18 | The live anonymiser used as an unlogged oracle to find what the detector misses | The demo `admin` (no other role has it) | Detector behaviour | Medium | Low | Stores nothing and discloses no stored call; demo deployments only (DPIA §3) | `test_live_anonymize_stores_nothing` |
 
 ### 1.6 Privacy threat model (LINDDUN) and security threat model (STRIDE)
 
@@ -561,6 +602,14 @@ less work.
   ignored (tested).
 * Rules: a user may request any tier at or below their own. AMBER users may open the AMBER view
   of their own calls only, which prevents IDOR across agents (tested with two agents).
+* **Roles narrow clearance to the job.** Clearance decides which copies a user's key can open; the role
+  decides which functions they are offered at all (`ROLES` in `server/main.py`). Compliance reviews,
+  releases, erases and reads the log; agents take and paste calls; data science reads GREEN and exports
+  the training set. Every endpoint checks both, and a refusal is logged as a denial, so hiding a page in
+  the dashboard is never the only control (`test_roles_scope_the_api`). The dashboard shows only the
+  pages and the tier columns a user can use. A demo `admin` (RED) has every page, including the project
+  overview, live anonymiser, attack simulation and results, so the project can be presented from one
+  account; a deployment would have no such account (separation of duties).
 
 ### 5.4 Break-glass access to low-risk calls
 
@@ -874,16 +923,16 @@ which the client says they told the caller their PIN are worded in ways the disc
 
 A bigram LM trained on raw transcripts reaches a test perplexity of 15.5 (an upper bound, not
 releasable). Suppressing or pseudonymising all PII drives it to 83.3. Surrogates bring it back to
-**23.9**, and the GREEN policy gives **28.2** [27.1, 29.3] with ground-truth spans and 26.8 with
+**23.9**, and the GREEN policy gives **28.2** [27.1, 29.3] with ground-truth spans and 26.6 with
 the real detector (its misses leave a little more real text in). GREEN keeps the number shape of
 81.0% of number-type PII. The cost of GREEN over raw is small next to the cost of suppression,
 which is the case for surrogates (R5).
 
 **E2-DP: where differential privacy would sit.** The same bigram from user-level DP counts (each
 of 221 training clients contributes at most 50 words and 50 bigrams; Laplace noise; partition
-selection for bigrams; δ = 10⁻⁵) reaches perplexity about **3,500–3,950 at ε = 1, 830–960 at
-ε = 4 and 520–550 at ε = 8**, on raw and GREEN text alike. Capping contributions without noise
-costs little (21.0 on raw, 29.3 on GREEN), so the noise is what destroys the model: at a couple
+selection for bigrams; δ = 10⁻⁵) reaches perplexity about **2,700–3,800 at ε = 1, 730–810 at
+ε = 4 and 500–520 at ε = 8**, on raw and GREEN text alike. Capping contributions without noise
+costs little (21.0 on raw, 29.1 on GREEN), so the noise is what destroys the model: at a couple
 of hundred clients, a bigram must be used by dozens of clients to survive the release threshold.
 This is the expected result, and the reason the plan does not propose DP training of Whisper:
 published user-level DP for ASR needs millions of users. It does not show DP is useless for a
@@ -958,11 +1007,11 @@ independent test of it that the first run could not be:
 | Detector (fresh calls) | Harm-wtd recall | Strict recall | Precision | Token F1 |
 |---|---|---|---|---|
 | Presidio alone | 46.5% | 6.6% | 84.8% | 41.9% |
-| Full minus spoken layer | 81.1% | 12.9% | 88.5% | 66.0% |
-| Full detector | **85.3%** | 14.6% | 89.4% | 71.4% |
+| Full minus spoken layer | 82.3% | 13.7% | 86.5% | 67.0% |
+| Full detector | **86.1%** | 15.4% | 87.5% | 72.1% |
 
-The spoken layer now adds 4.2 points on real ASR (it added nothing before), and the full detector rises
-from 82.5% to 85.3% at a similar word error rate. Real ASR remains well below simulated ASR text (98.0%):
+The spoken layer now adds 3.9 points on real ASR (it added nothing before), and the full detector rises
+from 82.5% to 86.1% at a similar word error rate. Real ASR remains well below simulated ASR text (98.0%):
 of the 49 misses, most are still Whisper's shapes the patterns do not join ("8 ,775 ,288", "AT467 -AT445",
 an address read as "be okay 690? It would learn's avenue 44 hashtag 25 -869") and names mis-heard into
 ordinary words. The tooling caveat from the first run is fixed: audio clips are now named by a hash of
@@ -970,7 +1019,7 @@ their text, so a regenerated corpus can never be scored against audio of the old
 
 **Audio redaction.** First run: bleeping every detected span with a 1 kHz tone at Whisper's word
 timestamps covered 22.1% of the audio, and re-transcribing the bleeped audio recovered **17.9%** of the
-ground-truth values (against 100% before bleeping). Rerun: 24.9% of the audio bleeped, **14.2%**
+ground-truth values (against 100% before bleeping). Rerun: 25.2% of the audio bleeped, **14.2%**
 recoverable. Either way that is more than the spans the detector missed outright (52 of 517 in the
 first run, 49 of 519 in the rerun). We did not break the remainder down; partly covered spans and word timestamps
 that do not line up with the audio are the likely causes. Bleeped audio is therefore not safe
@@ -978,10 +1027,10 @@ to release to GREEN on its own, which supports keeping audio at RED (R11).
 
 ### 8.5 E5 Cost
 
-Detection takes **31 ms per call** and rendering all three tiers 0.7 ms. ABE operations take
-about 240–420 ms each (setup, keygen, a 4-leaf encryption, a 2-leaf decryption) in pure Python
-(`py_ecc`). The hybrid layout keeps this off the hot path: ingest costs 69 ms per call including
-new policies, the first read under a policy 250 ms, and every later read 0.1 ms. A GREEN export
+Detection takes **34 ms per call** and rendering all three tiers 0.6 ms. ABE operations take
+about 300–450 ms each (setup, keygen, a 4-leaf encryption, a 2-leaf decryption) in pure Python
+(`py_ecc`). The hybrid layout keeps this off the hot path: ingest costs 84 ms per call including
+new policies, the first read under a policy 210 ms, and every later read 0.1 ms. A GREEN export
 costs 0.1 ms per call. Single runs on a laptop vary by a factor of about two, so these are orders
 of magnitude, not benchmarks. E5 runs the key authority in-process; over HTTP it adds one local
 round trip per user key (cached) and one per audit entry (the signed head).
@@ -1156,6 +1205,27 @@ so U8 is met. The real detector costs nothing over perfect labels here. Realisti
 suppression: "my account is 057-77959-6" teaches the model what follows "my account is", where
 "my account is [REDACTED]" teaches it a token that never occurs in speech.
 
+**Error analysis: where the old recogniser fails, and what the new one fixes.** Each reference word
+on the 30 test calls is aligned to each recogniser's output and counted wrong if it was substituted
+or dropped (runs of digit groups are joined first, so "4460 3536" and "44603536" match). Words are
+sorted into kinds by the generator's vocabularies.
+
+| Kind of word | Words | Old (Whisper alone) | New (adapted on GREEN) | Adapted on raw |
+|---|---|---|---|---|
+| Singlish particles | 106 | 99.1% | 98.1% | 98.1% |
+| Mandarin / Malay words | 37 | 62.2% | 54.0% | 54.0% |
+| Numbers and identifiers | 250 | 53.2% | 53.2% | 50.4% |
+| Names and places | 280 | 66.8% | 66.1% | 62.5% |
+| Everyday English | 4,403 | 9.0% | 7.5% | 7.5% |
+
+Three patterns. (1) Adaptation's gain is in everyday banking English and code-switched phrases:
+"a person alone" becomes "a personal loan", "Do I?" becomes "Dui". (2) Singlish particles are almost
+never right with any model: Whisper writes "leh" as "le" or "lay" and "lah" as "law", and the correct
+spelling is not in its 5-best list, so no language model can pick it; that needs acoustic fine-tuning
+of Whisper itself ([README §5](../README.md#5-improvements-still-open), still open). (3) GREEN costs nothing in any category except names
+and numbers, exactly the words it replaces with fakes, and those are the whole 0.3-point gap to raw.
+The examples the dashboard shows are taken only from utterances with no personal data in them.
+
 Limits: synthetic speech from TTS voices, a bigram LM, and n-best re-ranking rather than fine-tuning Whisper
 itself; the 460 training calls come from the same generator as the test calls, which flatters every LM row
 equally. The comparison is between releases, which is what the question needs.
@@ -1211,7 +1281,7 @@ equally. The comparison is between releases, which is what the question needs.
 * E2 and E6 use a bigram model, not Whisper. E6's exposure is estimated from 5,000 candidates per
   canary, so it cannot resolve exposures above 12.3 bits.
 * GLiNER as a review signal holds most calls (8.1) and is off by default.
-* The live anonymiser is unlogged by design, so it can be used to probe the detector (R18).
+* The live anonymiser is unlogged by design, so it can be used to probe the detector (R18); only the demo `admin` role has it.
 * "hao" is on the allow-list, so that syllable of a name is never redacted (3).
 * k is counted over calls, not people (4.1).
 * Agent ownership is matched on the agent's display name. A deployment would use a staff ID.

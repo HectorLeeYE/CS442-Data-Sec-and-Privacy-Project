@@ -1,4 +1,4 @@
-"""The six project requirements, with each privacy and utility target checked against the latest results.
+"""The six project questions, with each privacy and utility target checked against the latest results.
 
 Targets are the ones stated in docs/requirements.md. Measured targets are computed here from
 experiments/out/*.json; targets that a property of the code guarantees are marked "test" and name the test
@@ -93,7 +93,7 @@ def targets(r: dict) -> list[dict]:
     if "e8" in r:
         w = {x["release"]: x for x in r["e8"]["rows"]}
         raw, green = (w["raw transcripts (upper bound, not releasable)"]["wer"], w["GREEN policy, real detector"]["wer"])
-        row("U8", "utility", "Adapting the speech recogniser on GREEN works as well as on raw transcripts (the task itself)",
+        row("U8", "utility", "Adapting the speech recogniser on GREEN works as well as on raw transcripts (the training flow itself)",
             "WER within 1 point of raw", f"{_pct(green)} vs {_pct(raw)}", green <= raw + 0.01, "E8")
     return sorted(rows, key=lambda x: (x["group"], int(x["id"][1:])))      # stable: P4 rows stay in order
 
@@ -107,7 +107,7 @@ def datasets(r: dict) -> list[dict]:
                     "use": "Development set (tuned against)", "source": "Written by the team"})
     if "e4" in r:
         out.append({"name": "Synthetic speech", "size": f"{r['e4']['n_calls']} calls, {r['e4']['n_utterances']} utterances",
-                    "use": "Real ASR errors (E4) and the task itself (E8)", "source": "SG-English TTS → Whisper"})
+                    "use": "Real ASR errors (E4) and the training flow itself (E8)", "source": "SG-English TTS → Whisper"})
     if "e7" in r:
         e = r["e7"]
         out.append({"name": "Real Singapore speech", "size": f"{sum(p['clips'] for p in e['parts']):,} clips"
@@ -123,7 +123,7 @@ def datasets(r: dict) -> list[dict]:
 
 
 def task(r: dict) -> dict | None:
-    """The analysis task, old recogniser against new (E8), with the memorisation check on the new one (E6)."""
+    """The training flow, old recogniser against new (E8), with the memorisation check on the new one (E6)."""
     if "e8" not in r:
         return None
     e = r["e8"]

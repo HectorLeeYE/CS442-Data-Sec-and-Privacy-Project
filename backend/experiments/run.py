@@ -1244,7 +1244,7 @@ def report(r: dict) -> str:
                   "audio was bleeped.", ""]
     if "e8" in r:
         e = r["e8"]
-        L += ["## E8 — The analysis task itself: adapting the speech recogniser on each release", "",
+        L += ["## E8 — The training flow itself: adapting the speech recogniser on each release", "",
               f"Whisper (`{e['asr_model']}`) gives its {e['n_best']} best guesses for each utterance of the {e['n_calls']} E4 calls; "
               f"an {e['lm']} LM trained on {e['n_train_calls']} other calls, in each released form, re-ranks them. The LM weight "
               f"is chosen per release on the first {e['dev_calls']} calls; word error rate is reported on the other "

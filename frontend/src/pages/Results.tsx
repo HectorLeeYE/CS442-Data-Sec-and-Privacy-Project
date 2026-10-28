@@ -303,7 +303,7 @@ export default function Results() {
         )}
 
         {r.e8 && (
-          <Panel title="E8 · The task itself: adapting the speech recogniser on each release" question={`${r.e8.asr_model} gives its ${r.e8.n_best} best guesses for each utterance of the ${r.e8.n_calls} E4 calls; an ${r.e8.lm} LM trained on ${r.e8.n_train_calls} other calls, in each released form, re-ranks them. LM weight chosen on ${r.e8.dev_calls} calls; word error rate on the other ${r.e8.test_calls}. Lower is better; perfect re-ranking would reach ${pct(r.e8.oracle_wer)}. GREEN (real detector) against raw, paired by call: ${pts(r.e8.green_vs_raw)} of word accuracy.`}>
+          <Panel title="E8 · The training flow itself: adapting the speech recogniser on each release" question={`${r.e8.asr_model} gives its ${r.e8.n_best} best guesses for each utterance of the ${r.e8.n_calls} E4 calls; an ${r.e8.lm} LM trained on ${r.e8.n_train_calls} other calls, in each released form, re-ranks them. LM weight chosen on ${r.e8.dev_calls} calls; word error rate on the other ${r.e8.test_calls}. Lower is better; perfect re-ranking would reach ${pct(r.e8.oracle_wer)}. GREEN (real detector) against raw, paired by call: ${pts(r.e8.green_vs_raw)} of word accuracy.`}>
             <div className="max-w-full overflow-x-auto"><table className="table table-xs tabular-nums">
               <thead><tr><th>LM trained on</th><th>LM weight</th><th>Word error rate</th><th>95% CI</th><th>Fewer errors than Whisper alone</th></tr></thead>
               <tbody>{r.e8.rows.map((x) => (

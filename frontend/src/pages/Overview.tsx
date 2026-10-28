@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Database, FileLock2, FlaskConical, Hourglass, KeyRound, ListChecks, Mic, Radio, ScanSearch, ScrollText, Split, Target as TargetIcon, X } from 'lucide-react'
+import { ArrowRight, Check, Database, FileLock2, FlaskConical, Hourglass, KeyRound, ListChecks, Mic, Radio, ScanSearch, ScrollText, Split, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { api, ApiError, type Overview as OverviewData, type Target, type Task } from '../api'
 import TierBadge from '../components/TierBadge'
@@ -8,7 +8,7 @@ function Section({ n, title, Icon, children }: { n: number; title: string; Icon:
     <section className="card border border-base-300 bg-base-100" aria-labelledby={`req-${n}`}>
       <div className="card-body gap-3 p-4 md:p-5">
         <h2 id={`req-${n}`} className="flex items-center gap-2 text-base font-semibold">
-          <span className="grid size-6 flex-none place-items-center rounded-full bg-primary text-xs text-primary-content">{n}</span>
+          <span className="grid h-6 flex-none place-items-center rounded-full bg-primary px-2 text-xs text-primary-content">Q{n}</span>
           <Icon size={16} aria-hidden="true" />
           {title}
         </h2>
@@ -17,6 +17,14 @@ function Section({ n, title, Icon, children }: { n: number; title: string; Icon:
     </section>
   )
 }
+
+const TAXONOMY: [string, string, number][] = [
+  ['DIRECT_ID', 'Person, NRIC, passport, phone, email, address, date of birth', 5],
+  ['FINANCIAL_ID', 'Account, IBAN, card, card expiry, transaction reference, amount', 5],
+  ['AUTH_SECRET', 'OTP, PIN, CVV, security answer', 10],
+  ['QUASI_ID', 'Location, branch, SWIFT, employer, occupation, nationality, date', 1],
+  ['SENSITIVE_ATTR', 'Health, legal, religion, PEP status', 3],
+]
 
 const Step = ({ title, text }: { title: string; text: string }) => (
   <div className="min-w-0 flex-1 rounded-box border border-base-300 p-3">
@@ -40,7 +48,7 @@ function Targets({ rows, caption }: { rows: Target[]; caption: string }) {
       <table className="table table-sm">
         <caption className="pb-1 text-left text-xs font-medium text-base-content/70">{caption}</caption>
         <thead>
-          <tr><th>#</th><th>Requirement</th><th>Target</th><th>Result</th><th>Status</th></tr>
+          <tr><th>#</th><th>Target for</th><th>Threshold</th><th>Result</th><th>Status</th></tr>
         </thead>
         <tbody>
           {rows.map((t, i) => (
@@ -77,7 +85,7 @@ function TaskResult({ t }: { t: Task }) {
   const deploy = t.new_wer < t.old_wer && t.new_wer <= t.raw_wer + 0.01
   return (
     <div className="flex flex-col gap-3 border-t border-base-300 pt-3">
-      <h3 className="text-sm font-semibold">The analysis, run: old recogniser against new</h3>
+      <h3 className="text-sm font-semibold">Does the redacted GREEN release stay useful? Old recogniser against new</h3>
       <div className="flex flex-col gap-2 md:flex-row">
         <Recogniser label="Old: the in-house recogniser today" wer={t.old_wer}
           note={`Stand-in: ${t.asr_model} alone, on ${t.test_calls} test calls of Singapore-English speech`} />
@@ -88,7 +96,7 @@ function TaskResult({ t }: { t: Task }) {
       </div>
       <div className="overflow-x-auto">
         <table className="table table-sm">
-          <caption className="pb-1 text-left text-xs font-medium text-base-content/70">Inspect: where the old recogniser fails (share of words it gets wrong), and what adapting fixes</caption>
+          <caption className="pb-1 text-left text-xs font-medium text-base-content/70">Where the old recogniser fails (share of words it gets wrong), and what adapting on GREEN fixes</caption>
           <thead><tr><th>Kind of word</th><th className="text-right">Words</th><th className="text-right">Old</th><th className="text-right">New (GREEN)</th><th className="text-right">Raw-trained</th></tr></thead>
           <tbody>
             {t.breakdown.map((b) => (
@@ -174,19 +182,21 @@ export default function Overview() {
       <header className="px-1">
         <h2 className="text-xl font-semibold tracking-tight">Anonymising bank call transcripts so the bank can train its speech model on them</h2>
         <p className="mt-1 max-w-3xl text-sm text-base-content/70">
-          The project in six steps, in the order of the brief. Each step links to the part of this prototype that shows it.
+          The project in the six questions of the brief, in order. Each step links to the part of this prototype that shows it.
           All transcripts in the prototype are synthetic.
         </p>
       </header>
 
-      <Section n={1} title="A realistic data analysis task" Icon={Mic}>
+      <Section n={1} title="Domain, data flows and disclosure risks" Icon={Mic}>
         <p className="text-sm">
-          A Singapore bank&apos;s speech recogniser performs poorly on Singapore-accented English, Singlish and code-switching.
-          The analysis: <strong>where does it fail, and does adapting it on recorded client calls cut those errors enough to
-          deploy it?</strong> Data scientists inspect the transcripts and errors, clean and transform them into a training set,
-          adapt the model and measure word error rate (E8). They hold the lowest
-          clearance, while the transcripts are banking-secrecy data that only compliance may read in full, and only for
-          high-risk calls (fraud reports, large overseas transfers).
+          A Singapore retail bank&apos;s contact centre. Every client call is recorded and transcribed by speech recognition, and
+          one call can hold a name, NRIC, phone number, address, account and card numbers, amounts, an OTP, PIN or CVV read aloud,
+          and details of health, legal affairs or work. Three flows read the transcripts: <strong>compliance</strong> reads
+          high-risk calls (fraud reports, large overseas transfers) in full; <strong>agents</strong> follow up their own calls;
+          and <strong>data scientists</strong>, the lowest clearance, want the calls to adapt the bank&apos;s speech recogniser to
+          Singapore-accented English, Singlish and code-switching. The disclosure risks: insiders browsing calls, a model
+          memorising identifiers, re-identification through quasi-identifiers, spoken credentials, and spoken numbers a
+          detector misses (an 18-entry register in the design document).
         </p>
         <div className="flex flex-col gap-2 md:flex-row">
           <Step title="Client call" text="Recorded; names, NRIC, card and account numbers, OTPs spoken aloud" />
@@ -204,10 +214,37 @@ export default function Overview() {
         {data?.task && <TaskResult t={data.task} />}
       </Section>
 
-      <Section n={2} title="Privacy and utility requirements" Icon={TargetIcon}>
+      <Section n={2} title="Sensitive data taxonomy" Icon={ListChecks}>
+        <div className="overflow-x-auto">
+          <table className="table table-sm">
+            <thead><tr><th>Class</th><th>Types</th><th>Harm</th></tr></thead>
+            <tbody>
+              {TAXONOMY.map(([cls, types, harm]) => (
+                <tr key={cls}><td className="font-mono text-xs">{cls}</td><td>{types}</td><td>{harm}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-sm text-base-content/70">
+          Each class has a Singapore legal basis and an action per clearance tier, read from the YAML file the code enforces.
+          <a className="link ml-1" href="#/policy">See the policy matrix</a>.
+        </p>
+      </Section>
+
+      <Section n={3} title="Detection and redaction methods" Icon={Split}>
+        <div className="flex flex-col gap-2 md:flex-row">
+          <Step title="Detect" text="Six layers: NER, checksum-validated Singapore formats, cue phrases, spoken-number normaliser (English, Mandarin, Malay), dialogue slots, propagation" />
+          <Arrow />
+          <Step title="Triage and review" text="High-risk calls go to compliance; calls the detector is unsure about are held before GREEN release" />
+          <Arrow />
+          <Step title="Render per tier" text="Keep, realistic fake, mask, pseudonym, generalise or remove, by data class and clearance" />
+          <Arrow />
+          <Step title="Encrypt and log" text="One CP-ABE-encrypted copy per tier, master key in a separate authority; Merkle audit log" />
+        </div>
         <p className="text-sm">
-          Each target was set before it was measured, with a source (regulation, the brief, or a stated team choice).
-          Results below are read live from the latest experiment run.
+          Credentials are removed at ingest and exist in no copy, RED included. The GREEN export passes a k-anonymity gate.
+          Each target below was set before it was measured, with a source (regulation, the brief, or a stated team choice),
+          and is read live from the latest experiment run.
           {data && <> <strong>{met} of {measured.length}</strong> targets are met; the ones that are not are the honest gaps.</>}
         </p>
         {error && <div role="alert" className="alert alert-error alert-soft text-sm">{error}</div>}
@@ -218,22 +255,6 @@ export default function Overview() {
             <Targets caption="Utility: what each reader must still be able to do" rows={data.targets.filter((t) => t.group === 'utility')} />
           </>
         )}
-      </Section>
-
-      <Section n={3} title="A privacy-preserving solution" Icon={Split}>
-        <div className="flex flex-col gap-2 md:flex-row">
-          <Step title="Detect" text="Six layers: NER, checksum-validated Singapore formats, cue phrases, spoken-number normaliser (English, Mandarin, Malay), dialogue slots, propagation" />
-          <Arrow />
-          <Step title="Triage and review" text="High-risk calls go to compliance; calls the detector is unsure about are held before GREEN release" />
-          <Arrow />
-          <Step title="Render per tier" text="Keep, realistic fake, mask, pseudonym, generalise or remove, by data class and clearance" />
-          <Arrow />
-          <Step title="Encrypt and log" text="One CP-ABE-encrypted copy per tier, master key in a separate authority; Merkle audit log" />
-        </div>
-        <p className="text-sm text-base-content/70">
-          Credentials are removed at ingest and exist in no copy, RED included. The GREEN export passes a k-anonymity gate.
-          <a className="link ml-1" href="#/policy">See the policy matrix</a>.
-        </p>
       </Section>
 
       <Section n={4} title="A prototype of the design" Icon={KeyRound}>
@@ -272,6 +293,7 @@ export default function Overview() {
           <li><a className="link" href="#/calls">Calls</a>: sign in as <code>compliance</code>, <code>priya</code> (agent) or <code>datasci</code> and open the same call. Each sees only the tiers their clearance reads and only the tools their job needs: compliance reviews and reads the log, the agent takes calls, data science exports the training set.</li>
           <li>Open a low-risk call as compliance: break-glass asks for a reason, and the access lands in the <a className="link" href="#/audit">disclosure log</a>.</li>
           <li><a className="link" href="#/attack">Simulate attack</a>: steal the database, a key or a backup, and see what opens.</li>
+          <li>Tamper with the <a className="link" href="#/audit">disclosure log</a> from a terminal (README step 10) and press <em>Re-verify log</em>: the edit is caught against the heads the key authority signed.</li>
           <li><a className="link" href="#/dashboard">Results dashboard</a>: what is caught, what each tier sees, what still leaks.</li>
         </ol>
         <a href="#/live" className="btn btn-sm btn-primary self-start"><Radio size={14} aria-hidden="true" /> Start the live demo</a>

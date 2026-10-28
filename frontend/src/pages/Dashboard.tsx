@@ -359,10 +359,10 @@ export default function Dashboard() {
 
       {(bank || task.length > 0) && (
         <>
-          <h2 className="flex items-center gap-2 text-base font-semibold"><Mic size={18} aria-hidden="true" />Real speech, and the task itself</h2>
+          <h2 className="flex items-center gap-2 text-base font-semibold"><Mic size={18} aria-hidden="true" />Real speech, and the training flow itself</h2>
           <div className="grid gap-4 xl:grid-cols-2">
             {task.length > 0 && (
-              <Panel title="Does GREEN still serve the task? Adapting the speech recogniser" note={`A language model trained on each release re-ranks Whisper's five best guesses; word error rate on ${r.e8!.test_calls} test calls. Lower is better; a perfect re-ranking would reach ${pct(r.e8!.oracle_wer)}. GREEN keeps most of what raw data gains; blacking out loses more.`}>
+              <Panel title="Does GREEN still serve the training flow? Adapting the speech recogniser" note={`A language model trained on each release re-ranks Whisper's five best guesses; word error rate on ${r.e8!.test_calls} test calls. Lower is better; a perfect re-ranking would reach ${pct(r.e8!.oracle_wer)}. GREEN keeps most of what raw data gains; blacking out loses more.`}>
                 <Bars label="Word error rate by training release" labels={task.map((x) => relabel(x.release))} fmt={pct}
                   series={[{ name: 'Word error rate', values: task.map((x) => x.wer) }]} />
               </Panel>

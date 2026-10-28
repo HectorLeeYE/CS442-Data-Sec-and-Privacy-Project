@@ -1,18 +1,21 @@
 # Quietline: sensitive data discovery and redaction for bank call transcripts
 
-CS442 project. **The data analysis task:** *where does the bank's in-house speech recogniser fail
-on Singapore speech, and does adapting it on recorded client calls cut those errors enough to deploy
-it?* Data scientists **inspect** call transcripts and the recogniser's errors to find the failure
-patterns (Singlish particles, code-switching, numbers read out digit by digit), **clean** them
-(normalise spoken forms, hold back unusable calls), **transform** them into a training set,
-**model** them (adapt the recogniser's language model) and measure word error rate. The
-**decision** it supports: deploy the adapted recogniser if it beats the current one, trained on the
-de-identified release if that stays within 1 point of raw transcripts (target U8). E8 runs this
-end to end. The data scientists hold the lowest security clearance, while the same transcripts are
-banking-secrecy data that only compliance may read in full, and only for high-risk calls. Quietline detects sensitive data in
-each transcript once, stores one encrypted copy per clearance tier under attribute-based
-encryption, releases a de-identified training set to data science, and logs every release in a
-Merkle-tree log whose heads a separate key authority signs.
+CS442 project. **The domain:** a Singapore retail bank's contact centre. Every client call is
+recorded and transcribed by speech recognition, and one call can hold the client's name, NRIC,
+phone number and address, account and card numbers, amounts, an OTP, PIN or CVV read aloud, and
+details of their job, health or legal affairs. **The data flows:** compliance reads high-risk calls
+(fraud reports, large overseas transfers) in full; agents follow up their own calls; and data
+scientists, who hold the lowest clearance, want the calls to adapt the bank's speech recogniser to
+Singapore-accented English, Singlish and code-switching. **The disclosure risks** that follow
+(insiders browsing calls, a model memorising identifiers, re-identification through quasi-identifiers,
+spoken credentials, spoken numbers the detector misses, database theft) are in an 18-entry register.
+
+Quietline **discovers** sensitive data in each transcript once (six detection layers, including a
+normaliser for numbers spoken in English, Mandarin and Malay), **classifies** it under a five-class
+taxonomy, **redacts** it differently for each clearance tier, stores one copy per tier under
+attribute-based encryption, releases a de-identified training set to data science, and logs every
+release in a Merkle-tree log whose heads a separate key authority signs. The redacted release stays
+useful for the job it exists for (E8):
 
 | Recogniser | Word error rate (30 calls of SG-English speech, E8) |
 |---|---|
@@ -21,28 +24,31 @@ Merkle-tree log whose heads a separate key authority signs.
 | Adapted on raw transcripts (upper bound, not releasable) | 18.9% |
 
 The new recogniser never sees a real identifier. It is trained by a GREEN-clearance service account
-whose key opens GREEN copies only. Identifiers are swapped for checksum-valid fakes, names for
+whose key opens GREEN copies only. Identifiers are swapped for fakes of the same shape, names for
 pseudonyms, and places and employers for a region or sector. Credentials are never stored. Calls the
 detector is unsure of are held for review. The export passes a k = 5 anonymity gate and is signed
-and logged. A canary test checks what the model memorises. Details: [design §1.1](docs/design.md#11-the-domain-and-the-analysis-task).
+and logged. A canary test checks what the model memorises. Details: [design §1.1](docs/design.md#11-the-domain-a-banks-contact-centre).
 
-> **Project requirements**
-> 1. Identify a realistic data analysis task
-> 2. Define the privacy and utility requirements for the task
-> 3. Present a privacy-preserving solution for the task
+> **Project questions: sensitive data discovery and redaction**
+> 1. Identify an industrial domain/application that handles sensitive data, and the relevant data
+>    flows and data disclosure risks
+> 2. Define a sensitive data taxonomy for the domain/application
+> 3. Design/apply sensitive data detection and redaction methods
 > 4. Build a prototype of your design
-> 5. Gather / generate experimental data
+> 5. Gather/generate experimental data
 > 6. Show a demo of your solution
 >
-> [`docs/requirements.md`](docs/requirements.md) maps each one to the evidence, with the measurable
-> privacy and utility targets and whether each was met.
+> [`docs/requirements.md`](docs/requirements.md) maps each one (Q1–Q6) to the evidence, with the
+> measurable privacy and utility targets and whether each was met. [§2](#2-for-guomin) below is the
+> short version.
 
 | Document | Contents |
 |---|---|
-| This README | Deploying the demo, the demo script, how each requirement is met, open improvements |
-| [`docs/requirements.md`](docs/requirements.md) | The six requirements, the privacy and utility targets, and the evidence for each |
+| This README | Deploying the demo, the demo script, how each question is answered, open improvements |
+| [`docs/requirements.md`](docs/requirements.md) | The six questions, the privacy and utility targets, and the evidence for each |
 | [`docs/design.md`](docs/design.md) | Domain, data flows, risk register, taxonomy, detection, redaction, the prototype, experiment design and findings |
 | [`docs/dpia.md`](docs/dpia.md) | Data protection impact assessment |
+| [`docs/q1-domain-flows-risks.png`](docs/q1-domain-flows-risks.png), [`docs/q2-q3-taxonomy-detection-redaction.png`](docs/q2-q3-taxonomy-detection-redaction.png), [`docs/implementation.png`](docs/implementation.png) | Diagrams for Q1, Q2–Q3 and Q4 (Excalidraw sources alongside) |
 | [`docs/improvement-plan.md`](docs/improvement-plan.md) | What rounds 3–5 changed and what is still open |
 | [`backend/experiments/out/RESULTS.md`](backend/experiments/out/RESULTS.md) | Full experiment tables (generated) |
 
@@ -145,7 +151,7 @@ RED included, and never stored.
 
 ### Five-minute demo script
 
-0. **Sign in as `admin`: the app opens on the Project overview**, which walks the six requirements in
+0. **Sign in as `admin`: the app opens on the Project overview**, which walks the six project questions in
    order, with every privacy and utility target checked live against the latest results (met / not met),
    and shows the old recogniser against the new one. Then **open Live anonymiser** and press **Play a
    call**. A fresh synthetic call arrives one utterance at a time, as speech recognition would produce it.
@@ -159,7 +165,7 @@ RED included, and never stored.
    across the columns. Each call carries a **risk** badge (triage at ingest) and, if detection was
    unsure, a **review** badge.
 2. **Read across one row of a high-risk call.** RED shows the account number, AMBER a masked form
-   such as `***-***894-8`, and GREEN a realistic, checksum-valid fake. The OTP is `[REDACTED]` in
+   such as `***-***894-8`, and GREEN a realistic fake of the same shape. The OTP is `[REDACTED]` in
    all three columns.
 3. **Hover any tag** (or tab to it). The card names the class, the detection layer that found it
    (for example, *spoken layer*) and the action applied. It never shows the original value.
@@ -250,15 +256,15 @@ the frontend build and the linter on every push.
 
 ## 2. For Guomin
 
-| Requirement | What was built | Where |
+| Question | What was built | Where |
 |---|---|---|
-| **1. A realistic data analysis task** | Where does a bank's in-house ASR model fail on Singapore speech (Singapore-accented English, Singlish, code-switching), and does adapting it on recorded client calls cut those errors enough to deploy? Data scientists with the lowest clearance inspect, clean, transform and model the transcripts; the deploy decision rests on word error rate (E8). Secondary flow: compliance review of high-risk calls, as in the brief's BPMN. Data-flow diagram, data lifecycle, 15-entry risk register, LINDDUN and STRIDE threat models. | [design §1](docs/design.md#1-domain-data-flows-and-disclosure-risks), [`docs/dpia.md`](docs/dpia.md) |
-| **2. Privacy and utility requirements** | Privacy: a five-class taxonomy (DIRECT_ID, FINANCIAL_ID, AUTH_SECRET, QUASI_ID, SENSITIVE_ATTR) with harm weights, legal basis and a class × tier action matrix, **a YAML file the code loads**, so the documented policy is the enforced policy. Utility: per tier, what each reader must still be able to do, with measurable targets. | [requirements.md](docs/requirements.md#privacy-and-utility-requirements), [design §2](docs/design.md#2-sensitive-data-taxonomy), [`taxonomy.yaml`](backend/taxonomy.yaml) |
-| **3. A privacy-preserving solution** | Detection: Presidio + spaCy NER; Singapore formats with checksum validation; filler-tolerant cues and lexicons; a **spoken-form normaliser** (English, Mandarin and Malay digits, homophones, number words, ASR digit groups); dialogue-slot tracking; propagation. Redaction per tier: keep, **shape-preserving surrogate**, mask-last-4, pseudonym, generalise, suppress. k-anonymity gate on export; triage; review queue. **CP-ABE** so the stored copies enforce the policy without the server. | [design §3–5](docs/design.md#3-detection), [`privacy/`](backend/privacy) |
+| **1. Domain, data flows and disclosure risks** | A Singapore retail bank's contact centre: recorded, ASR-transcribed client calls full of identifiers, financial data, spoken credentials and sensitive attributes. Three flows: compliance review of high-risk calls (the brief's BPMN gateway), agent follow-up of their own calls, and a new one, data scientists with the lowest clearance adapting the bank's speech recogniser on the calls. Data-flow diagram, data lifecycle, clearance tiers, an 18-entry disclosure risk register, LINDDUN and STRIDE threat models, a DPIA. | [design §1](docs/design.md#1-domain-data-flows-and-disclosure-risks), [`docs/dpia.md`](docs/dpia.md) |
+| **2. Sensitive data taxonomy** | Five classes, 28 types: DIRECT_ID, FINANCIAL_ID, AUTH_SECRET, QUASI_ID, SENSITIVE_ATTR, each with a harm weight and its rationale, a Singapore legal basis and a class × tier action matrix. **A YAML file the code loads**, so the documented policy is the enforced policy. | [design §2](docs/design.md#2-sensitive-data-taxonomy), [`taxonomy.yaml`](backend/taxonomy.yaml), the *Redaction policy* page |
+| **3. Detection and redaction methods** | Detection: Presidio + spaCy NER; Singapore formats with checksum validation; filler-tolerant cues, lexicons and gazetteers; a **spoken-form normaliser** (English, Mandarin and Malay digits, homophones, number words, ASR digit groups); dialogue-slot tracking; propagation. Triage at ingest; a review queue for uncertain calls. Redaction per tier: keep, **shape-preserving surrogate**, mask-last-4, pseudonym, generalise, suppress; a k-anonymity gate on export. | [design §3–4](docs/design.md#3-detection), [`privacy/`](backend/privacy) |
 | **4. Prototype** | FastAPI + React/daisyUI. CP-ABE (BSW07 on BLS12-381) over one copy per tier, a **separate key authority** holding the master key; clearance rules backed by the crypto; break-glass; review hold and release; signed GREEN export; retention and crypto-shredding; key files and triage reasons encrypted at rest; an **RFC 6962 Merkle audit log** with authority-signed heads and receipts that verify offline; a **live anonymiser** view, a **simulate attack** page and a **project overview** that checks every target against the latest results; each role sees only the pages its job needs, with a demo `admin` that sees all. 41 tests. | [design §5](docs/design.md#5-the-prototype-access-control-encryption-integrity), [`server/`](backend/server), [`frontend/src/`](frontend/src) |
-| **5. Experimental data** | A generator for 500 calls about 300 synthetic Singapore clients, rendered **clean** and **ASR-noisy**, with exact ground-truth spans and risk labels. A **hand-written development set** of 24 calls, and the tooling for an **independent held-out set** written outside the team (typed placeholders, frozen by hash before scoring). Synthetic speech for E4. | [design §6](docs/design.md#6-experimental-data), [`data/`](backend/data) |
-| **6. Demo** | A project overview page that follows these six requirements and checks every target live; a live anonymiser; the 12-step script above, with the PCI moment, the offline receipt check, the Annex D panel and the canary result; the attack demo and the tamper demo. | §1 above, [design §5.9](docs/design.md#59-attack-demonstration) |
-| **Evaluation** | E1 leakage (with entity-level recall, exact intervals and paired tests), E2 utility (perplexity, a downstream triage classifier, a differentially private bigram), E3 re-identification against the PDPC Annex D threshold, E4 real ASR and audio bleeping, E5 cost, E6 canary exposure. | [design §7–8](docs/design.md#8-what-the-experiments-showed) |
+| **5. Experimental data** | A generator for 500 calls about 300 synthetic Singapore clients, rendered **clean** and **ASR-noisy**, with exact ground-truth spans and risk labels. Real Singapore speech from the IMDA National Speech Corpus, including 300 role-played bank calls labelled by hand and frozen before scoring. A **hand-written development set** of 24 calls, and the tooling for an **independent held-out set** written outside the team. Synthetic speech for E4. | [design §6](docs/design.md#6-experimental-data), [`data/`](backend/data) |
+| **6. Demo** | A project overview page that follows these six questions and checks every target live; a live anonymiser; the demo script above (steps 0–12), with the PCI moment, the offline receipt check, the Annex D panel and the canary result; the attack demo and the tamper demo. | §1 above, [design §5.9](docs/design.md#59-attack-demonstration) |
+| **Evaluation** | E1 leakage (with entity-level recall, exact intervals and paired tests), E2 utility (perplexity, a downstream triage classifier, a differentially private bigram), E3 re-identification against the PDPC Annex D threshold, E4 real ASR and audio bleeping, E5 cost, E6 canary exposure, E7 real Singapore speech, E8 the training flow itself. | [design §7–8](docs/design.md#8-what-the-experiments-showed) |
 
 ---
 
@@ -269,7 +275,7 @@ Full tables are in [`RESULTS.md`](backend/experiments/out/RESULTS.md); the discu
 
 | E1 harm-weighted recall | Clean (500 calls) | ASR-style (500 calls) | Hand-written dev set (24 calls, tuned against) |
 |---|---|---|---|
-| Presidio alone | 56.6% | 43.4% | 33.3% |
+| Presidio alone | 56.0% | 42.6% | 33.3% |
 | Our full detector | **99.4%** | **98.0%** | 94.2% (round 1 72.7%, round 2 85.1%) |
 | Our detector + GLiNER-PII | 99.9% | 99.0% | 97.7% (precision 52%) |
 
@@ -281,7 +287,7 @@ amounts with no currency word, Singapore employer and place gazetteers, broader 
 are now a development set: credentials 6 of 6 and triage 9 of 9 there show the rules work, not
 that they generalise. The real bank calls above are the held-out number for now; the independent written set
 is still to come (§5). GLiNER as a review
-signal raises recall of unreviewed GREEN text to 99.8% but holds 83% of calls, so it is off by
+signal raises recall of unreviewed GREEN text to 100% but holds 88% of calls, so it is off by
 default.
 
 | E2: bigram LM trained on… tested on real calls | Perplexity |
@@ -327,7 +333,7 @@ The second batch, labelled after the fixes and scored once: **73.0%** [50.4, 90.
 fixes since it holds no piecewise numbers; names 100%, amounts without a money word and travel places
 missed; 92.5% after the review queue (design §8.7).
 
-**E8, the task itself:** a language model trained on each release re-ranks Whisper's five best guesses
+**E8, the training flow itself:** a language model trained on each release re-ranks Whisper's five best guesses
 on the E4 calls. Word error rate: Whisper alone 20.7%, adapted on raw transcripts 18.9%, on **GREEN 19.2%**,
 on suppressed text 19.7%. The GREEN release keeps 82% of the gain raw data gives (suppression 54%); the
 target, set before the run, was within 1 point of raw (design §8.8). **Error analysis, old recogniser
@@ -346,7 +352,7 @@ about 210 ms (pure-Python pairings).
 
 ```
 frontend/  React 19 + Vite + Tailwind 4 + daisyUI 5 (Blueprint MCP); charts are plain HTML/SVG
-  src/pages/Overview.tsx    landing page: the six requirements, every target checked live, datasets, demo steps
+  src/pages/Overview.tsx    landing page: the six questions, every target checked live, datasets, demo steps
   src/pages/Live.tsx        live anonymiser: type or play a call, all tiers re-render per utterance (stores nothing)
   src/pages/Calls.tsx       three-tier aligned view, break-glass, release, erase, ingest, export
   src/pages/Audit.tsx       disclosure log, Merkle log verification against signed heads (RED only)
@@ -366,7 +372,7 @@ backend/   Python 3.12
   privacy/release.py        k-anonymity gate for GREEN exports
   privacy/vocab.py          SG vocabularies (generator + disjoint surrogate pool)
   server/main.py            FastAPI: auth, clearance rules, ingest, break-glass, review, erase, export, audit, live anonymiser
-  server/overview.py        the requirement targets checked against experiments/out/*.json (GET /api/overview)
+  server/overview.py        the privacy and utility targets checked against experiments/out/*.json (GET /api/overview)
   server/store.py           SQLite, per-tier copies under CP-ABE, key-authority client, Merkle audit log
   server/keyauthority.py    the key authority: ABE master key, user keys, signed tree heads (own process)
   server/merkle.py          RFC 6962 tree, inclusion/consistency proofs, offline receipt check
@@ -405,7 +411,7 @@ and have the authority sign the new head → respond with a receipt carrying an 
 3. **Remaining stretch items:** a phone-line (8 kHz µ-law) pass for E4; an LLM re-identification
    attacker; fine-tuning Whisper's weights on raw vs GREEN (E8 does the language-model form);
    per-recipient fingerprinting at export. Done since round 3: the E4 rerun on fresh calls, IMDA NSC
-   real speech (E7), the task itself (E8).
+   real speech (E7), the training flow itself (E8).
 4. **A per-client key layer**, so that one subject request is one key deletion (DPIA §2).
 5. **Publishing tree heads** somewhere public (a git repository or a timestamping service), and
    a KMS/HSM for the key authority.
@@ -422,4 +428,5 @@ and have the authority sign the new head → respond with a receipt carrying an 
 * k is counted over calls, not people.
 * Agent ownership is matched on the agent's display name; a deployment would use a staff ID.
 * Session tokens live in `sessionStorage` with no refresh or revocation list.
+* A spoken NRIC's GREEN fake keeps its shape but usually not a valid check letter (written NRICs and IBANs are fine).
 * Changing `taxonomy.yaml` affects only calls ingested afterwards: the raw transcript is not kept.

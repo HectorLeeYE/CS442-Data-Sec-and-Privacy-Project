@@ -390,7 +390,7 @@ def simulate_attack(body: Attack, user: dict = Depends(allow("attack", "RED")), 
 
 @app.get("/api/overview")
 def project_overview(user: dict = Depends(allow("overview"))):
-    """The six project requirements: each privacy and utility target against the latest results."""
+    """The six project questions: each privacy and utility target against the latest results."""
     return overview.overview()
 
 

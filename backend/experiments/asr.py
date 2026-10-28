@@ -2,7 +2,7 @@
 
     python -m experiments.asr [n_calls]      # needs network for TTS the first time; hours on a laptop CPU,
                                              # resumable: Whisper output is cached in audio/whisper.json
-    python -m experiments.asr task           # E8, the analysis task on each release (after E4: reuses its audio)
+    python -m experiments.asr task           # E8, the training flow on each release (after E4: reuses its audio)
 
 1. Speak:      each utterance of n generated calls (clean script) is synthesised by Microsoft's
                Singapore-English neural voices (edge-tts: en-SG-WayneNeural agent, en-SG-LunaNeural client).
@@ -243,7 +243,7 @@ def main(n: int = 40) -> dict:
     return res
 
 
-# ------------------------------------------------------------------ E8: the analysis task itself
+# ------------------------------------------------------------------ E8: the training flow itself
 
 NBEST = AUDIO / "nbest.json"
 N_BEST, DEV_CALLS = 5, 10
@@ -323,7 +323,7 @@ def _nbest(model, proc, feats, k: int = N_BEST, max_len: int = 120) -> list[list
 
 
 def task(n: int = 40) -> dict:
-    """E8: does the GREEN release still serve the task it exists for?
+    """E8: does the GREEN release still serve the training flow it exists for?
 
     The bank wants a speech recogniser that does better on its calls. The text-only way to adapt one is a
     domain language model trained on transcripts, used to re-rank the recogniser's n-best list. So: Whisper

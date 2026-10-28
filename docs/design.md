@@ -1,37 +1,62 @@
 # Design: sensitive data discovery and redaction for bank call transcripts
 
 This document explains how every part of Quietline works and which part of the project scope it
-fulfils. For deployment, the demo script and the one-page requirement checklist, see the
+fulfils. For deployment, the demo script and the one-page Q1–Q6 map, see the
 [README](../README.md). Measured results are in
 [`backend/experiments/out/RESULTS.md`](../backend/experiments/out/RESULTS.md); the regulatory
 and privacy-impact view is in [`docs/dpia.md`](dpia.md).
 
-The project has six requirements. Each section below opens with a **Scope** line naming the one it
-serves; [requirements.md](requirements.md) is the one-page map with the measurable targets.
+The project answers six questions, labelled Q1–Q6 here so they are not confused with the risks
+R1–R18 in 1.5. Each section below opens with a **Scope** line naming the question it answers;
+[requirements.md](requirements.md) is the one-page map with the measurable targets.
 
-| Requirement | Sections |
+| Question | Sections |
 |---|---|
-| R1 A realistic data analysis task | [1.1](#11-the-domain-and-the-analysis-task) |
-| R2 Privacy and utility requirements for the task | [1.2](#12-clearance-tiers-and-where-we-depart-from-the-brief), [1.5](#15-disclosure-risk-register), [2](#2-sensitive-data-taxonomy); targets in [requirements.md](requirements.md#privacy-and-utility-requirements) |
-| R3 A privacy-preserving solution | [3](#3-detection), [4](#4-redaction-and-release), [5.2](#52-attribute-based-encryption-at-rest-cp-abe) |
-| R4 Prototype | [5](#5-the-prototype-access-control-encryption-integrity) |
-| R5 Experimental data | [6](#6-experimental-data), including real speech in [6.4](#64-real-singapore-speech-imda-national-speech-corpus) |
-| R6 Demo | The Project overview and Live anonymiser pages ([5.10](#510-dashboard)), [README §1](../README.md#five-minute-demo-script) and the attack demo in [5.9](#59-attack-demonstration) |
-| Evaluation of R3/R4 | [7](#7-experiment-design), [8](#8-what-the-experiments-showed) |
+| Q1 Identify an industrial domain/application that handles sensitive data, and the relevant data flows and data disclosure risks | [1.1](#11-the-domain-a-banks-contact-centre) domain, [1.2](#12-clearance-tiers-and-where-we-depart-from-the-brief) readers, [1.3](#13-data-flow) data flows, [1.4](#14-data-lifecycle) lifecycle, [1.5](#15-disclosure-risk-register) disclosure risks, [1.6](#16-privacy-threat-model-linddun-and-security-threat-model-stride) threat models |
+| Q2 Define a sensitive data taxonomy for the domain/application | [2](#2-sensitive-data-taxonomy): classes and types, harm weights, legal basis, class × clearance action matrix |
+| Q3 Design/apply sensitive data detection and redaction methods | [3](#3-detection) detection, [3.1](#31-triage-the-briefs-high-risk-gateway) triage, [3.2](#32-review-queue-catching-what-detection-is-unsure-about) review queue, [4](#4-redaction-and-release) redaction and the k-anonymity release gate |
+| Q4 Build a prototype of your design | [5](#5-the-prototype-access-control-encryption-integrity) |
+| Q5 Gather/generate experimental data | [6](#6-experimental-data), including real speech in [6.4](#64-real-singapore-speech-imda-national-speech-corpus) |
+| Q6 Show a demo of your solution | The Project overview and Live anonymiser pages ([5.10](#510-dashboard)), [README §1](../README.md#five-minute-demo-script) and the attack demo in [5.9](#59-attack-demonstration) |
+| Evaluation of Q3 and Q4 | [7](#7-experiment-design), [8](#8-what-the-experiments-showed); targets in [requirements.md](requirements.md#privacy-and-utility-targets) |
 
 ---
 
 ## 1. Domain, data flows and disclosure risks
 
-**Scope: R1 and R2.**
+**Scope: Q1.**
 
-### 1.1 The domain and the analysis task
+![Q1: the contact centre's data flows, disclosure points, lifecycle and risk register](q1-domain-flows-risks.png)
 
-**The analysis task answers one question: where does the bank's in-house speech recogniser fail on
-Singapore speech, and does adapting it on recorded client calls cut those errors enough to deploy
-it?** The people who do this are data scientists with the lowest clearance; the input is
-banking-secrecy data. The secondary flow is the existing one: compliance reads high-risk calls in
-full.
+### 1.1 The domain: a bank's contact centre
+
+**Industry and application.** Retail banking in Singapore, and specifically the bank's contact
+centre: clients phone in to report a lost card or a scam, send money overseas, apply for a loan or
+change their details. Every call is recorded and transcribed by speech recognition (ASR). Those
+transcripts are the sensitive data this project protects. One call can hold the client's name,
+NRIC, phone number and address; account and card numbers and amounts; a one-time password, PIN or
+card verification code read aloud to the agent; and details of the client's job, health or legal
+affairs. Account data and the client's circumstances are banking-secrecy data (Banking Act s47),
+and a leaked account number together with its credential is a breach the bank must notify (2.3).
+Call transcripts are harder than documents: identifiers are spoken ("nine one two three", "wu liu
+qi"), split over several turns, mixed with Singlish and Mandarin or Malay, and garbled by the ASR.
+
+**Who reads the transcripts, and why.** Three data flows, each with its own reader (1.2) and its
+own disclosure risk (1.5):
+
+| Flow | Reader | What they need | Main disclosure risk |
+|---|---|---|---|
+| Compliance review | Compliance (RED) | High-risk calls (an overseas transfer of S$5,000 or more, a fraud or scam report) in full, to check the right disclosures were given before approving. The brief's process diagram (BPMN) has this gateway: *"Is the transaction considered high risk?"* | Reading confidential low-risk calls with no business reason (R12) |
+| Agent follow-up | Call agents, QA (AMBER) | Their own calls, to follow up | Reading other agents' clients (R10) |
+| Model training (new) | Data scientists, the training pipeline and the model (GREEN) | Realistic Singapore speech text to improve the bank's in-house recogniser | The lowest clearance reading banking-secrecy data (R1); the model memorising and repeating identifiers (R2); linkage through quasi-identifiers (R3) |
+
+Credentials (R4) and missed spoken identifiers (R6, R17) cut across all three. The new training
+flow is what makes discovery and redaction necessary: the existing flows could be handled with
+access control alone, but data science needs the *content* of the calls without the identities.
+
+**The training flow in detail.** The data scientists' question is: where does the bank's in-house
+speech recogniser fail on Singapore speech, and does adapting it on recorded client calls cut those
+errors enough to deploy it? The redacted release has to stay good enough to answer it.
 
 | Step | What the data scientists do | Where in this project |
 |---|---|---|
@@ -40,17 +65,6 @@ full.
 | Transform | Turn the calls into a training set | GREEN rendering, k-anonymity gate, JSONL export (4, 5) |
 | Model | Adapt the recogniser's language model on that set; measure word error rate | E8 (8.8) |
 | Decide | Deploy the adapted recogniser if it beats the current one, trained on GREEN if GREEN stays within 1 point of raw (U8) | E8 (8.8) |
-
-When a client calls the bank, the agent records the call. If the transaction is high risk (an
-overseas transfer above a threshold, or a fraud report), the recording is transcribed and referred
-to the compliance team, which checks that the right disclosures were given before approving.
-Otherwise the bank–client conversation is confidential: account numbers, amounts and the client's
-circumstances are banking-secrecy data. The brief's process diagram (BPMN) has exactly this
-gateway: *"Is the transaction considered high risk?"*
-
-The bank also wants to improve its in-house transcription model, which performs poorly on
-Singapore-accented English, Singlish particles and code-switching. The best training material is
-these calls, and the people who would use it (data scientists) hold the lowest security rating.
 
 **The old recogniser and the new one.** The *old* recogniser is the bank's in-house model as it is
 today; in the prototype `whisper-base` stands in for it. The *new* one is the same recogniser with
@@ -75,7 +89,7 @@ stays within the 1-point target of raw (U8).
 | Measure | What it stops | Where |
 |---|---|---|
 | The training pipeline is the `model` account at GREEN; its CP-ABE key opens GREEN copies only | The model, and everyone who can query it, gaining RED or AMBER access (R2) | 1.2, 5.2 |
-| Identifiers become checksum-valid fakes of the same shape; names become pseudonyms from a pool disjoint from real names; places and employers are generalised to a region or sector | The model learning, and later repeating, a real identifier; fakes keep what follows "my account is" learnable | 4 |
+| Identifiers become fakes of the same shape (written NRICs and IBANs stay checksum-valid); names become pseudonyms from a pool disjoint from real names; places and employers are generalised to a region or sector | The model learning, and later repeating, a real identifier; fakes keep what follows "my account is" learnable | 4 |
 | Credentials (OTP, PIN, CVV, security answers) are removed at ingest and stored in no copy | Any credential reaching any training set | 2.4 |
 | Calls with an unanswered credential question or a stray long number are held for review, encrypted to RED only | A value the detector missed reaching the model (E6: 12.0 → 0.3 bits for a missed NRIC) | 3.2, 5.5 |
 | k-anonymity gate (k = 5) on the export | Linking a call to a client through a rare combination of region, sector and other quasi-identifiers (E3) | 4.1 |
@@ -195,7 +209,11 @@ LINDDUN is the privacy counterpart of STRIDE. Each category, applied to the flow
 
 ## 2. Sensitive data taxonomy
 
-**Scope: R2.** The taxonomy is the privacy requirement stated per data class.
+**Scope: Q2.** The taxonomy says what counts as sensitive in a bank call, how harmful each kind is,
+which law makes it sensitive, and what each clearance tier may see of it. The diagram covers Q2 and Q3
+together: the taxonomy, the detection layers and the per-tier redaction, with the redactor's real output.
+
+![Q2–Q3: taxonomy, detection layers and per-tier redaction](q2-q3-taxonomy-detection-redaction.png)
 
 The taxonomy is a file the code reads ([`backend/taxonomy.yaml`](../backend/taxonomy.yaml)). The
 detector tags spans with its types, the redactor looks up its actions, the server reads triage,
@@ -286,7 +304,7 @@ makes it notifiable to the PDPC (PDPA s26B).
 
 ## 3. Detection
 
-**Scope: R3** (detection methods). Implemented in
+**Scope: Q3** (detection methods). Implemented in
 [`backend/privacy/detect.py`](../backend/privacy/detect.py) and
 [`spoken.py`](../backend/privacy/spoken.py).
 
@@ -414,14 +432,14 @@ leak get caught.
 
 ## 4. Redaction and release
 
-**Scope: R3** (redaction methods). Implemented in
+**Scope: Q3** (redaction methods). Implemented in
 [`backend/privacy/redact.py`](../backend/privacy/redact.py) and
 [`release.py`](../backend/privacy/release.py).
 
 | Action | Example | Used for |
 |---|---|---|
 | `keep` | `S9876543A` | Tiers that need the value |
-| `surrogate` | NRIC → a different, checksum-valid NRIC; IBAN → a different, **mod-97-valid** IBAN; `nine one two` → `four seven three` | GREEN: realistic training text |
+| `surrogate` | written NRIC → a different, checksum-valid NRIC; IBAN → a different, **mod-97-valid** IBAN; `nine one two` → `four seven three` | GREEN: realistic training text |
 | `mask_last4` | `259-822894-8` → `***-***894-8` | AMBER: "the account ending 8948" |
 | `pseudonym` | `Tan Wei Ming` → `<PERSON_1>`, stable within the call | AMBER: who said what, without the name |
 | `generalize` | `$4,250` → `between 1,000 and 5,000 dollars`; `Tampines` → `the East`; `HSBCGB2L` → `a foreign bank` | GREEN: keeps the gist, breaks linkage |
@@ -431,7 +449,9 @@ leak get caught.
 nothing about how people say account numbers. Trained on "my account is zero seven two…" with
 fake digits, it learns the real pattern and nothing leaks. Surrogates keep the surface form:
 spoken digits stay spoken, written digits stay written, lowercase stays lowercase, a name keeps
-its number of tokens, and checksummed identifiers stay valid. They are seeded by
+its number of tokens, and written NRICs and IBANs stay checksum-valid. A spoken NRIC ("s nine eight
+seven … a") keeps its shape, but its check letter is not recomputed: the detected span starts after
+the prefix letter the checksum depends on, so the fake usually fails mod-11 (a known gap, §10). They are seeded by
 HMAC(server secret, call id, type, value): the same within a call (coreference survives),
 different across calls (which blocks linkage), and not invertible without the secret.
 
@@ -473,7 +493,7 @@ to the threshold**. If they weakened to medium, the same data would need k ≥ 2
 that sensitive financial data raises motivation, which would make k ≥ 10. Two cautions: the guide
 "applies only to treatment of structured data", so applying it to the quasi-identifiers extracted
 from free text is our bridge, and residual free-text risk is measured empirically (E1, E3, E6).
-And multiplying E3's *measured* insider linkage rate by P(attempt), as the requirements do for
+And multiplying E3's *measured* insider linkage rate by P(attempt), as the targets do for
 P6, is our reading: the guide uses the worst case 1/k.
 
 l-diversity for SENSITIVE_ATTR is not needed: GREEN suppresses that whole class. One ceiling to
@@ -484,8 +504,10 @@ times. Per-person k would need the client identity, which GREEN must not have.
 
 ## 5. The prototype: access control, encryption, integrity
 
-**Scope: R4.** FastAPI service ([`backend/server/`](../backend/server)) and React/daisyUI dashboard
+**Scope: Q4.** FastAPI service ([`backend/server/`](../backend/server)) and React/daisyUI dashboard
 ([`frontend/src/`](../frontend/src)).
+
+![Q4: the prototype's containers, volumes, modules and the ingest and read paths](implementation.png)
 
 ### 5.1 Ingest: detect once, store copies
 
@@ -732,9 +754,9 @@ never their text, and each run is a log entry of its own (`attack`).
 | **Disclosure log** | RED only: Merkle log status against the authority's signed heads; releases, break-glass openings and denials; a reason column; filters per event type |
 | **Simulate attack** | RED only: choose what an attacker holds (files, secrets, a user's key, access to the key authority) or a preset, run it on the stored calls, and see a verdict, opened counts per tier, the state of each key file and a per-call grid of what opened (5.9) |
 | **Redaction policy** | The matrix, harm rationales, legal basis and operating policy, all read from `taxonomy.yaml` |
-| **Project overview** | The landing page: the six project requirements in order, each privacy and utility target with its threshold, the latest result and a met / not-met badge (`GET /api/overview`, computed from `experiments/out/*.json` by `server/overview.py`; targets a property of the code guarantees name the test that checks it), the datasets, and the demo steps |
+| **Project overview** | The landing page: the six project questions in order (Q1–Q6), each privacy and utility target with its threshold, the latest result and a met / not-met badge (`GET /api/overview`, computed from `experiments/out/*.json` by `server/overview.py`; targets a property of the code guarantees name the test that checks it), the datasets, and the demo steps |
 | **Live anonymiser** | Type, paste or play a synthetic call one utterance at a time; detection and all three tier renderings update after each change, with the server time, risk and review status |
-| **Results dashboard** | Charts: what each layer adds, recall by class, the tier treatment of every detected span, real speech and the task itself (E7, E8), the GREEN release's utility and leakage |
+| **Results dashboard** | Charts: what each layer adds, recall by class, the tier treatment of every detected span, real speech and the training flow itself (E7, E8), the GREEN release's utility and leakage |
 | **Experiment tables** | E1–E8 tables; the Annex D calculator (choose controls and motivation, read off the required k and the measured insider risk) |
 
 **The live anonymiser** (`POST /api/anonymize`) runs detection, triage, the review check and the render
@@ -749,7 +771,9 @@ would disable it or restrict it to a training environment.
 
 ## 6. Experimental data
 
-**Scope: R5.**
+**Scope: Q5.** Real bank call transcripts cannot be shared outside a bank, so the data is a mix of
+generated calls (labelled for free), team-written and outside-written calls, synthetic speech, and
+real Singaporean speech from a public corpus.
 
 ### 6.1 Synthetic corpus
 
@@ -822,7 +846,7 @@ personal data and no credential, and only one is high risk.
 
 ## 7. Experiment design
 
-**Scope: evaluation of R3 and R4.** Run with `python -m experiments.run` (E1, E2, E3, E5, E6) and
+**Scope: evaluation of Q3 and Q4.** Run with `python -m experiments.run` (E1, E2, E3, E5, E6) and
 `python -m experiments.asr` (E4).
 
 | | Question | Method | Risks |
@@ -833,7 +857,7 @@ personal data and no credential, and only one is high risk.
 | **E4 Real ASR** | Does detection survive real ASR errors, and can audio be redacted? | SG-English TTS → `openai/whisper-base` (forced English) with word timestamps; ground truth aligned onto Whisper's words with difflib; E1 metrics; WER. **Audio:** detected words bleeped with a 1 kHz tone at their timestamps, re-transcribed, and ground-truth values still recoverable counted | R6, R11 |
 | **E6 Canaries** | Does a model trained on the release memorise identifiers? | Carlini et al.'s "Secret Sharer" audit: plant fake NRICs and phone numbers in the training calls, 1, 5 and 20 times, in phrasings the detector catches and in two it misses (an M-series FIN, a number read in pairs). Train the bigram on raw, on GREEN, and on GREEN without the calls the review queue holds; measure each canary's exposure (log₂ of candidates minus log₂ of its rank among 5,000 random same-format secrets) | R2 |
 | **E7 Real speech** | What does the pipeline do to real Singaporean conversation, and what does it miss on real bank calls? | IMDA NSC transcripts: behaviour on 4,000 clips, blind precision on 1,000 frozen held-out clips; recall on 300 role-played bank calls labelled by hand and frozen by hash before scoring | R6, R13, R17 |
-| **E8 The task** | Does the GREEN release still serve the task it exists for? | Whisper's 5 best guesses per utterance of the E4 calls, re-ranked by a bigram LM trained on 460 other calls in each released form; LM weight chosen on 10 calls, WER on the other 30; target U8 set before the run | U1, U8 |
+| **E8 The training flow** | Does the GREEN release still serve the training flow it exists for? | Whisper's 5 best guesses per utterance of the E4 calls, re-ranked by a bigram LM trained on 460 other calls in each released form; LM weight chosen on 10 calls, WER on the other 30; target U8 set before the run | U1, U8 |
 | **E5 Cost** | Is it fast enough? | Latency of detection, rendering, ABE setup, keygen, encrypt and decrypt, ingest, first and cached reads, and the export | — |
 
 ---
@@ -855,7 +879,7 @@ See [`RESULTS.md`](../backend/experiments/out/RESULTS.md) for every table. Headl
 hand-written calls, so they are a development set: the 94.2% shows the rules do what they were written to
 do, not that they generalise. On 150 real role-played bank calls the team did not write, labelled and frozen
 before scoring, harm-weighted recall is **73.0% [50.4, 90.2]**, and 92.5% after the review queue (8.7). On
-the task itself, a recogniser adapted on the GREEN release keeps 82% of the gain raw transcripts give (8.8).
+the training flow itself, a recogniser adapted on the GREEN release keeps 82% of the gain raw transcripts give (8.8).
 The independent written set (6.2) is still to come.
 
 ### 8.1 E1 Leakage
@@ -889,9 +913,9 @@ be whole entities in calls with few mentions. That gap is invisible in mention-l
 **GLiNER as a review signal.** The plan was to keep GLiNER's recall without its 52% precision
 reaching released text: hold a call when GLiNER finds a quasi-identifier or sensitive attribute
 that no rule covers. It works on recall and fails on cost. On the development set, recall of the
-text that reaches GREEN without a human reading it rises from 95.2% to **99.8%** (paired bootstrap
+text that reaches GREEN without a human reading it rises from 95.5% to **100%** (paired bootstrap
 +4.5 points [+2.2, +7.5]). But GLiNER flags something uncovered in almost every call, so the
-queue grows from 16.7% to **83.3%** of calls (from 10.5% to 82.5% on synthetic ASR text, from 0% to 100% on clean). A queue
+queue grows from 20.8% to **87.5%** of calls (from 9.5% to 82.5% on synthetic ASR text, from 0% to 100% on clean). A queue
 that holds most calls is not a queue. It stays off by default (`GLINER_REVIEW=1` turns it on); it
 would need a score threshold, or restriction to SENSITIVE_ATTR, tuned on the independent set,
 before it is usable.
@@ -903,10 +927,10 @@ drops 1.0–1.3 points and precision rises 3.4–4.2 points. Across five seeds t
 Remaining synthetic misses are the deliberate lexicon gaps and, on ASR text, homophone runs and
 spelled-out IBAN, SWIFT and PIN values.
 
-**Review queue.** On ASR text it holds 11.0% of calls and catches 45.9% of the calls with a
-harmful miss, removing 52.4% of the harm-weighted leakage. On clean text it holds nothing:
+**Review queue.** On ASR text it holds 10.0% of calls and catches 43.9% of the calls with a
+harmful miss, removing 49.5% of the harm-weighted leakage. On clean text it holds nothing:
 clean-text misses are words, not unanswered slots or stray numbers. On the development set it
-holds 16.7%. (A first round-3 run held 12% of clean calls because the generator sampled an
+holds 20.8%. (A first round-3 run held 12% of clean calls because the generator sampled an
 optional question and its answer independently, so the agent asked for a CVV that was never
 given. The generator now keeps the pair together.)
 
@@ -1178,9 +1202,9 @@ an unexplained long number.
 
 ---
 
-### 8.8 E8 The analysis task itself: adapting the speech recogniser on each release
+### 8.8 E8 The training flow itself: adapting the speech recogniser on each release
 
-Every utility number above is a proxy (perplexity, a triage classifier). E8 runs the task the release
+Every utility number above is a proxy (perplexity, a triage classifier). E8 runs the training flow the release
 exists for, in the form a laptop can run. The bank wants its recogniser to do better on its calls; the
 text-only way to adapt a recogniser is a domain language model trained on transcripts, used to re-rank the
 recogniser's best guesses. Whisper (`whisper-base`) gives its 5 best guesses for each utterance of the 40
@@ -1238,7 +1262,7 @@ equally. The comparison is between releases, which is what the question needs.
 * **The i2b2/n2c2 de-identification shared tasks** (2006, 2014) established token- and
   span-level recall as the metric and **surrogate generation** (realistic replacements rather than
   blackouts) as the practice for clinical text. Our surrogates follow that practice and extend it
-  to checksum-valid, spoken-form-preserving identifiers.
+  to spoken-form-preserving identifiers that stay checksum-valid when written.
 * **GLiNER** (Zaratiana et al., 2023) is a generalist span-extraction model; GLiNER-PII is the
   PII fine-tune used as our learned baseline.
 * **k-anonymity** (Sweeney 2002) and **l-diversity** (Machanavajjhala et al. 2007), and the
@@ -1282,6 +1306,7 @@ equally. The comparison is between releases, which is what the question needs.
   canary, so it cannot resolve exposures above 12.3 bits.
 * GLiNER as a review signal holds most calls (8.1) and is off by default.
 * The live anonymiser is unlogged by design, so it can be used to probe the detector (R18); only the demo `admin` role has it.
+* A spoken NRIC's surrogate keeps its shape but not a valid check letter (4).
 * "hao" is on the allow-list, so that syllable of a name is never redacted (3).
 * k is counted over calls, not people (4.1).
 * Agent ownership is matched on the agent's display name. A deployment would use a staff ID.

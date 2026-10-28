@@ -504,7 +504,7 @@ Every miss, full detector:
 
 GREEN audio: every detected span replaced by a 1 kHz tone using Whisper's word timestamps, then re-transcribed. PII values still recoverable from the bleeped audio: 14.2% of spans (vs 100.0% before bleeping); 25.2% of the audio was bleeped.
 
-## E8 — The analysis task itself: adapting the speech recogniser on each release
+## E8 — The training flow itself: adapting the speech recogniser on each release
 
 Whisper (`openai/whisper-base`) gives its 5 best guesses for each utterance of the 40 E4 calls; an interpolated word bigram LM trained on 460 other calls, in each released form, re-ranks them. The LM weight is chosen per release on the first 10 calls; word error rate is reported on the other 30, with a 95% bootstrap interval by call. Lower is better. Best possible re-ranking of these lists (oracle): 16.7%.
 

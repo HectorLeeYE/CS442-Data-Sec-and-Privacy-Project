@@ -26,7 +26,7 @@ for the evidence. The legal references are a course project's mapping, not legal
   possible").** E8 measures the purpose itself: a speech recogniser adapted on the GREEN release cuts
   its word error rate from 20.7% to 19.2%, against 18.9% when adapted on raw transcripts. The release
   keeps 82% of what identifiable data would give (blacking PII out keeps 54%), so identifiable data is
-  not necessary for the purpose ([design §8.8](design.md#88-e8-the-analysis-task-itself-adapting-the-speech-recogniser-on-each-release)). Compliance needs
+  not necessary for the purpose ([design §8.8](design.md#88-e8-the-training-flow-itself-adapting-the-speech-recogniser-on-each-release)). Compliance needs
   high-risk calls only; low-risk calls need a recorded reason (break-glass).
 * **Data minimisation and protection (s24).** Credentials (OTP, PIN, security answers) are
   suppressed at ingest and exist in no stored copy. The raw transcript is not stored.

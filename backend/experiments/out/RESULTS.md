@@ -544,13 +544,13 @@ Utterances the new recogniser fixes (only utterances with no personal data are s
 
 | Operation | Time |
 |---|---|
-| detect_ms_per_call | 33.9 ms |
-| render_3_tiers_ms_per_call | 0.6 ms |
-| abe_setup_ms | 393.3 ms |
-| abe_keygen_3_attrs_ms | 452.5 ms |
-| abe_encrypt_4_leaf_policy_ms | 358.6 ms |
-| abe_decrypt_2_leaf_path_ms | 298.6 ms |
+| detect_ms_per_call | 31.2 ms |
+| render_3_tiers_ms_per_call | 0.5 ms |
+| abe_setup_ms | 456.0 ms |
+| abe_keygen_3_attrs_ms | 442.9 ms |
+| abe_encrypt_4_leaf_policy_ms | 294.2 ms |
+| abe_decrypt_2_leaf_path_ms | 349.0 ms |
 | ingest_encrypt_ms_per_call_incl_new_policies | 84.1 ms |
-| first_open_ms (ABE unlock of the policy key) | 206.0 ms |
+| first_open_ms (ABE unlock of the policy key) | 255.4 ms |
 | cached_open_ms_per_call (AES only) | 0.1 ms |
 | export_ms_per_call | 0.1 ms |

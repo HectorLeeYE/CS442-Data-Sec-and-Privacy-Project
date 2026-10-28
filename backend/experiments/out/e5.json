@@ -1,13 +1,13 @@
 {
  "n_calls": 40,
- "detect_ms_per_call": 33.9,
- "render_3_tiers_ms_per_call": 0.6,
- "abe_setup_ms": 393.3,
- "abe_keygen_3_attrs_ms": 452.5,
- "abe_encrypt_4_leaf_policy_ms": 358.6,
- "abe_decrypt_2_leaf_path_ms": 298.6,
+ "detect_ms_per_call": 31.2,
+ "render_3_tiers_ms_per_call": 0.5,
+ "abe_setup_ms": 456.0,
+ "abe_keygen_3_attrs_ms": 442.9,
+ "abe_encrypt_4_leaf_policy_ms": 294.2,
+ "abe_decrypt_2_leaf_path_ms": 349.0,
  "ingest_encrypt_ms_per_call_incl_new_policies": 84.1,
- "first_open_ms (ABE unlock of the policy key)": 206.0,
+ "first_open_ms (ABE unlock of the policy key)": 255.4,
  "cached_open_ms_per_call (AES only)": 0.1,
  "export_ms_per_call": 0.1
 }

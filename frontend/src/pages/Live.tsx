@@ -1,6 +1,7 @@
 import { Play, RotateCcw, ScanSearch, Square, Timer } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, ApiError, CLASS_CODE, parsePasted, SCENARIO_LABEL, TIERS, type Anonymized, type Tier, type User, type Utterance } from '../api'
+import Dictate from '../components/Dictate'
 import TierBadge from '../components/TierBadge'
 import { Line } from '../components/Transcript'
 
@@ -58,8 +59,10 @@ export default function Live({ user }: { user: User }) {
   const [busy, setBusy] = useState(false)
   const [queue, setQueue] = useState<Line_[]>([])
   const [scenario, setScenario] = useState<string | null>(null)
+  const [recording, setRecording] = useState(false)
+  const [partial, setPartial] = useState('')   // the sentence still being spoken, redacted as it grows
   const seq = useRef(0)
-  const utterances = useMemo(() => parsePasted(input), [input])
+  const utterances = useMemo(() => parsePasted(partial ? `${input}\n${partial}` : input), [input, partial])
   const playing = queue.length > 0
 
   // The whole pipeline (detect, triage, review check, render every tier) reruns shortly after each change.
@@ -109,7 +112,7 @@ export default function Live({ user }: { user: User }) {
             <div className="min-w-0">
               <h2 className="text-base font-semibold">Watch a transcript being anonymised</h2>
               <p className="text-sm text-base-content/70">
-                Type, paste or play a call. Each change reruns detection and renders every clearance tier.
+                Type, paste, play or record a call (speak, and pick who is speaking). Each change reruns detection and renders every clearance tier.
                 Nothing on this page is stored or logged, and it shows all tiers because the text is yours.
               </p>
             </div>
@@ -120,15 +123,21 @@ export default function Live({ user }: { user: User }) {
                 </button>
               ) : (
                 <>
-                  <button className="btn btn-sm btn-primary" onClick={() => play('asr')}>
+                  <button className="btn btn-sm btn-primary" disabled={recording} onClick={() => play('asr')}>
                     <Play size={14} aria-hidden="true" /> Play a call (speech-recognition output)
                   </button>
-                  <button className="btn btn-sm" onClick={() => play('clean')}>
+                  <button className="btn btn-sm" disabled={recording} onClick={() => play('clean')}>
                     <Play size={14} aria-hidden="true" /> Play a call (written)
                   </button>
+                  <Dictate
+                    label="Record a call"
+                    onRecording={(on) => { setRecording(on); if (on) { setScenario(null); setInput('') } }}
+                    onLine={(l) => setInput((v) => (v ? `${v}\n` : '') + l)}
+                    onInterim={setPartial}
+                  />
                 </>
               )}
-              <button className="btn btn-sm btn-ghost" disabled={playing} onClick={() => { setScenario(null); setInput(EXAMPLE) }}>
+              <button className="btn btn-sm btn-ghost" disabled={playing || recording} onClick={() => { setScenario(null); setInput(EXAMPLE) }}>
                 <RotateCcw size={14} aria-hidden="true" /> Example
               </button>
             </div>
@@ -142,7 +151,7 @@ export default function Live({ user }: { user: User }) {
               id="live-input"
               className="textarea h-40 w-full font-mono text-sm"
               value={input}
-              readOnly={playing}
+              readOnly={playing || recording}
               onChange={(e) => setInput(e.target.value)}
             />
           </fieldset>

@@ -1,6 +1,7 @@
 import { ClipboardPaste, Download, Eraser, Fingerprint, PhoneIncoming, RefreshCw, ShieldCheck, Siren } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, ApiError, parsePasted, SCENARIO_LABEL, TIER_RANK, TIERS, type CallSummary, type CallView, type ExportResult, type Tier, type User } from '../api'
+import Dictate from '../components/Dictate'
 import TierBadge from '../components/TierBadge'
 import { BreakGlass, Line, Locked, SourceLabel } from '../components/Transcript'
 
@@ -348,12 +349,13 @@ export default function Calls({ user }: { user: User }) {
             create('/api/calls', { utterances })
           }}
         >
-          <h3 id="paste-title" className="text-lg font-semibold">Paste a transcript</h3>
+          <h3 id="paste-title" className="text-lg font-semibold">Paste or record a transcript</h3>
           <fieldset className="fieldset">
             <label className="label whitespace-normal" htmlFor="paste-text">One utterance per line, prefixed with A: (agent) or C: (client)</label>
             <textarea id="paste-text" required className="textarea textarea-sm h-48 w-full font-mono" value={pasted}
                       onChange={(e) => setPasted(e.target.value)}
                       placeholder={'A: Thank you for calling, may I have your NRIC?\nC: Sure, it is S1234567D and my OTP is 482913.'} />
+            <Dictate onLine={(l) => setPasted((v) => (v ? `${v}\n` : '') + l)} />
             <p className="label whitespace-normal">Detection and triage run once on ingest; each tier's copy is encrypted under its own access policy. You will be recorded as the handling agent.</p>
           </fieldset>
           <div className="modal-action">

@@ -157,7 +157,7 @@ function TaskResult({ t }: { t: Task }) {
 }
 
 const PAGES = [
-  { href: '#/live', label: 'Live anonymiser', Icon: Radio, text: 'Type or play a call; detection and all three tier renderings update per utterance.' },
+  { href: '#/live', label: 'Live anonymiser', Icon: Radio, text: 'Type, record or play a call; detection and all three tier renderings update per utterance.' },
   { href: '#/calls', label: 'Calls', Icon: FileLock2, text: 'Stored calls opened per clearance, break-glass, review hold, signed export, erasure.' },
   { href: '#/audit', label: 'Disclosure log', Icon: ScrollText, text: 'Every release in a Merkle log whose heads the key authority signs; receipts verify offline.' },
   { href: '#/policy', label: 'Redaction policy', Icon: ListChecks, text: 'The class × tier action matrix, loaded by the code from taxonomy.yaml.' },
@@ -289,7 +289,7 @@ export default function Overview() {
 
       <Section n={6} title="Demo" Icon={ScanSearch}>
         <ol className="list-inside list-decimal space-y-1 text-sm">
-          <li><a className="link" href="#/live">Live anonymiser</a>: press <em>Play a call</em> and watch each tier update as the call arrives.</li>
+          <li><a className="link" href="#/live">Live anonymiser</a>: press <em>Play a call</em>, or <em>Record</em> and speak, and watch each tier update as the call arrives.</li>
           <li><a className="link" href="#/calls">Calls</a>: sign in as <code>compliance</code>, <code>priya</code> (agent) or <code>datasci</code> and open the same call. Each sees only the tiers their clearance reads and only the tools their job needs: compliance reviews and reads the log, the agent takes calls, data science exports the training set.</li>
           <li>Open a low-risk call as compliance: break-glass asks for a reason, and the access lands in the <a className="link" href="#/audit">disclosure log</a>.</li>
           <li><a className="link" href="#/attack">Simulate attack</a>: steal the database, a key or a backup, and see what opens.</li>

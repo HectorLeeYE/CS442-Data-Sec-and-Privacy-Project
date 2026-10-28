@@ -308,6 +308,31 @@ def tier_actions(calls, dets) -> dict:
     return {t: dict(v) for t, v in out.items()}
 
 
+def redaction_grade(calls, dets) -> dict:
+    """Per tier, every labelled value the policy says that tier must not see: hidden in full, partly hidden or
+    released. A character is hidden only if a detected span covers it with an action that is not `keep` at that
+    tier, so a value found but typed as something the tier keeps (an AMOUNT at AMBER) counts as released.
+    "GREEN, held calls withheld" also counts every value in a call the review queue holds as not released."""
+    out = {}
+    for t in [*taxonomy.tiers(), "GREEN, held calls withheld"]:
+        tier, c = t.split(",")[0], Counter()
+        for call, d in zip(calls, dets):
+            text = text_of(call)
+            held = t != tier and bool(review.reasons(text, d))
+            for g in call["spans"]:
+                if taxonomy.action(g["type"], tier) == "keep":
+                    continue                                    # this tier is meant to see it
+                chars = {i for i in range(g["start"], g["end"]) if not text[i].isspace()}
+                hid = {i for s in d if overlaps(g, s) and taxonomy.action(s.type, tier) != "keep"
+                       for i in range(s.start, s.end)} & chars
+                grade = "hidden" if held or hid == chars else "partly hidden" if hid else "released"
+                cls, h = taxonomy.class_of(g["type"]), taxonomy.harm(g["type"])
+                c.update({"n": 1, grade: 1, f"{cls}|n": 1, f"{cls}|{grade}": 1, "harm_n": h})
+                c["harm_hidden"] += h * (grade == "hidden")
+        out[t] = dict(c)
+    return out
+
+
 def _gliner_review(calls, dets, learned, name) -> dict:
     """The same calls with three review signals and with GLiNER as the fourth."""
     rules, plus = review_queue(calls, dets), review_queue(calls, dets, learned)
@@ -330,7 +355,8 @@ def heldout_block(name: str, calls: list[dict]) -> dict:
            "entity_ci": bootstrap([(p["ent_found"], p["n_ent"]) for p in (per_call(c, d) for c, d in zip(calls, full))]),
            "exact_ci": {k: clopper_pearson(tot[f"found|{k}"], tot[f"gt|{k}"]) for k in CLASSES},
            "full vs presidio": paired(harm_parts(calls, pres), harm_parts(calls, full)),
-           "misses": misses(calls, full, limit=200), "review": rq, "triage": triage_accuracy(calls, full)}
+           "misses": misses(calls, full, limit=200), "review": rq, "triage": triage_accuracy(calls, full),
+           "redaction": redaction_grade(calls, full)}
     g = gliner_spans(name, calls)
     if g is not None:
         out["GLiNER-PII alone"] = score(calls, g)

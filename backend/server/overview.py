@@ -1,6 +1,6 @@
 """The six project questions, with each privacy and utility target checked against the latest results.
 
-Targets are the ones stated in docs/requirements.md. Measured targets are computed here from
+Targets are the ones stated in docs/table.md. Measured targets are computed here from
 experiments/out/*.json; targets that a property of the code guarantees are marked "test" and name the test
 that checks it in CI. A target with no result yet has met = None.
 """

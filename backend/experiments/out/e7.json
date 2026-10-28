@@ -552,6 +552,59 @@
     0.975
    ]
   },
+  "redaction": {
+   "GREEN": {
+    "n": 56,
+    "hidden": 37,
+    "QUASI_ID|n": 5,
+    "QUASI_ID|hidden": 5,
+    "harm_n": 260,
+    "harm_hidden": 165,
+    "FINANCIAL_ID|n": 25,
+    "FINANCIAL_ID|hidden": 13,
+    "DIRECT_ID|n": 26,
+    "DIRECT_ID|hidden": 19,
+    "released": 14,
+    "DIRECT_ID|released": 6,
+    "partly hidden": 5,
+    "FINANCIAL_ID|partly hidden": 4,
+    "FINANCIAL_ID|released": 8,
+    "DIRECT_ID|partly hidden": 1
+   },
+   "AMBER": {
+    "n": 36,
+    "hidden": 26,
+    "DIRECT_ID|n": 26,
+    "DIRECT_ID|hidden": 19,
+    "harm_n": 180,
+    "harm_hidden": 130,
+    "released": 9,
+    "DIRECT_ID|released": 7,
+    "FINANCIAL_ID|n": 10,
+    "FINANCIAL_ID|hidden": 7,
+    "partly hidden": 1,
+    "FINANCIAL_ID|partly hidden": 1,
+    "FINANCIAL_ID|released": 2
+   },
+   "RED": {},
+   "GREEN, held calls withheld": {
+    "n": 56,
+    "hidden": 43,
+    "QUASI_ID|n": 5,
+    "QUASI_ID|hidden": 5,
+    "harm_n": 260,
+    "harm_hidden": 195,
+    "FINANCIAL_ID|n": 25,
+    "FINANCIAL_ID|hidden": 16,
+    "DIRECT_ID|n": 26,
+    "DIRECT_ID|hidden": 22,
+    "released": 9,
+    "DIRECT_ID|released": 4,
+    "partly hidden": 4,
+    "FINANCIAL_ID|partly hidden": 4,
+    "FINANCIAL_ID|released": 5
+   }
+  },
   "GLiNER-PII alone": {
    "recall": {
     "DIRECT_ID": 0.5385,
@@ -854,6 +907,51 @@
     null,
     null
    ]
+  },
+  "redaction": {
+   "GREEN": {
+    "n": 41,
+    "hidden": 28,
+    "DIRECT_ID|n": 19,
+    "DIRECT_ID|hidden": 19,
+    "harm_n": 159,
+    "harm_hidden": 116,
+    "QUASI_ID|n": 11,
+    "QUASI_ID|hidden": 6,
+    "released": 13,
+    "QUASI_ID|released": 5,
+    "SENSITIVE_ATTR|n": 1,
+    "SENSITIVE_ATTR|released": 1,
+    "FINANCIAL_ID|n": 10,
+    "FINANCIAL_ID|hidden": 3,
+    "FINANCIAL_ID|released": 7
+   },
+   "AMBER": {
+    "n": 19,
+    "hidden": 19,
+    "DIRECT_ID|n": 19,
+    "DIRECT_ID|hidden": 19,
+    "harm_n": 95,
+    "harm_hidden": 95
+   },
+   "RED": {},
+   "GREEN, held calls withheld": {
+    "n": 41,
+    "hidden": 35,
+    "DIRECT_ID|n": 19,
+    "DIRECT_ID|hidden": 19,
+    "harm_n": 159,
+    "harm_hidden": 147,
+    "QUASI_ID|n": 11,
+    "QUASI_ID|hidden": 7,
+    "released": 6,
+    "QUASI_ID|released": 4,
+    "SENSITIVE_ATTR|n": 1,
+    "SENSITIVE_ATTR|released": 1,
+    "FINANCIAL_ID|n": 10,
+    "FINANCIAL_ID|hidden": 9,
+    "FINANCIAL_ID|released": 1
+   }
   },
   "GLiNER-PII alone": {
    "recall": {

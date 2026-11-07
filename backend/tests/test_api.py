@@ -51,23 +51,31 @@ def ingest(c, user, utterances):
     return r.json()["id"]
 
 
+def colleague():
+    """The demo accounts are role-based, so there is one agent; a bank has many. Register another one directly."""
+    db = store.connect()
+    db.execute("INSERT OR IGNORE INTO users VALUES (?,?,?,?,?)",
+               ("colleague", "Another call agent", "AMBER", "Daniel Koh", store.hash_password("demo")))
+    return "colleague"
+
+
 def call_row(call_id):
     return store.get_call(store.connect(), call_id)
 
 
 def test_triage_and_clearance_rules(c):
-    red, priya, daniel, green = (login(c, u) for u in ("compliance", "priya", "daniel", "datasci"))
-    fraud, dispute = ingest(c, "priya", FRAUD), ingest(c, "priya", DISPUTE)
+    red, agent, other_agent, green = (login(c, u) for u in ("compliance", "agent", colleague(), "datasci"))
+    fraud, dispute = ingest(c, "agent", FRAUD), ingest(c, "agent", DISPUTE)
     assert call_row(fraud)["risk"] == "high" and call_row(dispute)["risk"] == "low"
 
     assert c.get(f"/api/calls/{fraud}?tier=RED", headers=red).status_code == 200
-    assert c.get(f"/api/calls/{fraud}?tier=AMBER", headers=priya).status_code == 200
-    assert c.get(f"/api/calls/{fraud}?tier=AMBER", headers=daniel).status_code == 403     # IDOR: another agent's call
-    assert c.get(f"/api/calls/{fraud}?tier=RED", headers=priya).status_code == 403
+    assert c.get(f"/api/calls/{fraud}?tier=AMBER", headers=agent).status_code == 200
+    assert c.get(f"/api/calls/{fraud}?tier=AMBER", headers=other_agent).status_code == 403  # IDOR: another agent's call
+    assert c.get(f"/api/calls/{fraud}?tier=RED", headers=agent).status_code == 403
     assert c.get(f"/api/calls/{fraud}?tier=AMBER", headers=green).status_code == 403
     assert c.get(f"/api/calls/{fraud}?tier=GREEN", headers=green).status_code == 200
     assert c.get(f"/api/calls/{fraud}?tier=PURPLE", headers=red).status_code == 422
-    assert c.get("/api/audit", headers=priya).status_code == 403
+    assert c.get("/api/audit", headers=agent).status_code == 403
     assert c.post("/api/calls/simulate", headers=green).status_code == 403
 
     body = c.get(f"/api/calls/{fraud}?tier=RED", headers=red).json()
@@ -77,7 +85,7 @@ def test_triage_and_clearance_rules(c):
 
 def test_breakglass_for_low_risk_calls(c):
     red = login(c, "compliance")
-    dispute = ingest(c, "priya", DISPUTE)
+    dispute = ingest(c, "agent", DISPUTE)
     assert c.get(f"/api/calls/{dispute}?tier=RED", headers=red).status_code == 428
     assert c.get(f"/api/calls/{dispute}?tier=RED&justification=short", headers=red).status_code == 428
     why = "Chargeback escalated by the card scheme, case 7731"
@@ -89,16 +97,16 @@ def test_breakglass_for_low_risk_calls(c):
 
 def test_crypto_backs_the_rules(c, monkeypatch):
     """Even if the clearance code is wrong, a GREEN key cannot open a RED copy."""
-    fraud = ingest(c, "priya", FRAUD)
+    fraud = ingest(c, "agent", FRAUD)
     monkeypatch.setattr(main, "can_view", lambda *a: None)
     r = c.get(f"/api/calls/{fraud}?tier=RED", headers=login(c, "datasci"))
     assert r.status_code == 403 and "attribute key" in r.json()["detail"]
-    r = c.get(f"/api/calls/{fraud}?tier=AMBER", headers=login(c, "daniel"))
+    r = c.get(f"/api/calls/{fraud}?tier=AMBER", headers=login(c, colleague()))
     assert r.status_code == 403
 
 
 def test_forged_escalated_and_stale_tokens(c):
-    fraud = ingest(c, "priya", FRAUD)
+    fraud = ingest(c, "agent", FRAUD)
     exp = datetime.now(timezone.utc) + timedelta(hours=1)
     forged = jwt.encode({"sub": "compliance", "exp": exp}, "not-the-key", algorithm="HS256")
     assert c.get("/api/me", headers={"Authorization": f"Bearer {forged}"}).status_code == 401
@@ -110,18 +118,18 @@ def test_forged_escalated_and_stale_tokens(c):
     assert c.get("/api/me", headers={"Authorization": f"Bearer {ghost}"}).status_code == 401
 
     # a downgrade applies to tokens already issued
-    priya = login(c, "priya")
+    agent = login(c, "agent")
     db = store.connect()
-    db.execute("UPDATE users SET tier = 'GREEN' WHERE username = 'priya'")
+    db.execute("UPDATE users SET tier = 'GREEN' WHERE username = 'agent'")
     try:
-        assert c.get(f"/api/calls/{fraud}?tier=AMBER", headers=priya).status_code == 403
+        assert c.get(f"/api/calls/{fraud}?tier=AMBER", headers=agent).status_code == 403
     finally:
-        db.execute("UPDATE users SET tier = 'AMBER' WHERE username = 'priya'")
+        db.execute("UPDATE users SET tier = 'AMBER' WHERE username = 'agent'")
 
 
 def test_review_hold_then_release(c):
     red, green = login(c, "compliance"), login(c, "datasci")
-    held = ingest(c, "priya", UNSURE)
+    held = ingest(c, "agent", UNSURE)
     row = call_row(held)
     assert row["review"] == "pending" and "OTP" in str(store.reasons(row)["review_reasons"])
     assert c.get(f"/api/calls/{held}?tier=GREEN", headers=green).status_code == 403
@@ -136,8 +144,8 @@ def test_review_hold_then_release(c):
 
 
 def test_signed_receipts_and_export(c):
-    green = login(c, "model")                                       # the training pipeline's service account
-    fraud = ingest(c, "priya", FRAUD)
+    green = login(c, "datasci")                                    # the training pipeline holds a GREEN key
+    fraud = ingest(c, "agent", FRAUD)
     pub = load_pem_public_key(c.get("/api/signing-key").text.encode())
     canon = lambda o: json.dumps(o, sort_keys=True, separators=(",", ":")).encode()
 
@@ -165,7 +173,7 @@ def test_signed_receipts_and_export(c):
 
 def test_erase_crypto_shreds(c):
     red = login(c, "compliance")
-    fraud = ingest(c, "priya", FRAUD)
+    fraud = ingest(c, "agent", FRAUD)
     db = store.connect()
     backup = db.execute("SELECT blob FROM copies WHERE call_id = ? AND tier = 'RED'", (fraud,)).fetchone()["blob"]
     assert c.post(f"/api/calls/{fraud}/erase", json={"reason": "PDPA withdrawal of consent"}, headers=red).status_code == 200
@@ -180,7 +188,7 @@ def test_erase_crypto_shreds(c):
 def test_erased_key_not_left_in_file(c):
     """A deleted row survives in SQLite's free pages and WAL unless overwritten: shredding must reach the disk."""
     red = login(c, "compliance")
-    fraud = ingest(c, "priya", FRAUD)
+    fraud = ingest(c, "agent", FRAUD)
     db = store.connect()
     wrapped = [r["wrapped"] for r in db.execute("SELECT wrapped FROM dek WHERE call_id = ?", (fraud,))]
     assert c.post(f"/api/calls/{fraud}/erase", json={"reason": "PDPA withdrawal of consent"}, headers=red).status_code == 200
@@ -189,7 +197,7 @@ def test_erased_key_not_left_in_file(c):
 
 
 def test_retention_purge(c):
-    fraud = ingest(c, "priya", DISPUTE)                              # low risk: 365 days
+    fraud = ingest(c, "agent", DISPUTE)                              # low risk: 365 days
     db = store.connect()
     old = (datetime.now(timezone.utc) - timedelta(days=400)).isoformat(timespec="seconds")
     db.execute("UPDATE calls SET created_at = ? WHERE id = ?", (old, fraud))
@@ -201,7 +209,7 @@ def test_retention_purge(c):
 
 
 def test_stolen_database_and_key(c):
-    ingest(c, "priya", FRAUD)
+    ingest(c, "agent", FRAUD)
     db = store.connect()
     n = {t: db.execute("SELECT COUNT(*) FROM copies WHERE tier = ?", (t,)).fetchone()[0] for t in ("RED", "AMBER", "GREEN")}
     held = db.execute("SELECT COUNT(*) FROM calls WHERE review = 'pending'").fetchone()[0]
@@ -210,14 +218,14 @@ def test_stolen_database_and_key(c):
     green = attack.attempt(store.DB_PATH, {"tier:GREEN"})
     assert green[("RED", "opened")] == 0 and green[("AMBER", "opened")] == 0
     assert green[("GREEN", "opened")] == n["GREEN"] - held
-    priya = attack.attempt(store.DB_PATH, {"tier:AMBER", "tier:GREEN", "agent:Priya Nair"})
+    handler = attack.attempt(store.DB_PATH, {"tier:AMBER", "tier:GREEN", "agent:Priya Nair"})
     mine = db.execute("SELECT COUNT(*) FROM calls WHERE agent = 'Priya Nair'").fetchone()[0]
-    assert priya[("RED", "opened")] == 0 and priya[("AMBER", "opened")] == mine
+    assert handler[("RED", "opened")] == 0 and handler[("AMBER", "opened")] == mine
 
 
 def test_server_compromise_yields_no_master_key(c):
     """Root on the main server reads its database and its key folder: the ABE master key is in neither."""
-    ingest(c, "priya", FRAUD)
+    ingest(c, "agent", FRAUD)
     assert not attack.server_compromise()
     assert keyauthority.KA_DIR not in (store.KEYS_DIR, *store.KEYS_DIR.parents)
     # the authority refuses unsigned assertions and break-glass keys without a reason, and logs what it issues
@@ -234,7 +242,7 @@ def test_encrypted_at_rest(c):
     db = store.connect()
     for (blob,) in db.execute("SELECT blob FROM copies"):
         assert b"utterances" not in blob and b"speaker" not in blob and b"Tan" not in blob
-    fraud = ingest(c, "priya", FRAUD)
+    fraud = ingest(c, "agent", FRAUD)
     row = call_row(fraud)
     assert isinstance(row["risk_reason"], bytes) and b"fraud" not in row["risk_reason"]
     assert store.reasons(row)["risk_reason"].startswith("fraud report")
@@ -299,7 +307,7 @@ def test_parallel_tier_requests(c):
     from concurrent.futures import ThreadPoolExecutor
 
     red = login(c, "compliance")
-    fraud = ingest(c, "priya", FRAUD)
+    fraud = ingest(c, "agent", FRAUD)
     with ThreadPoolExecutor(6) as pool:
         codes = list(pool.map(lambda t: c.get(f"/api/calls/{fraud}?tier={t}", headers=red).status_code,
                               ["RED", "AMBER", "GREEN"] * 4))
@@ -332,17 +340,17 @@ def test_overview_targets(c):
 
 def test_roles_scope_the_api(c):
     """Each role gets what its job needs, whatever its clearance; refusals are logged."""
-    can = {u: set(c.get("/api/me", headers=login(c, u)).json()["can"]) for u in ("compliance", "priya", "datasci", "admin")}
+    can = {u: set(c.get("/api/me", headers=login(c, u)).json()["can"]) for u in ("compliance", "agent", "datasci", "admin")}
     assert can["compliance"] == {"calls", "review", "audit", "policy"}
-    assert can["datasci"] == {"calls", "export", "policy"} and "ingest" in can["priya"]
-    assert can["admin"] >= can["compliance"] | can["priya"] | can["datasci"] | {"attack", "live", "overview", "results"}
-    red, priya, green = login(c, "compliance"), login(c, "priya"), login(c, "datasci")
+    assert can["datasci"] == {"calls", "export", "policy"} and "ingest" in can["agent"]
+    assert can["admin"] >= can["compliance"] | can["agent"] | can["datasci"] | {"attack", "live", "overview", "results"}
+    red, agent, green = login(c, "compliance"), login(c, "agent"), login(c, "datasci")
     before = store.connect().execute("SELECT COUNT(*) FROM audit WHERE action = 'deny'").fetchone()[0]
     assert c.post("/api/attack", json={}, headers=red).status_code == 403          # RED, but not compliance's job
     assert c.get("/api/overview", headers=red).status_code == 403
     assert c.post("/api/calls/simulate", headers=red).status_code == 403
     assert c.get("/api/export", headers=red).status_code == 403
-    assert c.get("/api/export", headers=priya).status_code == 403
+    assert c.get("/api/export", headers=agent).status_code == 403
     assert c.get("/api/sample-call", headers=green).status_code == 403
     assert c.get("/api/results", headers=green).status_code == 403
     assert store.connect().execute("SELECT COUNT(*) FROM audit WHERE action = 'deny'").fetchone()[0] == before + 7

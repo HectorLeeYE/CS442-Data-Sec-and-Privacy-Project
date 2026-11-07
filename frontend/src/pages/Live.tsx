@@ -90,9 +90,9 @@ export default function Live({ user }: { user: User }) {
     return () => clearTimeout(t)
   }, [queue])
 
-  async function play(style: 'asr' | 'clean') {
+  async function play() {
     try {
-      const s = await api<Sample>(`/api/sample-call?style=${style}`)
+      const s = await api<Sample>('/api/sample-call')
       setScenario(s.scenario)
       setInput('')
       setQueue(s.utterances)
@@ -123,11 +123,8 @@ export default function Live({ user }: { user: User }) {
                 </button>
               ) : (
                 <>
-                  <button className="btn btn-sm btn-primary" disabled={recording} onClick={() => play('asr')}>
-                    <Play size={14} aria-hidden="true" /> Play a call (speech-recognition output)
-                  </button>
-                  <button className="btn btn-sm" disabled={recording} onClick={() => play('clean')}>
-                    <Play size={14} aria-hidden="true" /> Play a call (written)
+                  <button className="btn btn-sm btn-primary" disabled={recording} onClick={play}>
+                    <Play size={14} aria-hidden="true" /> Play a call
                   </button>
                   <Dictate
                     label="Record a call"

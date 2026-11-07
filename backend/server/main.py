@@ -35,10 +35,8 @@ GLINER_REVIEW = os.environ.get("GLINER_REVIEW") == "1"     # needs requirements-
 MIN_JUSTIFICATION = 15
 DEMO_USERS = [  # username, display name, tier, agent name, role — password "demo" for all
     ("compliance", "Rachel Ong — Compliance", "RED", None, "compliance"),
-    ("priya", "Priya Nair — Call agent", "AMBER", "Priya Nair", "agent"),
-    ("daniel", "Daniel Koh — Call agent", "AMBER", "Daniel Koh", "agent"),
+    ("agent", "Call agent — Contact centre", "AMBER", "Priya Nair", "agent"),
     ("datasci", "Alex Chua — Data science", "GREEN", None, "datasci"),
-    ("model", "ASR training pipeline — service account", "GREEN", None, "datasci"),
     ("admin", "Demo admin — every page", "RED", None, "admin"),
 ]
 # What each role's job needs. The dashboard shows only these, and the API refuses the rest (least privilege on

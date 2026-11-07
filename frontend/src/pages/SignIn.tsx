@@ -5,10 +5,8 @@ import TierBadge from '../components/TierBadge'
 
 const DEMO: { username: string; who: string; tier: Tier; sees: string }[] = [
   { username: 'compliance', who: 'Rachel Ong, compliance', tier: 'RED', sees: 'High-risk calls in full, credentials still withheld; low-risk calls only with a logged reason. Releases held calls, erases calls, reads the disclosure log.' },
-  { username: 'priya', who: 'Priya Nair, call agent', tier: 'AMBER', sees: 'Own calls with names pseudonymised and accounts masked. Takes and pastes calls.' },
-  { username: 'daniel', who: 'Daniel Koh, call agent', tier: 'AMBER', sees: 'Same as Priya, for his own calls; not hers.' },
+  { username: 'agent', who: 'Call agent, contact centre', tier: 'AMBER', sees: 'Own calls with names pseudonymised and accounts masked. Takes and pastes calls.' },
   { username: 'datasci', who: 'Alex Chua, data science', tier: 'GREEN', sees: 'De-identified training text with realistic surrogates; the training-set export.' },
-  { username: 'model', who: 'ASR training pipeline', tier: 'GREEN', sees: 'Service account: the model gets GREEN data, not raw.' },
   { username: 'admin', who: 'Demo admin, for presenting', tier: 'RED', sees: 'Every page: project overview, live anonymiser, attack simulation, experiment results. Demo only; a bank would have no such account.' },
 ]
 

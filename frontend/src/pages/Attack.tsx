@@ -11,7 +11,7 @@ const NONE: AttackAssets = {
 const PRESETS: { label: string; assets: Partial<AttackAssets> }[] = [
   { label: 'Stolen database', assets: { database: true } },
   { label: 'Database + data scientist\'s key', assets: { database: true, user_key: 'datasci' } },
-  { label: 'Rogue agent', assets: { database: true, user_key: 'priya' } },
+  { label: 'Rogue agent', assets: { database: true, user_key: 'agent' } },
   { label: 'Stolen backup of every volume', assets: { database: true, keys_volume: true, ka_volume: true } },
   { label: 'Root on the app server', assets: { database: true, keys_volume: true, app_secret: true, ka_secret: true, ka_access: true } },
   { label: 'Everything', assets: { database: true, user_key: 'compliance', keys_volume: true, ka_volume: true, app_secret: true, ka_secret: true, ka_access: true } },
@@ -41,8 +41,7 @@ const STOLEN: { group: string; items: { key: keyof AttackAssets; label: string; 
 
 const VICTIMS = [
   { username: 'datasci', label: 'Alex Chua, data science (GREEN)' },
-  { username: 'priya', label: 'Priya Nair, call agent (AMBER)' },
-  { username: 'daniel', label: 'Daniel Koh, call agent (AMBER)' },
+  { username: 'agent', label: 'Call agent (AMBER)' },
   { username: 'compliance', label: 'Rachel Ong, compliance (RED)' },
 ]
 

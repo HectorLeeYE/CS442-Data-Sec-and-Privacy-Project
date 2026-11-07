@@ -138,7 +138,7 @@ function TaskResult({ t }: { t: Task }) {
       </div>
       <h3 className="text-sm font-semibold">How the new recogniser is kept private</h3>
       <ul className="list-disc space-y-1 pl-5 text-sm">
-        <li><strong>It only ever sees GREEN.</strong> The training pipeline is the <code>model</code> account at GREEN clearance; its CP-ABE key cannot open a RED or AMBER copy, even with the database in hand.</li>
+        <li><strong>It only ever sees GREEN.</strong> The training pipeline runs at GREEN clearance, as data science's account does; its CP-ABE key cannot open a RED or AMBER copy, even with the database in hand.</li>
         <li><strong>Identifiers are replaced, not blacked out.</strong> NRIC, account and card numbers become checksum-valid fakes of the same shape; names become pseudonyms from a pool that shares no word with real names; places and employers become a region or a sector. The fakes are why GREEN keeps most of the gain.</li>
         <li><strong>Credentials never reach it.</strong> OTPs, PINs, CVVs and security answers are removed at ingest and exist in no copy, RED included.</li>
         <li><strong>Doubtful calls are held back.</strong> A call with an unanswered credential question or a stray long number is held for review and stays encrypted to RED until compliance releases it.</li>
@@ -289,12 +289,12 @@ export default function Overview() {
 
       <Section n={6} title="Demo" Icon={ScanSearch}>
         <ol className="list-inside list-decimal space-y-1 text-sm">
-          <li><a className="link" href="#/live">Live anonymiser</a>: press <em>Play a call</em>, or <em>Record</em> and speak, and watch each tier update as the call arrives.</li>
-          <li><a className="link" href="#/calls">Calls</a>: sign in as <code>compliance</code>, <code>priya</code> (agent) or <code>datasci</code> and open the same call. Each sees only the tiers their clearance reads and only the tools their job needs: compliance reviews and reads the log, the agent takes calls, data science exports the training set.</li>
+          <li><a className="link" href="#/live">Live anonymiser</a>: press <em>Play a call</em>, or <em>Record</em> and speak, and watch each tier update as the call arrives. The PCI moment: an agent asking for “the three digits at the back of the card” shows no CVV in any tier, RED included. Nothing on this page is stored.</li>
+          <li><a className="link" href="#/calls">Calls</a>: sign in as <code>compliance</code>, <code>agent</code> or <code>datasci</code> and open the same call. Each sees only the tiers their clearance reads and only the tools their job needs: compliance reviews and reads the log, the agent takes calls, data science exports the training set.</li>
           <li>Open a low-risk call as compliance: break-glass asks for a reason, and the access lands in the <a className="link" href="#/audit">disclosure log</a>.</li>
-          <li><a className="link" href="#/attack">Simulate attack</a>: steal the database, a key or a backup, and see what opens.</li>
-          <li>Tamper with the <a className="link" href="#/audit">disclosure log</a> from a terminal (README step 10) and press <em>Re-verify log</em>: the edit is caught against the heads the key authority signed.</li>
-          <li><a className="link" href="#/dashboard">Results dashboard</a>: what is caught, what each tier sees, what still leaks.</li>
+          <li>Steal the database: <code>python -m server.attack</code> in a terminal, or the <a className="link" href="#/attack">Simulate attack</a> page — the database alone opens nothing, and with a GREEN key only GREEN copies open.</li>
+          <li>As <code>compliance</code>, the <a className="link" href="#/audit">disclosure log</a>: every release with the hash of the text released, and <em>Merkle log: Intact</em>.</li>
+          <li><a className="link" href="#/policy">Redaction policy</a> shows the taxonomy matrix from <code>taxonomy.yaml</code>; the <a className="link" href="#/results">experiment tables</a> and the <a className="link" href="#/dashboard">results dashboard</a> show E1–E8.</li>
         </ol>
         <a href="#/live" className="btn btn-sm btn-primary self-start"><Radio size={14} aria-hidden="true" /> Start the live demo</a>
       </Section>

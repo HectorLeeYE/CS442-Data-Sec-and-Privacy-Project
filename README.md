@@ -77,10 +77,8 @@ is refused at start-up with a clear error telling you to delete it.
 | Username | Who | Clearance | Pages | Sees and does |
 |---|---|---|---|---|
 | `compliance` | Rachel Ong, compliance | RED | Calls, Disclosure log, Redaction policy | High-risk calls in every tier; low-risk calls in full only by break-glass. Releases held calls and erases calls. |
-| `priya` | Priya Nair, call agent | AMBER | Calls, Redaction policy | AMBER view of her own calls, GREEN view of any call. Takes and pastes calls. |
-| `daniel` | Daniel Koh, call agent | AMBER | Calls, Redaction policy | Same, for his own calls (shows that agents cannot read each other's calls) |
+| `agent` | Call agent, contact centre | AMBER | Calls, Redaction policy | AMBER view of their own calls, GREEN view of any call. Takes and pastes calls. |
 | `datasci` | Alex Chua, data science | GREEN | Calls, Redaction policy | The GREEN rendering only, and the training-set export |
-| `model` | ASR training pipeline, service account | GREEN | Calls, Redaction policy | The same as `datasci`: the model is treated as a GREEN principal |
 | `admin` | Demo admin, for presenting | RED | Every page | Everything above, plus the project overview, live anonymiser, simulate attack, results dashboard and experiment tables. **Demo only**: a bank would have no such account. |
 
 Each role sees only the pages and buttons its job needs, and the API refuses the rest and logs the
@@ -107,7 +105,7 @@ RED included, and never stored.
    is `[REDACTED]` everywhere. Hover a tag: it names the class, the detection layer and the action,
    never the original value. Pick an ASR call (C0016 or later): "s nine eight seven…" is caught and
    replaced in the same spoken form. A low-risk call asks for a break-glass reason before opening.
-4. **Sign in as `priya` (agent).** Only AMBER and GREEN. *Take a call* ingests a synthetic call;
+4. **Sign in as `agent`.** Only AMBER and GREEN. *Take a call* ingests a synthetic call;
    *Paste* lets you type or record an `A:` / `C:` transcript to ingest. A call with an unanswered
    credential question is held for review until compliance releases it.
 5. **Sign in as `datasci`.** Only GREEN, and *Training set*: a JSONL export through the k = 5
